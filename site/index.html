@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="ET Analytics SDK 使用手册：接入、事件模型、可靠投递、Consent、插件和本地调试。" />
+    <title>ET Analytics SDK · 使用手册</title>
+    <link rel="stylesheet" href="/docs/styles.css" />
+  </head>
+  <body>
+    <div class="mobile-bar">
+      <button id="menuButton" class="icon-button" aria-label="打开导航">☰</button>
+      <a class="mobile-brand" href="#top"><span class="mark">ET</span><strong>Analytics SDK</strong></a>
+      <button class="icon-button theme-toggle" aria-label="切换主题">◐</button>
+    </div>
+
+    <aside id="sidebar" class="sidebar">
+      <a class="brand" href="#top"><span class="mark">ET</span><span><strong>Analytics SDK</strong><small>Browser SDK Handbook</small></span></a>
+      <label class="search"><span>⌕</span><input id="searchInput" type="search" placeholder="搜索手册…" autocomplete="off" /><kbd>⌘K</kbd></label>
+      <nav id="navigation">
+        <p>开始</p>
+        <a href="#overview">概览</a><a href="#installation">安装与初始化</a><a href="#quickstart">五分钟接入</a>
+        <p>采集</p>
+        <a href="#events">事件 API</a><a href="#identity">身份与会话</a><a href="#consent">Consent</a><a href="#plugins">插件管线</a>
+        <p>投递</p>
+        <a href="#storage">持久化队列</a><a href="#delivery">批量与重试</a><a href="#codec">Codec 与 Protobuf</a><a href="#transport">Transport</a>
+        <p>调试与服务端</p>
+        <a href="#diagnostics">诊断事件</a><a href="#collector">Collector 协议</a><a href="#local-lab">本地验证台</a><a href="#production">生产检查表</a>
+      </nav>
+      <div class="sidebar-footer"><span class="status-dot"></span>v0.2 starter <button class="icon-button theme-toggle" aria-label="切换主题">◐</button></div>
+    </aside>
+    <button id="backdrop" class="backdrop" aria-label="关闭导航"></button>
+
+    <main id="top" class="content">
+      <header class="hero doc-section" data-title="概览 后端无关 前端埋点 SDK">
+        <div class="eyebrow"><span class="pulse"></span>Backend-agnostic · TypeScript · Browser</div>
+        <h1>把埋点变成一条<br /><span>可靠、可替换的数据链路</span></h1>
+        <p class="hero-copy">ET Analytics SDK 将业务事件与具体后端隔离：业务只依赖稳定 API，Codec、压缩、存储与 Transport 均可独立替换。</p>
+        <div class="hero-actions"><a class="button primary" href="#quickstart">开始接入</a><a class="button" href="/lab" data-local-lab>打开本地验证台 ↗</a></div>
+        <div class="pipeline" aria-label="事件处理流程"><span>track()</span><i>→</i><span>Plugins</span><i>→</i><span>Queue</span><i>→</i><span>Codec</span><i>→</i><span>Transport</span></div>
+      </header>
+
+      <section id="overview" class="doc-section" data-title="架构概览 核心能力">
+        <div class="section-label">01 · Overview</div><h2>核心设计</h2><p class="lead">SDK Core 只定义事件生命周期和抽象接口。任何后端差异都收敛在 Adapter 边界，避免扩散到业务代码。</p>
+        <div class="feature-grid">
+          <article><span class="feature-icon">◇</span><h3>类型安全事件</h3><p>通过 TypeScript EventMap 在编译期检查事件名、必填字段与属性类型。</p></article>
+          <article><span class="feature-icon">↻</span><h3>可靠投递</h3><p>批量发送、IndexedDB 持久化、页面退出 Flush，以及带抖动的指数退避。</p></article>
+          <article><span class="feature-icon">⊙</span><h3>隐私优先</h3><p>Consent 在事件创建前拦截；撤回授权可同时清空队列和本地身份。</p></article>
+          <article><span class="feature-icon">⬡</span><h3>完全可插拔</h3><p>Plugin、Codec、Compression、Storage 和 Transport 都有独立契约。</p></article>
+        </div>
+        <div class="callout info"><strong>边界原则</strong><span>业务依赖 SDK API，SDK Core 依赖抽象接口，Adapter 才依赖具体平台。</span></div>
+      </section>
+
+      <section id="installation" class="doc-section" data-title="安装 构建 初始化 TypeScript pnpm">
+        <div class="section-label">02 · Installation</div><h2>安装与构建</h2><p>当前仓库是零运行时依赖的 TypeScript 包。安装开发依赖并构建：</p>
+        <pre><code class="language-shell">pnpm install
+pnpm build
+pnpm test</code><button class="copy-button">复制</button></pre>
+        <p>构建产物输出到 <code>dist/</code>，入口为 <code>dist/index.js</code>。应用内可直接从包入口导入：</p>
+        <pre><code class="language-ts">import {
+  createAnalytics,
+  HttpTransport,
+  IndexedDbEventStorage,
+  BrowserLocalStorage,
+} from "@et/analytics-sdk";</code><button class="copy-button">复制</button></pre>
+      </section>
+
+      <section id="quickstart" class="doc-section" data-title="快速开始 createAnalytics 配置 示例">
+        <div class="section-label">03 · Quickstart</div><h2>五分钟接入</h2>
+        <div class="steps"><span>1</span><div><h3>定义业务事件</h3><p>事件类型只存在于应用侧，不会让 Core 与业务 Schema 强耦合。</p></div></div>
+        <pre><code class="language-ts">interface AppEvents {
+  product_viewed: {
+    productId: string;
+    category?: string;
+  };
+  order_submitted: {
+    orderId: string;
+    amount: number;
+    currency: "CNY" | "USD";
+  };
+}</code><button class="copy-button">复制</button></pre>
+        <div class="steps"><span>2</span><div><h3>创建 SDK 实例</h3><p>浏览器生产环境建议显式使用 IndexedDB 与 localStorage。</p></div></div>
+        <pre><code class="language-ts">const analytics = createAnalytics&lt;AppEvents&gt;({
+  appId: "commerce-web",
+  appVersion: "1.0.0",
+  environment: "production",
+  identityStorage: new BrowserLocalStorage(),
+  eventStorage: new IndexedDbEventStorage(),
+  transport: new HttpTransport({
+    endpoint: "https://events.example.com/v1/batch",
+  }),
+  retry: {
+    baseDelayMs: 1_000,
+    maxDelayMs: 60_000,
+    jitterRatio: 0.2,
+  },
+});
+
+await analytics.init();</code><button class="copy-button">复制</button></pre>
+        <div class="steps"><span>3</span><div><h3>发送业务事件</h3></div></div>
+        <pre><code class="language-ts">await analytics.track("order_submitted", {
+  orderId: "o_123",
+  amount: 199,
+  currency: "CNY",
+});</code><button class="copy-button">复制</button></pre>
+      </section>
+
+      <section id="events" class="doc-section" data-title="事件 API track page identify reset flush shutdown">
+        <div class="section-label">04 · Collection</div><h2>事件 API</h2>
+        <div class="api-list">
+          <article><header><code>track(name, properties, options?)</code><span>Promise&lt;void&gt;</span></header><p>记录一个类型安全的业务事件。可用 <code>options.timestamp</code> 覆盖发生时间。</p></article>
+          <article><header><code>page(name, properties?)</code><span>Promise&lt;void&gt;</span></header><p>记录页面访问，SDK 自动补充 URL、路径、标题与 Referrer。</p></article>
+          <article><header><code>identify(userId, traits?)</code><span>Promise&lt;void&gt;</span></header><p>绑定登录用户，并发送 <code>$identify</code> 事件。</p></article>
+          <article><header><code>flush(reason?)</code><span>Promise&lt;void&gt;</span></header><p>立即发送当前批次。同一时间只允许一个 Flush 执行。</p></article>
+          <article><header><code>reset()</code><span>void</span></header><p>退出登录时清除 userId，并生成新的 anonymousId 与 sessionId。</p></article>
+          <article><header><code>shutdown()</code><span>Promise&lt;void&gt;</span></header><p>停止定时器、解绑页面事件、完成最后一次发送并销毁插件。</p></article>
+        </div>
+      </section>
+
+      <section id="identity" class="doc-section" data-title="身份 anonymousId userId sessionId 会话">
+        <div class="section-label">05 · Identity</div><h2>身份与会话</h2><p>每个事件都携带三层身份。服务端可以按 <code>eventId</code> 去重，并按身份字段完成后续合并。</p>
+        <div class="table-wrap"><table><thead><tr><th>字段</th><th>来源</th><th>用途</th></tr></thead><tbody><tr><td><code>anonymousId</code></td><td>首次访问生成</td><td>登录前行为串联</td></tr><tr><td><code>userId</code></td><td><code>identify()</code></td><td>跨设备登录身份</td></tr><tr><td><code>sessionId</code></td><td>会话生成</td><td>一次访问范围</td></tr><tr><td><code>eventId</code></td><td>每个事件生成</td><td>服务端幂等去重</td></tr></tbody></table></div>
+        <div class="callout warning"><strong>注意</strong><span>当前 starter 尚未实现空闲超时自动续期。可调用 IdentityManager 的 <code>renewSession()</code>，或在后续阶段增加 Session 策略。</span></div>
+      </section>
+
+      <section id="consent" class="doc-section" data-title="Consent 隐私 pending granted denied 撤回授权">
+        <div class="section-label">06 · Privacy</div><h2>Consent 管理</h2><p>Consent 检查发生在创建事件和生成身份之前。需要用户授权的项目应从 <code>pending</code> 开始。</p>
+        <pre><code class="language-ts">const analytics = createAnalytics({
+  appId: "shop-web",
+  transport,
+  consent: {
+    initialState: "pending",
+    clearQueueOnDenied: true,
+  },
+});
+
+await analytics.setConsent("granted"); // 开始采集
+await analytics.setConsent("denied");  // 清队列、清身份</code><button class="copy-button">复制</button></pre>
+        <div class="state-grid"><article><b>pending</b><p>等待用户决定，不创建事件。</p></article><article class="active"><b>granted</b><p>允许采集、排队和投递。</p></article><article><b>denied</b><p>阻断采集，可清理已有数据。</p></article></div>
+      </section>
+
+      <section id="plugins" class="doc-section" data-title="Plugin 插件 beforeTrack afterTrack redact sampling">
+        <div class="section-label">07 · Plugins</div><h2>插件管线</h2><p>插件在编码前处理标准 JavaScript 事件。返回 <code>null</code> 会丢弃事件；诊断能力可以观察这一行为。</p>
+        <pre><code class="language-ts">const analytics = createAnalytics({
+  appId: "shop-web",
+  transport,
+  plugins: [
+    redactPlugin(["password", "token", "authorization"]),
+    samplingPlugin({ mouse_moved: 0.01 }),
+  ],
+});</code><button class="copy-button">复制</button></pre>
+        <div class="pipeline compact"><span>setup</span><i>→</i><span>beforeTrack</span><i>→</i><span>Queue</span><i>→</i><span>afterTrack</span><i>→</i><span>teardown</span></div>
+      </section>
+
+      <section id="storage" class="doc-section" data-title="IndexedDB Storage Memory 队列 持久化">
+        <div class="section-label">08 · Storage</div><h2>持久化队列</h2><p>SDK 提供统一的 <code>EventStorage</code> 契约。开发和测试可用内存队列，浏览器生产环境推荐 IndexedDB。</p>
+        <div class="compare"><article><h3>MemoryEventStorage</h3><ul><li>零配置、速度快</li><li>刷新页面即丢失</li><li>适合测试和 SSR</li></ul></article><article class="recommended"><span>Recommended</span><h3>IndexedDbEventStorage</h3><ul><li>未发送事件跨刷新保留</li><li>FIFO 读取</li><li>适合失败重试</li></ul></article></div>
+        <pre><code class="language-ts">eventStorage: new IndexedDbEventStorage({
+  databaseName: "commerce-analytics",
+  storeName: "events",
+})</code><button class="copy-button">复制</button></pre>
+      </section>
+
+      <section id="delivery" class="doc-section" data-title="可靠投递 batch retry exponential backoff pagehide visibilitychange">
+        <div class="section-label">09 · Delivery</div><h2>批量与重试</h2>
+        <div class="timeline"><div><span>01</span><h3>进入队列</h3><p>事件先持久化，再判断是否达到批量阈值。</p></div><div><span>02</span><h3>触发 Flush</h3><p>定时、队列满、手动或页面隐藏均可触发。</p></div><div><span>03</span><h3>发送结果</h3><p>成功出队；408、429、5xx 或网络失败进入退避。</p></div><div><span>04</span><h3>幂等去重</h3><p>服务端依据稳定 eventId 去重。</p></div></div>
+        <div class="callout info"><strong>投递语义</strong><span>浏览器无法保证严格 exactly-once。推荐“客户端至少一次投递 + 服务端 eventId 幂等”。</span></div>
+      </section>
+
+      <section id="codec" class="doc-section" data-title="Codec JSON Protobuf gzip CompressionStream 编码压缩">
+        <div class="section-label">10 · Encoding</div><h2>Codec 与 Protobuf</h2><p>编码位于插件和批量之后、Transport 之前。Core 内置 JSON，并允许注入任意 Protobuf 生成器。</p>
+        <pre><code class="language-ts">const codec = new ProtobufCodec((batch) =&gt; {
+  return EventBatch.encode(
+    EventBatch.fromJSON(batch),
+  ).finish();
+});
+
+const analytics = createAnalytics({
+  appId: "shop-web",
+  codec,
+  compression: new GzipCompression(),
+  transport,
+});</code><button class="copy-button">复制</button></pre>
+        <p>建议先优化批量、字段和采样，再评估 Protobuf。压缩后的 JSON 与 Protobuf 差距通常小于未压缩数据。</p>
+      </section>
+
+      <section id="transport" class="doc-section" data-title="Transport HTTP fetch keepalive adapter 后端解耦">
+        <div class="section-label">11 · Transport</div><h2>Transport</h2><p>Transport 只接收已经编码和压缩的 Batch，并把不同后端响应归一化成统一结果。</p>
+        <pre><code class="language-ts">interface TransportResult {
+  success: boolean;
+  retryable?: boolean;
+  status?: number;
+  retryAfterMs?: number;
+}</code><button class="copy-button">复制</button></pre>
+        <div class="table-wrap"><table><thead><tr><th>响应</th><th>默认行为</th></tr></thead><tbody><tr><td>2xx</td><td>成功，批次出队</td></tr><tr><td>408 / 429 / 5xx</td><td>保留批次并指数退避</td></tr><tr><td>其他 4xx</td><td>不可重试，移出队列</td></tr><tr><td>网络错误</td><td>保留批次并重试</td></tr></tbody></table></div>
+      </section>
+
+      <section id="diagnostics" class="doc-section" data-title="diagnostic 诊断日志 监控 onDiagnostic">
+        <div class="section-label">12 · Observability</div><h2>诊断事件</h2><p><code>onDiagnostic</code> 不创建业务事件，不会导致递归采集，适合接入日志或前端监控。</p>
+        <pre><code class="language-ts">const analytics = createAnalytics({
+  appId: "shop-web",
+  transport,
+  onDiagnostic(event) {
+    console.debug("[analytics]", event);
+  },
+});</code><button class="copy-button">复制</button></pre>
+        <div class="tag-list"><code>sdk_initialized</code><code>event_enqueued</code><code>event_dropped</code><code>flush_started</code><code>flush_succeeded</code><code>flush_failed</code><code>flush_retry_scheduled</code><code>sdk_shutdown</code></div>
+      </section>
+
+      <section id="collector" class="doc-section" data-title="Collector API 服务端协议 v1 batch stats health">
+        <div class="section-label">13 · Collector</div><h2>服务端协议</h2><p>SDK 默认向 Collector 发送一个带协议版本和发送时间的事件批次。</p>
+        <pre><code class="language-json">{
+  "protocolVersion": "1",
+  "sentAt": "2026-10-16T08:00:00.000Z",
+  "events": [
+    {
+      "eventId": "…",
+      "type": "track",
+      "name": "order_submitted",
+      "timestamp": "…",
+      "identity": { "anonymousId": "…", "sessionId": "…" },
+      "properties": { "orderId": "o_123", "amount": 199 },
+      "schemaVersion": "1"
+    }
+  ]
+}</code><button class="copy-button">复制</button></pre>
+        <div class="table-wrap"><table><thead><tr><th>方法</th><th>路径</th><th>用途</th></tr></thead><tbody><tr><td><b>POST</b></td><td><code>/v1/batch</code></td><td>接收 SDK 批量事件</td></tr><tr><td>GET</td><td><code>/v1/events</code></td><td>本地查询最近事件</td></tr><tr><td>GET</td><td><code>/v1/stats</code></td><td>查看批次、失败与请求日志</td></tr><tr><td>POST</td><td><code>/v1/control/failure</code></td><td>本地注入响应故障</td></tr></tbody></table></div>
+      </section>
+
+      <section id="local-lab" class="doc-section" data-title="本地测试 验证台 lab server 开发调试">
+        <div class="section-label">14 · Local Lab</div><h2>本地验证台</h2><p>仓库内置一个零依赖 Collector 和浏览器控制台，可验证队列、身份、Consent、重试和故障恢复。</p>
+        <pre><code class="language-shell">pnpm build
+pnpm local:server
+
+# 手册
+open http://127.0.0.1:4318
+
+# 交互验证台
+open http://127.0.0.1:4318/lab</code><button class="copy-button">复制</button></pre>
+        <div class="lab-card"><div><span class="live-dot"></span><strong>Analytics SDK Lab</strong><p>发送自定义事件、注入 503/429、观察本地队列和自动重试。</p></div><a class="button primary" href="/lab" data-local-lab>打开验证台 ↗</a></div>
+      </section>
+
+      <section id="production" class="doc-section" data-title="生产检查 checklist 安全 合规 性能">
+        <div class="section-label">15 · Production</div><h2>生产接入检查表</h2>
+        <div class="checklist">
+          <label><input type="checkbox" /> 使用第一方 HTTPS Collector 域名</label><label><input type="checkbox" /> 服务端按 eventId 幂等去重</label>
+          <label><input type="checkbox" /> 默认阻止密码、Token 和输入框文本</label><label><input type="checkbox" /> 配置 Consent 与撤回授权流程</label>
+          <label><input type="checkbox" /> 使用 IndexedDB 持久化队列</label><label><input type="checkbox" /> 为 Collector 配置限流和请求大小限制</label>
+          <label><input type="checkbox" /> 监控失败率、队列积压和投递延迟</label><label><input type="checkbox" /> 对高频低价值事件配置采样</label>
+          <label><input type="checkbox" /> 保留 event_time 与 received_at</label><label><input type="checkbox" /> 对 Schema 和协议进行版本管理</label>
+        </div>
+      </section>
+
+      <footer><div><strong>ET Analytics SDK</strong><p>一个后端无关的浏览器事件采集基础实现。</p></div><div><a href="#top">返回顶部 ↑</a><a href="/lab" data-local-lab>本地验证台</a><a href="#production">生产检查表</a></div></footer>
+      <div id="searchEmpty" class="search-empty" hidden>没有找到匹配的章节。试试“重试”“Consent”或“Protobuf”。</div>
+    </main>
+    <script src="/docs/app.js" type="module"></script>
+  </body>
+</html>

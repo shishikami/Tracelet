@@ -1,0 +1,1 @@
+{"version":3,"file":"consent.d.ts","sourceRoot":"","sources":["../src/consent.ts"],"names":[],"mappings":"AAAA,MAAM,MAAM,YAAY,GAAG,SAAS,GAAG,SAAS,GAAG,QAAQ,CAAC;AAE5D,qBAAa,cAAc;IACb,OAAO,CAAC,KAAK;gBAAL,KAAK,GAAE,YAAwB;IAEnD,GAAG,IAAI,YAAY;IAInB,GAAG,CAAC,KAAK,EAAE,YAAY,GAAG,IAAI;IAI9B,UAAU,IAAI,OAAO;CAGtB"}

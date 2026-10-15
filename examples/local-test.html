@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ET Analytics Lab</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --bg: #080b12; --panel: #111622; --panel-2: #171d2b; --line: #283044;
+        --text: #f5f7fb; --muted: #8f9ab1; --cyan: #62e6d2; --blue: #6ea8fe;
+        --green: #48d597; --amber: #f8c15c; --red: #ff7285;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 10% 0%, #17213a 0, transparent 34%), var(--bg); color: var(--text); }
+      button, input, textarea, select { font: inherit; }
+      button { cursor: pointer; }
+      .shell { max-width: 1440px; margin: auto; padding: 28px; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+      .brand { display: flex; align-items: center; gap: 13px; }
+      .logo { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; color: #071111; font-weight: 900; background: linear-gradient(135deg, var(--cyan), var(--blue)); box-shadow: 0 8px 28px #62e6d238; }
+      h1 { margin: 0; font-size: 19px; letter-spacing: -.02em; }
+      .subtitle { margin-top: 4px; color: var(--muted); font-size: 13px; }
+      .connection { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 13px; background: #0d121d; }
+      .docs-link { color: var(--cyan); text-decoration: none; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 12px currentColor; }
+      .dot.online { background: var(--green); }
+      .grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(360px, .8fr); gap: 18px; }
+      .stats { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+      .stat, .card { border: 1px solid var(--line); background: linear-gradient(155deg, #141a28, #0f141f); border-radius: 14px; box-shadow: 0 14px 42px #0004; }
+      .stat { padding: 16px; }
+      .stat-label { color: var(--muted); font-size: 12px; }
+      .stat-value { margin-top: 8px; font-size: 25px; font-weight: 720; letter-spacing: -.04em; }
+      .card { overflow: hidden; }
+      .card-head { display: flex; align-items: center; justify-content: space-between; min-height: 54px; padding: 0 17px; border-bottom: 1px solid var(--line); }
+      .card-title { font-size: 14px; font-weight: 680; }
+      .card-body { padding: 17px; }
+      .stack { display: grid; gap: 14px; }
+      .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; }
+      input, textarea, select { width: 100%; color: var(--text); background: #0b101a; border: 1px solid var(--line); border-radius: 9px; padding: 10px 11px; outline: none; }
+      input:focus, textarea:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #6ea8fe1e; }
+      textarea { min-height: 112px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.55; }
+      .btn { border: 1px solid var(--line); color: var(--text); background: #1a2232; border-radius: 9px; padding: 9px 13px; transition: .15s ease; }
+      .btn:hover { transform: translateY(-1px); border-color: #45516d; background: #202a3e; }
+      .btn-primary { color: #051412; border-color: transparent; background: var(--cyan); font-weight: 700; }
+      .btn-danger { color: #ffdbe0; border-color: #62303b; background: #2d1720; }
+      .btn-small { padding: 6px 9px; font-size: 12px; }
+      .segmented { display: inline-flex; padding: 3px; border-radius: 10px; background: #090d15; border: 1px solid var(--line); }
+      .segmented button { padding: 6px 11px; border: 0; border-radius: 7px; color: var(--muted); background: transparent; }
+      .segmented button.active { color: #06120f; background: var(--green); font-weight: 700; }
+      .hint { color: var(--muted); font-size: 12px; line-height: 1.55; }
+      .events { width: 100%; border-collapse: collapse; font-size: 12px; }
+      .events th { color: var(--muted); font-weight: 500; text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+      .events td { padding: 10px; border-bottom: 1px solid #20283a; vertical-align: top; }
+      .events tr:last-child td { border-bottom: 0; }
+      .event-name { color: var(--cyan); font-family: ui-monospace, monospace; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .scroll { max-height: 374px; overflow: auto; }
+      .log { margin: 0; min-height: 260px; max-height: 380px; overflow: auto; white-space: pre-wrap; color: #b8c2d8; font: 11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .badge { display: inline-flex; align-items: center; padding: 3px 7px; border-radius: 999px; background: #242c3e; color: #bfc9de; font-size: 11px; }
+      .badge.success { background: #123326; color: #74e3ad; }
+      .badge.error { background: #3b1c26; color: #ff9aaa; }
+      .empty { padding: 30px; text-align: center; color: var(--muted); }
+      .toast { position: fixed; right: 24px; bottom: 24px; max-width: 380px; padding: 12px 15px; border: 1px solid var(--line); border-radius: 10px; background: #171d2b; box-shadow: 0 14px 48px #0008; opacity: 0; transform: translateY(12px); pointer-events: none; transition: .2s; }
+      .toast.show { opacity: 1; transform: none; }
+      @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2, 1fr); } }
+      @media (max-width: 600px) { .shell { padding: 16px; } .topbar { align-items: flex-start; flex-direction: column; } .stats, .form-grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand"><div class="logo">ET</div><div><h1>Analytics SDK Lab</h1><div class="subtitle">本地事件采集、队列、重试与 Consent 验证台</div></div></div>
+        <div class="row"><a class="docs-link" href="/">← 使用手册</a><div class="connection"><span id="connectionDot" class="dot"></span><span id="connectionText">正在连接 Collector</span></div></div>
+      </header>
+
+      <section class="grid">
+        <div class="stats">
+          <div class="stat"><div class="stat-label">服务端事件</div><div id="storedEvents" class="stat-value">—</div></div>
+          <div class="stat"><div class="stat-label">本地队列</div><div id="queueSize" class="stat-value">—</div></div>
+          <div class="stat"><div class="stat-label">批次请求</div><div id="batchRequests" class="stat-value">—</div></div>
+          <div class="stat"><div class="stat-label">失败请求</div><div id="failedRequests" class="stat-value">—</div></div>
+          <div class="stat"><div class="stat-label">事件类型</div><div id="uniqueNames" class="stat-value">—</div></div>
+        </div>
+
+        <div class="stack">
+          <section class="card">
+            <div class="card-head"><span class="card-title">事件生成器</span><span class="badge">track()</span></div>
+            <div class="card-body stack">
+              <div class="form-grid">
+                <label>事件名称<input id="eventName" value="product_viewed" /></label>
+                <label>批量数量<input id="batchCount" type="number" min="1" max="100" value="1" /></label>
+              </div>
+              <label>Properties JSON<textarea id="properties">{
+  "productId": "p_1001",
+  "category": "analytics-lab",
+  "price": 199
+}</textarea></label>
+              <div class="row">
+                <button id="sendEvent" class="btn btn-primary">加入队列并发送</button>
+                <button id="enqueueOnly" class="btn">仅加入队列</button>
+                <button id="flush" class="btn">立即 Flush</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><span class="card-title">身份与隐私</span><span id="consentBadge" class="badge">granted</span></div>
+            <div class="card-body stack">
+              <div class="form-grid">
+                <label>User ID<input id="userId" value="local_user_001" /></label>
+                <label>用户等级<input id="userPlan" value="developer" /></label>
+              </div>
+              <div class="row"><button id="identify" class="btn">Identify</button><button id="resetIdentity" class="btn">Reset Identity</button></div>
+              <div>
+                <div class="hint" style="margin-bottom:8px">Consent 状态</div>
+                <div id="consentControl" class="segmented">
+                  <button data-consent="pending">Pending</button><button data-consent="granted">Granted</button><button data-consent="denied">Denied</button>
+                </div>
+              </div>
+              <div class="hint">Denied 会清空未发送事件及本地身份。随后调用 track() 不会创建事件。</div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><span class="card-title">故障与重试实验</span><span class="badge error">Collector control</span></div>
+            <div class="card-body stack">
+              <div class="form-grid">
+                <label>失败次数<input id="failureCount" type="number" min="1" max="20" value="1" /></label>
+                <label>HTTP 状态<select id="failureStatus"><option>503</option><option>429</option><option>500</option><option>400</option></select></label>
+              </div>
+              <label>服务端延迟（ms）<input id="serverDelay" type="number" min="0" max="10000" value="0" /></label>
+              <div class="row"><button id="injectFailure" class="btn btn-danger">注入故障并发送事件</button></div>
+              <div class="hint">503/429 会保留本地队列并退避重试；400 被视为不可重试并移出队列。</div>
+            </div>
+          </section>
+        </div>
+
+        <div class="stack">
+          <section class="card">
+            <div class="card-head"><span class="card-title">Collector 中的事件</span><div class="row"><button id="refresh" class="btn btn-small">刷新</button><button id="clearServer" class="btn btn-small btn-danger">清空</button></div></div>
+            <div class="scroll"><table class="events"><thead><tr><th>事件</th><th>身份</th><th>时间</th></tr></thead><tbody id="eventsBody"></tbody></table><div id="eventsEmpty" class="empty">暂无服务端事件</div></div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><span class="card-title">SDK 诊断日志</span><button id="clearLog" class="btn btn-small">清空日志</button></div>
+            <div class="card-body"><pre id="diagnosticLog" class="log"></pre></div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><span class="card-title">最近请求</span><span class="badge">server</span></div>
+            <div id="requestLog" class="card-body stack"><div class="hint">暂无请求</div></div>
+          </section>
+        </div>
+      </section>
+    </main>
+    <div id="toast" class="toast"></div>
+
+    <script type="module">
+      import { BrowserLocalStorage, HttpTransport, IndexedDbEventStorage, createAnalytics } from "/dist/index.js";
+
+      const $ = (selector) => document.querySelector(selector);
+      const eventStorage = new IndexedDbEventStorage({ databaseName: "et-analytics-lab-v2" });
+      const diagnostics = [];
+      let autoFlush = true;
+      let toastTimer;
+
+      function toast(message) {
+        const element = $("#toast"); element.textContent = message; element.classList.add("show");
+        clearTimeout(toastTimer); toastTimer = setTimeout(() => element.classList.remove("show"), 2400);
+      }
+
+      function writeDiagnostic(event) {
+        diagnostics.unshift({ at: new Date().toLocaleTimeString(), ...event });
+        diagnostics.splice(80);
+        $("#diagnosticLog").textContent = diagnostics.map((item) => `${item.at}  ${JSON.stringify(item)}`).join("\n");
+        void updateQueueSize();
+      }
+
+      const analytics = createAnalytics({
+        appId: "analytics-lab",
+        appVersion: "0.2.0",
+        environment: "local",
+        identityStorage: new BrowserLocalStorage("et_lab_"),
+        eventStorage,
+        consent: { initialState: "granted", clearQueueOnDenied: true },
+        flushIntervalMs: 3000,
+        retry: { baseDelayMs: 800, maxDelayMs: 8000, jitterRatio: 0.1 },
+        transport: new HttpTransport({ endpoint: "/v1/batch", timeoutMs: 12000 }),
+        onDiagnostic: writeDiagnostic,
+      });
+
+      async function api(path, options) {
+        const response = await fetch(path, options);
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error ?? `HTTP ${response.status}`);
+        return body;
+      }
+
+      async function updateQueueSize() { $("#queueSize").textContent = String(await eventStorage.size()); }
+
+      function renderConsent() {
+        const state = analytics.getConsent();
+        $("#consentBadge").textContent = state;
+        document.querySelectorAll("[data-consent]").forEach((button) => button.classList.toggle("active", button.dataset.consent === state));
+      }
+
+      function renderEvents(events) {
+        const body = $("#eventsBody"); body.replaceChildren(); $("#eventsEmpty").hidden = events.length > 0;
+        for (const event of events) {
+          const row = document.createElement("tr");
+          const name = document.createElement("td"); name.className = "event-name"; name.textContent = event.name;
+          const identity = document.createElement("td"); identity.className = "mono"; identity.textContent = event.identity?.userId ?? event.identity?.anonymousId?.slice(0, 8) ?? "—";
+          const time = document.createElement("td"); time.textContent = new Date(event.timestamp).toLocaleTimeString();
+          row.append(name, identity, time); body.append(row);
+        }
+      }
+
+      function renderRequests(items) {
+        const container = $("#requestLog"); container.replaceChildren();
+        if (!items.length) { const empty = document.createElement("div"); empty.className = "hint"; empty.textContent = "暂无请求"; container.append(empty); return; }
+        for (const item of items.slice(0, 8)) {
+          const row = document.createElement("div"); row.className = "row";
+          const status = document.createElement("span"); status.className = `badge ${item.status < 400 ? "success" : "error"}`; status.textContent = String(item.status);
+          const text = document.createElement("span"); text.className = "hint mono"; text.textContent = `${new Date(item.at).toLocaleTimeString()} · accepted ${item.accepted}`;
+          row.append(status, text); container.append(row);
+        }
+      }
+
+      async function refreshDashboard() {
+        try {
+          const [stats, events] = await Promise.all([api("/v1/stats"), api("/v1/events?limit=50")]);
+          $("#storedEvents").textContent = stats.storedEvents; $("#batchRequests").textContent = stats.batchRequests;
+          $("#failedRequests").textContent = stats.failedRequests; $("#uniqueNames").textContent = stats.uniqueEventNames;
+          $("#connectionDot").classList.add("online"); $("#connectionText").textContent = "Collector 在线";
+          renderEvents(events.events); renderRequests(stats.requestLog); await updateQueueSize();
+        } catch (error) {
+          $("#connectionDot").classList.remove("online"); $("#connectionText").textContent = "Collector 离线";
+          writeDiagnostic({ type: "dashboard_error", message: error.message });
+        }
+      }
+
+      async function createEvents(flushAfter) {
+        let properties;
+        try { properties = JSON.parse($("#properties").value); } catch { toast("Properties 不是合法 JSON"); return; }
+        const name = $("#eventName").value.trim(); const count = Math.min(100, Math.max(1, Number($("#batchCount").value)));
+        if (!name) { toast("请输入事件名称"); return; }
+        for (let index = 0; index < count; index += 1) await analytics.track(name, { ...properties, sequence: index + 1, generatedAt: new Date().toISOString() });
+        if (flushAfter) await analytics.flush();
+        toast(`已创建 ${count} 条 ${name}`); await refreshDashboard();
+      }
+
+      $("#sendEvent").onclick = () => createEvents(true);
+      $("#enqueueOnly").onclick = () => createEvents(false);
+      $("#flush").onclick = async () => { await analytics.flush(); await refreshDashboard(); toast("Flush 完成"); };
+      $("#identify").onclick = async () => { await analytics.identify($("#userId").value.trim(), { plan: $("#userPlan").value.trim() }); await analytics.flush(); await refreshDashboard(); toast("Identify 已发送"); };
+      $("#resetIdentity").onclick = () => { analytics.reset(); toast("身份已重置"); };
+      $("#refresh").onclick = refreshDashboard;
+      $("#clearServer").onclick = async () => { await api("/v1/events", { method: "DELETE" }); await refreshDashboard(); toast("服务端数据已清空"); };
+      $("#clearLog").onclick = () => { diagnostics.length = 0; $("#diagnosticLog").textContent = ""; };
+      $("#consentControl").onclick = async (event) => { const state = event.target.dataset.consent; if (!state) return; await analytics.setConsent(state); renderConsent(); await updateQueueSize(); toast(`Consent: ${state}`); };
+      $("#injectFailure").onclick = async () => {
+        await api("/v1/control/failure", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ count: Number($("#failureCount").value), status: Number($("#failureStatus").value), delayMs: Number($("#serverDelay").value) }) });
+        await analytics.track("retry_experiment", { expectedStatus: Number($("#failureStatus").value) });
+        await analytics.flush(); await refreshDashboard(); toast("故障已注入，请观察队列与诊断日志");
+      };
+
+      await analytics.init(); renderConsent(); await refreshDashboard();
+      await analytics.track("lab_opened", { viewport: `${innerWidth}x${innerHeight}` });
+      setInterval(refreshDashboard, 2500);
+      window.analyticsLab = { analytics, eventStorage, refreshDashboard };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "@et/analytics-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Backend-agnostic browser analytics SDK starter",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:docs": "node scripts/build-docs.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "pnpm run build && node --test tests/*.test.mjs",
+    "local:server": "node scripts/local-server.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ]
+}

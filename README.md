@@ -1,0 +1,166 @@
+# ET Analytics SDK starter
+
+一个后端无关的浏览器埋点 SDK 初始实现。核心只依赖抽象协议，JSON、Protobuf、压缩算法和网络传输都可以替换。
+
+## 数据链路
+
+```text
+track / page / identify
+  -> standard event
+  -> plugins
+  -> event storage
+  -> batch
+  -> codec
+  -> compression
+  -> transport
+```
+
+## 快速使用
+
+```ts
+import {
+  BrowserLocalStorage,
+  HttpTransport,
+  IndexedDbEventStorage,
+  createAnalytics,
+} from "@et/analytics-sdk";
+
+interface Events {
+  order_submitted: {
+    orderId: string;
+    amount: number;
+  };
+}
+
+const analytics = createAnalytics<Events>({
+  appId: "shop-web",
+  identityStorage: new BrowserLocalStorage(),
+  eventStorage: new IndexedDbEventStorage(),
+  transport: new HttpTransport({
+    endpoint: "https://events.example.com/v1/batch",
+  }),
+});
+
+await analytics.track("order_submitted", {
+  orderId: "o_123",
+  amount: 199,
+});
+```
+
+## Consent
+
+需要用户授权后才能采集时，将初始状态设为 `pending`：
+
+```ts
+const analytics = createAnalytics({
+  appId: "shop-web",
+  transport,
+  consent: {
+    initialState: "pending",
+    clearQueueOnDenied: true,
+  },
+});
+
+await analytics.track("ignored_before_consent", {});
+await analytics.setConsent("granted");
+await analytics.track("collected_after_consent", {});
+
+// 撤回授权会清空未发送队列并重置身份。
+await analytics.setConsent("denied");
+```
+
+默认值仍为 `granted`，便于服务端已统一处理授权的项目保持兼容。
+
+## 可靠投递
+
+- `IndexedDbEventStorage` 按写入顺序持久化未发送事件。
+- `visibilitychange` 和 `pagehide` 会触发最后一次 Flush。
+- 网络、HTTP 408、429 和 5xx 使用指数退避与随机抖动重试。
+- HTTP 4xx 等不可重试错误会从队列移除，防止永久阻塞。
+- 每个事件拥有稳定 `eventId`，服务端应按该字段幂等去重。
+
+可通过 `onDiagnostic` 观察 SDK 自身状态，不会生成新的业务埋点：
+
+```ts
+const analytics = createAnalytics({
+  appId: "shop-web",
+  transport,
+  onDiagnostic(event) {
+    console.debug("[analytics]", event);
+  },
+});
+```
+
+完整示例见 `examples/browser.ts`。
+
+## 接入 Protobuf
+
+Core 不依赖具体 Protobuf Runtime。使用 `protobufjs`、`ts-proto` 或 Buf 生成编码器后，通过 `ProtobufCodec` 注入：
+
+```ts
+import { ProtobufCodec, createAnalytics } from "@et/analytics-sdk";
+import { EventBatch } from "./generated/analytics.js";
+
+const codec = new ProtobufCodec((batch) => {
+  return EventBatch.encode(EventBatch.fromJSON(batch)).finish();
+});
+
+const analytics = createAnalytics({
+  appId: "shop-web",
+  codec,
+  transport,
+});
+```
+
+示例协议位于 `proto/analytics.proto`。实际项目建议把生成代码放在独立包，例如 `@et/analytics-codec-protobuf`。
+
+## 当前限制
+
+- 默认队列仍是内存存储；浏览器生产环境应显式使用 `IndexedDbEventStorage`。
+- gzip 使用浏览器原生 `CompressionStream`，不支持时不会自动降级。
+- 尚未实现多 Transport 路由、跨 Tab 发送锁和完整 Session 超时策略。
+- `properties` 和 `context` 在示例 Protobuf 中以 JSON bytes 保存，优先保持通用性；稳定后可以逐步强类型化。
+
+## 本地端到端测试
+
+```bash
+pnpm build
+pnpm local:server
+```
+
+浏览器访问 `http://127.0.0.1:4318` 查看网页版使用手册；访问 `http://127.0.0.1:4318/lab` 打开完整的 SDK 验证台。页面支持：
+
+- 自定义事件名、Properties 和批量数量。
+- 仅入队或立即 Flush，并实时查看 IndexedDB 队列长度。
+- Identify、身份重置和 Consent 状态切换。
+- 注入 503、429、500、400 以及服务端响应延迟。
+- 观察指数退避、失败保留、不可重试丢弃等行为。
+- 查看服务端事件、批次统计、请求日志和 SDK 诊断日志。
+
+Collector 同时提供以下调试接口：
+
+```text
+http://127.0.0.1:4318/health
+http://127.0.0.1:4318/v1/events
+http://127.0.0.1:4318/v1/stats
+```
+
+| 方法 | 路径 | 用途 |
+|---|---|---|
+| `POST` | `/v1/batch` | 接收 SDK 批量事件 |
+| `GET` | `/v1/events?limit=100` | 查询最近事件 |
+| `DELETE` | `/v1/events` | 清空事件和统计 |
+| `GET` | `/v1/stats` | 查询批次、失败、事件名和请求日志 |
+| `POST` | `/v1/control/failure` | 配置后续请求的失败状态与延迟 |
+
+本地 Collector 仅用于开发验证：事件只保存在内存中，进程退出即清空，不包含生产鉴权、限流和持久化能力。
+
+## 构建和部署手册站点
+
+手册站点采用零依赖静态 HTML/CSS/JS，无需 Tailwind 或框架运行时：
+
+```bash
+pnpm build:docs
+```
+
+产物位于 `site/`。仓库附带 `vercel.json`，导入 Vercel 后会自动运行构建并发布 `site/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `site`。
