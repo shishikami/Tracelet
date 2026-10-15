@@ -163,4 +163,4 @@ http://127.0.0.1:4318/v1/stats
 pnpm build:docs
 ```
 
-产物位于 `site/`。仓库附带 `vercel.json`，导入 Vercel 后会自动运行构建并发布 `site/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `site`。
+产物位于 `out/`。仓库附带 `vercel.json`，导入 Vercel 后会自动运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。
