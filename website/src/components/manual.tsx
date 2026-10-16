@@ -38,6 +38,8 @@ const options = [
   ["flushIntervalMs", "number", "5000", "定时 Flush 间隔"],
   ["maxBatchSize", "number", "30", "单次投递的最大事件数"],
   ["maxQueueSize", "number", "2000", "本地队列的最大事件数"],
+  ["sessionTimeoutMs", "number", "1800000", "连续无事件多久后自动创建新 Session"],
+  ["deliveryLock", "DeliveryLock", "Web Locks", "协调同源多 Tab 对共享队列的 Flush"],
   ["pageLifecycle", "boolean", "true", "页面隐藏或退出时尝试最后一次 Flush"],
   ["consent.initialState", "pending | granted | denied", "granted", "首次采集前的授权状态"],
   ["retry", "object", "指数退避", "基础延迟、最大延迟和随机抖动"],
@@ -95,7 +97,7 @@ export function Manual() {
 
             <article id="manual-collector">
               <div className="manual-heading"><Server className="size-5" /><h3>服务端接收契约</h3></div>
-              <p className="manual-copy">默认 JSON Codec 会提交一个 EventBatch。服务端返回任意 2xx 表示接收成功；408、429 和 5xx 会保留队列并重试。</p>
+              <p className="manual-copy">默认 JSON Codec 会提交一个 EventBatch。服务端返回任意 2xx 表示接收成功；408、429 和 5xx 会保留队列并重试。同源多 Tab 默认通过 Web Locks 协调共享队列。</p>
               <div className="mt-6"><CodeBlock code={collectorCode} language="http" /></div>
             </article>
 

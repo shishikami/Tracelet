@@ -4,6 +4,7 @@ export * from "./compression.js";
 export * from "./consent.js";
 export * from "./contracts.js";
 export * from "./identity.js";
+export * from "./locking.js";
 export * from "./plugins.js";
 export * from "./storage.js";
 export * from "./transport.js";

@@ -15,6 +15,7 @@ import { ConsentManager, type ConsentState } from "./consent.js";
 import { IdentityManager, createId } from "./identity.js";
 import { MemoryEventStorage, MemoryKeyValueStorage } from "./storage.js";
 import { SDK_NAME, SDK_VERSION } from "./version.js";
+import { BrowserDeliveryLock, type DeliveryLock } from "./locking.js";
 import type {
   AnalyticsEvent,
   EventContext,
@@ -38,6 +39,8 @@ export interface AnalyticsOptions {
   flushIntervalMs?: number;
   maxBatchSize?: number;
   maxQueueSize?: number;
+  deliveryLock?: DeliveryLock;
+  sessionTimeoutMs?: number;
   consent?: {
     initialState?: ConsentState;
     clearQueueOnDenied?: boolean;
@@ -58,6 +61,7 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
   private readonly identity: IdentityManager;
   private readonly consent: ConsentManager;
   private readonly plugins: AnalyticsPlugin[];
+  private readonly deliveryLock: DeliveryLock;
   private flushTimer?: number;
   private flushPromise: Promise<void> | undefined;
   private initialized = false;
@@ -71,9 +75,13 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     this.codec = options.codec ?? new JsonCodec();
     this.compression = options.compression ?? new NoCompression();
     this.eventStorage = options.eventStorage ?? new MemoryEventStorage();
-    this.identity = new IdentityManager(options.identityStorage ?? new MemoryKeyValueStorage());
+    this.identity = new IdentityManager(
+      options.identityStorage ?? new MemoryKeyValueStorage(),
+      options.sessionTimeoutMs,
+    );
     this.consent = new ConsentManager(options.consent?.initialState ?? "granted");
     this.plugins = options.plugins ?? [];
+    this.deliveryLock = options.deliveryLock ?? new BrowserDeliveryLock(`tracelet:${options.appId}:delivery`);
   }
 
   async init(): Promise<void> {
@@ -192,6 +200,11 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
   }
 
   private async performFlush(reason: TransportContext["reason"]): Promise<void> {
+    const acquired = await this.deliveryLock.runExclusive(() => this.performFlushUnlocked(reason));
+    if (!acquired && this.initialized) this.scheduleFlush();
+  }
+
+  private async performFlushUnlocked(reason: TransportContext["reason"]): Promise<void> {
     let nextDelayMs: number | undefined;
     let eventCount = 0;
     try {

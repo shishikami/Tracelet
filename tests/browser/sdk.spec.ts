@@ -1,0 +1,162 @@
+import { expect, test } from "@playwright/test";
+
+test.beforeEach(async ({ request }) => {
+  const response = await request.delete("/v1/events");
+  expect(response.ok()).toBeTruthy();
+});
+
+test("sends a browser event through the real collector", async ({ page, request, browserName }) => {
+  await page.goto("/");
+
+  const eventId = await page.evaluate(async (name) => {
+    const { createAnalytics, HttpTransport, IndexedDbEventStorage } = await import("/dist/index.js");
+    const storage = new IndexedDbEventStorage({ databaseName: `tracelet-e2e-${name}` });
+    const diagnostics: Array<{ type: string; eventId?: string }> = [];
+    const analytics = createAnalytics({
+      appId: "browser-e2e",
+      pageLifecycle: false,
+      eventStorage: storage,
+      transport: new HttpTransport({ endpoint: "/v1/batch" }),
+      onDiagnostic(event) {
+        diagnostics.push(event);
+      },
+    });
+
+    await analytics.track("browser_event", { browser: name });
+    await analytics.flush();
+    await analytics.shutdown();
+    await storage.close();
+    return diagnostics.find((event) => event.type === "event_enqueued")?.eventId;
+  }, browserName);
+
+  expect(eventId).toBeTruthy();
+  const response = await request.get("/v1/events");
+  const body = await response.json();
+  expect(body.count).toBe(1);
+  expect(body.events[0]).toMatchObject({
+    eventId,
+    name: "browser_event",
+    properties: { browser: browserName },
+    context: { sdk: { name: "tracelet-browser", version: "0.1.2" } },
+  });
+});
+
+test("does not create or deliver events before consent", async ({ page, request }) => {
+  await page.goto("/");
+
+  const result = await page.evaluate(async () => {
+    const { createAnalytics, HttpTransport, MemoryEventStorage } = await import("/dist/index.js");
+    const storage = new MemoryEventStorage();
+    const analytics = createAnalytics({
+      appId: "consent-e2e",
+      pageLifecycle: false,
+      eventStorage: storage,
+      consent: { initialState: "pending" },
+      transport: new HttpTransport({ endpoint: "/v1/batch" }),
+    });
+
+    await analytics.track("blocked_event", {});
+    const before = await storage.size();
+    await analytics.setConsent("granted");
+    await analytics.track("allowed_event", {});
+    await analytics.flush();
+    await analytics.shutdown();
+    return { before, after: await storage.size() };
+  });
+
+  expect(result).toEqual({ before: 0, after: 0 });
+  const body = await (await request.get("/v1/events")).json();
+  expect(body.events.map((event: { name: string }) => event.name)).toEqual(["allowed_event"]);
+});
+
+test("recovers an IndexedDB queue after a page reload", async ({ page, request, browserName }) => {
+  const databaseName = `tracelet-reload-${browserName}-${Date.now()}`;
+  await page.goto("/");
+
+  await page.evaluate(async (name) => {
+    const { createAnalytics, IndexedDbEventStorage } = await import("/dist/index.js");
+    const storage = new IndexedDbEventStorage({ databaseName: name });
+    const analytics = createAnalytics({
+      appId: "reload-e2e",
+      pageLifecycle: false,
+      eventStorage: storage,
+      transport: { name: "offline", async send() { return { success: false, retryable: true }; } },
+    });
+    await analytics.track("persisted_event", { source: "before-reload" });
+    await analytics.shutdown();
+    await storage.close();
+  }, databaseName);
+
+  await page.reload();
+  const remaining = await page.evaluate(async (name) => {
+    const { createAnalytics, HttpTransport, IndexedDbEventStorage } = await import("/dist/index.js");
+    const storage = new IndexedDbEventStorage({ databaseName: name });
+    const analytics = createAnalytics({
+      appId: "reload-e2e",
+      pageLifecycle: false,
+      eventStorage: storage,
+      transport: new HttpTransport({ endpoint: "/v1/batch" }),
+    });
+    await analytics.flush();
+    const size = await storage.size();
+    await analytics.shutdown();
+    await storage.close();
+    return size;
+  }, databaseName);
+
+  expect(remaining).toBe(0);
+  const body = await (await request.get("/v1/events")).json();
+  expect(body.events).toHaveLength(1);
+  expect(body.events[0]).toMatchObject({ name: "persisted_event", properties: { source: "before-reload" } });
+});
+
+test("coordinates a shared IndexedDB queue across tabs", async ({ page, request, browserName }) => {
+  const secondPage = await page.context().newPage();
+  const databaseName = `tracelet-tabs-${browserName}-${Date.now()}`;
+  await Promise.all([page.goto("/"), secondPage.goto("/")]);
+
+  async function enqueueOffline(target: typeof page, source: string) {
+    await target.evaluate(async ({ name, source }) => {
+      const { createAnalytics, IndexedDbEventStorage } = await import("/dist/index.js");
+      const storage = new IndexedDbEventStorage({ databaseName: name });
+      const analytics = createAnalytics({
+        appId: "tabs-e2e",
+        pageLifecycle: false,
+        eventStorage: storage,
+        transport: { name: "offline", async send() { return { success: false, retryable: true }; } },
+      });
+      await analytics.track("tab_event", { source });
+      await analytics.shutdown();
+      await storage.close();
+    }, { name: databaseName, source });
+  }
+
+  await enqueueOffline(page, "first");
+  await enqueueOffline(secondPage, "second");
+
+  async function flushSharedQueue(target: typeof page) {
+    return target.evaluate(async (name) => {
+      const { createAnalytics, HttpTransport, IndexedDbEventStorage } = await import("/dist/index.js");
+      const storage = new IndexedDbEventStorage({ databaseName: name });
+      const analytics = createAnalytics({
+        appId: "tabs-e2e",
+        pageLifecycle: false,
+        eventStorage: storage,
+        transport: new HttpTransport({ endpoint: "/v1/batch" }),
+      });
+      await analytics.flush();
+      const remaining = await storage.size();
+      await analytics.shutdown();
+      await storage.close();
+      return remaining;
+    }, databaseName);
+  }
+
+  await Promise.all([flushSharedQueue(page), flushSharedQueue(secondPage)]);
+  const body = await (await request.get("/v1/events")).json();
+  expect(body.events).toHaveLength(2);
+  expect(new Set(body.events.map((event: { eventId: string }) => event.eventId)).size).toBe(2);
+  expect(body.events.map((event: { properties: { source: string } }) => event.properties.source).sort())
+    .toEqual(["first", "second"]);
+  await secondPage.close();
+});

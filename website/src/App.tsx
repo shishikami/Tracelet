@@ -26,7 +26,7 @@ import quickstartCode from "../../examples/quickstart.ts?raw";
 
 const features = [
   { icon: Braces, title: "类型安全事件", description: "以 EventMap 在编译期约束事件名和属性，重构业务代码时更安心。" },
-  { icon: Database, title: "可靠本地队列", description: "IndexedDB 持久化未发送事件，刷新页面和网络抖动都不轻易丢失。" },
+  { icon: Database, title: "可靠本地队列", description: "IndexedDB 持久化未发送事件，Web Locks 协调多 Tab，刷新页面和网络抖动都不轻易丢失。" },
   { icon: ShieldCheck, title: "隐私优先", description: "Consent 在身份生成与事件创建前执行，拒绝后可立即清理本地数据。" },
   { icon: Plug, title: "完全可插拔", description: "Codec、Compression、Storage 与 Transport 都通过稳定契约独立替换。" },
 ];

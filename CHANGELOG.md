@@ -17,9 +17,12 @@ Tracelet 的可靠性和用户手册增强版本。
 ### Added
 
 - 根包版本生成和一致性检查，官网构建时自动读取版本。
-- HTTP Transport、存储降级和 SDK 元数据测试，测试数由 4 增加到 11。
+- HTTP Transport、存储降级、SDK 元数据和 Session 生命周期测试，单元测试由 4 个增加到 13 个。
 - 配置参考、Consent、服务端契约、投递语义和故障排查用户手册。
 - Quickstart 作为真实 TypeScript 示例进入 CI 类型检查。
+- Chromium、Firefox 和 WebKit 共 12 个端到端测试，覆盖 Collector 投递、Consent、刷新恢复和多 Tab 协调。
+- 基于 Web Locks API 的同源多 Tab 发送锁。
+- 默认 30 分钟空闲 Session 超时以及 `sessionTimeoutMs` 配置。
 
 ## 0.1.1 - 2026-10-16
 

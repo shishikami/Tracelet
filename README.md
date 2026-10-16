@@ -28,7 +28,7 @@ yarn add tracelet-browser
 
 当前版本见页面顶部的 npm badge，适合评估、原型和对投递行为有明确验证方案的早期项目。
 
-Tracelet 以现代 Chrome、Edge、Firefox 和 Safari 为目标。核心逻辑、npm JavaScript 导入和 TypeScript 声明已经验证；完整跨浏览器自动化测试将在后续版本补充。使用 `IndexedDbEventStorage`、`CompressionStream` 等浏览器能力前，请结合目标浏览器验证支持情况。
+Tracelet 以现代 Chrome、Edge、Firefox 和 Safari 为目标。核心逻辑、npm JavaScript 导入和 TypeScript 声明已经验证；Chromium、Firefox 和 WebKit 会在 CI 中运行真实浏览器测试。使用 `CompressionStream` 等可选浏览器能力前，仍应结合目标版本验证支持情况。
 
 ## 数据链路
 
@@ -103,6 +103,8 @@ await analytics.setConsent("denied");
 
 - `IndexedDbEventStorage` 按写入顺序持久化未发送事件。
 - `visibilitychange` 和 `pagehide` 会触发最后一次 Flush。
+- Web Locks API 会协调同源多 Tab 的共享队列发送，避免并发 Flush 重复读取同一批事件。
+- Session 默认在连续 30 分钟无事件后自动续期，可通过 `sessionTimeoutMs` 调整。
 - 网络、HTTP 408、429 和 5xx 使用指数退避与随机抖动重试。
 - HTTP 4xx 等不可重试错误会从队列移除，防止永久阻塞。
 - 每个事件拥有稳定 `eventId`，服务端应按该字段幂等去重。
@@ -146,7 +148,7 @@ const analytics = createAnalytics({
 
 - 默认队列仍是内存存储；浏览器生产环境应显式使用 `IndexedDbEventStorage`。
 - gzip 使用浏览器原生 `CompressionStream`，不支持时不会自动降级。
-- 尚未实现多 Transport 路由、跨 Tab 发送锁和完整 Session 超时策略。
+- 尚未实现多 Transport 路由和按编码后字节数拆分批次。
 - `properties` 和 `context` 在示例 Protobuf 中以 JSON bytes 保存，优先保持通用性；稳定后可以逐步强类型化。
 
 ## 本地端到端测试
@@ -155,6 +157,7 @@ const analytics = createAnalytics({
 pnpm build
 pnpm build:docs
 pnpm local:server
+pnpm test:browser
 ```
 
 浏览器访问 `http://127.0.0.1:4318` 查看网页版使用手册；访问 `http://127.0.0.1:4318/lab` 打开完整的 SDK 验证台。页面支持：
@@ -210,6 +213,7 @@ proto/     可选的 Protobuf 协议示例
 项目通过 GitHub Actions 自动完成持续集成与 npm 发布：
 
 - Pull Request 和 `main` 分支推送会在 Node.js 20、24 上运行类型检查、测试、官网构建和 npm 包内容检查。
+- Node.js 检查通过后，会在 Chromium、Firefox 和 WebKit 上运行浏览器端到端测试。
 - 发布正式 GitHub Release 后，工作流会校验 Git tag 与 `package.json` 版本一致，再通过 npm Trusted Publishing 提交待审核版本。
 - Vercel 保持 Git 集成：Pull Request 生成 Preview，`main` 更新生产站点，不在 Actions 中重复部署。
 
@@ -248,10 +252,10 @@ npm publish
 
 ## Roadmap
 
-- 跨浏览器自动化测试
-- Chrome、Firefox 和 WebKit 真实浏览器测试
-- Session 空闲超时和自动续期策略
-- 多 Tab 发送锁与队列容量管理
+- 按编码后字节数拆分批次
+- 浏览器测试覆盖 pagehide、gzip 和异常恢复
+- 多 Transport 路由与条件投递
+- 队列容量和存储配额诊断
 - MDX 用户手册、搜索和完整 API 文档
 
 版本变化见 [CHANGELOG.md](./CHANGELOG.md)。

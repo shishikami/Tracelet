@@ -10,21 +10,30 @@ export class IdentityManager {
   private readonly anonymousIdKey = "anonymous_id";
   private readonly userIdKey = "user_id";
   private readonly sessionIdKey = "session_id";
+  private readonly sessionActivityKey = "session_activity";
 
-  constructor(private readonly storage: KeyValueStorage) {}
+  constructor(
+    private readonly storage: KeyValueStorage,
+    private readonly sessionTimeoutMs = 30 * 60 * 1_000,
+    private readonly now: () => number = Date.now,
+  ) {}
 
   current(): EventIdentity {
     let anonymousId = this.storage.get(this.anonymousIdKey);
     let sessionId = this.storage.get(this.sessionIdKey);
+    const now = this.now();
+    const lastActivity = Number(this.storage.get(this.sessionActivityKey));
+    const sessionExpired = !Number.isFinite(lastActivity) || now - lastActivity >= this.sessionTimeoutMs;
 
     if (!anonymousId) {
       anonymousId = createId();
       this.storage.set(this.anonymousIdKey, anonymousId);
     }
-    if (!sessionId) {
+    if (!sessionId || sessionExpired) {
       sessionId = createId();
       this.storage.set(this.sessionIdKey, sessionId);
     }
+    this.storage.set(this.sessionActivityKey, String(now));
 
     const userId = this.storage.get(this.userIdKey);
     return userId ? { anonymousId, sessionId, userId } : { anonymousId, sessionId };
@@ -38,16 +47,19 @@ export class IdentityManager {
     this.storage.remove(this.userIdKey);
     this.storage.set(this.anonymousIdKey, createId());
     this.storage.set(this.sessionIdKey, createId());
+    this.storage.set(this.sessionActivityKey, String(this.now()));
   }
 
   clear(): void {
     this.storage.remove(this.userIdKey);
     this.storage.remove(this.anonymousIdKey);
     this.storage.remove(this.sessionIdKey);
+    this.storage.remove(this.sessionActivityKey);
   }
 
   renewSession(): void {
     this.storage.set(this.sessionIdKey, createId());
+    this.storage.set(this.sessionActivityKey, String(this.now()));
   }
 }
 

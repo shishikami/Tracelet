@@ -4,6 +4,8 @@ dist/
 out/
 website/dist/
 *.tsbuildinfo
+playwright-report/
+test-results/
 .vercel/
 
 # Local environment files
