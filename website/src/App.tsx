@@ -19,9 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CodeBlock } from "@/components/code-block";
+import { InstallCommand } from "@/components/install-command";
 import { SiteHeader } from "@/components/site-header";
-
-const installCode = "# npm 发布后\npnpm add tracelet-browser";
 
 const quickstartCode = `import {
   createAnalytics,
@@ -86,7 +85,9 @@ export function App() {
           <div className="hero-glow" aria-hidden="true" />
           <div className="grid-pattern" aria-hidden="true" />
           <div className="relative mx-auto max-w-5xl text-center">
-            <Badge><span className="mr-2 size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />Backend-agnostic · TypeScript · Browser</Badge>
+            <a href="https://www.npmjs.com/package/tracelet-browser" target="_blank" rel="noreferrer">
+              <Badge><span className="mr-2 size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />v0.1.0 · Published on npm</Badge>
+            </a>
             <h1 className="mt-8 text-balance text-5xl font-semibold tracking-[-0.045em] sm:text-7xl lg:text-8xl">
               每一个事件，都有迹可循。
             </h1>
@@ -129,7 +130,7 @@ export function App() {
             <div>
               <span className="section-kicker">02 / Quickstart</span>
               <h2>通过 npm 接入，五分钟开始采集</h2>
-              <p className="section-copy">GitHub 用于协作与阅读源码；应用项目通过 npm 锁定版本、安装类型声明并接收升级。当前包名已配置，首次公开发布后即可安装。</p>
+              <p className="section-copy">GitHub 用于协作与阅读源码；应用项目通过 npm 安装正式发布的 SDK、锁定版本并获得完整 TypeScript 类型。</p>
               <div className="mt-8 flex flex-wrap gap-2">
                 <Badge className="border-white/10 bg-white/5 text-slate-300"><PackageCheck className="mr-1.5 size-3.5" />ES Modules</Badge>
                 <Badge className="border-white/10 bg-white/5 text-slate-300"><LockKeyhole className="mr-1.5 size-3.5" />Consent first</Badge>
@@ -137,7 +138,7 @@ export function App() {
               </div>
             </div>
             <div className="space-y-5">
-              <CodeBlock code={installCode} language="shell" />
+              <InstallCommand />
               <CodeBlock code={quickstartCode} />
             </div>
           </div>

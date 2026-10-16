@@ -1,16 +1,34 @@
 # Tracelet
 
+[![npm version](https://img.shields.io/npm/v/tracelet-browser?color=34d399)](https://www.npmjs.com/package/tracelet-browser)
+[![license](https://img.shields.io/github/license/shishikami/Tracelet)](./LICENSE)
+[![website](https://img.shields.io/badge/docs-tracelet--opal.vercel.app-0f172a)](https://tracelet-opal.vercel.app)
+
 Backend-agnostic、隐私优先的浏览器埋点 SDK。SDK 核心保持框架无关，React 官网作为独立 workspace 维护。
 
 ## 安装
 
+npm 包：[tracelet-browser](https://www.npmjs.com/package/tracelet-browser)
+
 ```bash
+npm install tracelet-browser
 pnpm add tracelet-browser
+yarn add tracelet-browser
 ```
 
 > `tracelet` 已在 npm 被其他项目占用，因此本项目使用 `tracelet-browser` 作为 npm 包名。
 
 一个后端无关的浏览器埋点 SDK 初始实现。核心只依赖抽象协议，JSON、Protobuf、压缩算法和网络传输都可以替换。
+
+- 官网：[tracelet-opal.vercel.app](https://tracelet-opal.vercel.app)
+- npm：[tracelet-browser](https://www.npmjs.com/package/tracelet-browser)
+- 源码：[shishikami/Tracelet](https://github.com/shishikami/Tracelet)
+
+## 项目状态与浏览器支持
+
+当前公开版本为 `0.1.0`，适合评估、原型和对投递行为有明确验证方案的早期项目。
+
+Tracelet 以现代 Chrome、Edge、Firefox 和 Safari 为目标。核心逻辑、npm JavaScript 导入和 TypeScript 声明已经验证；完整跨浏览器自动化测试将在后续版本补充。使用 `IndexedDbEventStorage`、`CompressionStream` 等浏览器能力前，请结合目标浏览器验证支持情况。
 
 ## 数据链路
 
@@ -196,11 +214,22 @@ pnpm check
 pnpm pack:check
 ```
 
-确认 npm 登录状态并发布：
+确认 npm 登录状态、升级版本并发布：
 
 ```bash
 npm login
+npm version patch
 npm publish
 ```
 
 正式发布前请更新 `package.json` 版本号。npm 包只包含 `dist/`、README 和 LICENSE，不包含官网与测试文件。
+
+## Roadmap
+
+- GitHub Actions CI 与 npm Trusted Publishing
+- Chrome、Firefox 和 WebKit 真实浏览器测试
+- Session 空闲超时和自动续期策略
+- 多 Tab 发送锁与队列容量管理
+- MDX 用户手册、搜索和完整 API 文档
+
+版本变化见 [CHANGELOG.md](./CHANGELOG.md)。
