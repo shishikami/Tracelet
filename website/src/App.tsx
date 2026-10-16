@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Boxes,
@@ -20,26 +20,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CodeBlock } from "@/components/code-block";
 import { InstallCommand } from "@/components/install-command";
+import { Manual } from "@/components/manual";
 import { SiteHeader } from "@/components/site-header";
-
-const quickstartCode = `import {
-  createAnalytics,
-  HttpTransport,
-  IndexedDbEventStorage,
-} from "tracelet-browser";
-
-const analytics = createAnalytics({
-  appId: "commerce-web",
-  eventStorage: new IndexedDbEventStorage(),
-  transport: new HttpTransport({
-    endpoint: "https://events.example.com/v1/batch",
-  }),
-});
-
-await analytics.init();
-await analytics.track("product_viewed", {
-  productId: "sku_123",
-});`;
+import quickstartCode from "../../examples/quickstart.ts?raw";
 
 const features = [
   { icon: Braces, title: "类型安全事件", description: "以 EventMap 在编译期约束事件名和属性，重构业务代码时更安心。" },
@@ -56,16 +39,30 @@ const deliverySteps = [
 ];
 
 function MobileMenu({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#070b0d]/96 p-5 backdrop-blur-xl md:hidden">
+    <div className="fixed inset-0 z-50 bg-[#070b0d]/96 p-5 backdrop-blur-xl md:hidden" role="dialog" aria-modal="true" aria-label="移动端导航">
       <div className="flex items-center justify-between">
         <strong>Tracelet</strong>
-        <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="关闭导航"><X className="size-5" /></Button>
+        <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="关闭导航" autoFocus><X className="size-5" /></Button>
       </div>
       <nav className="mt-12 grid gap-3 text-2xl" aria-label="移动端导航">
         <a href="#architecture" onClick={onClose}>架构</a>
         <a href="#docs" onClick={onClose}>文档</a>
         <a href="#delivery" onClick={onClose}>可靠投递</a>
+        <a href="#manual" onClick={onClose}>用户手册</a>
         <a href="https://github.com/shishikami/Tracelet">GitHub</a>
       </nav>
     </div>
@@ -85,9 +82,7 @@ export function App() {
           <div className="hero-glow" aria-hidden="true" />
           <div className="grid-pattern" aria-hidden="true" />
           <div className="relative mx-auto max-w-5xl text-center">
-            <a href="https://www.npmjs.com/package/tracelet-browser" target="_blank" rel="noreferrer">
-              <Badge><span className="mr-2 size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />v0.1.1 · Published on npm</Badge>
-            </a>
+            <Badge><span className="mr-2 size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />v{__TRACELET_VERSION__} · In development</Badge>
             <h1 className="mt-8 text-balance text-5xl font-semibold tracking-[-0.045em] sm:text-7xl lg:text-8xl">
               每一个事件，都有迹可循。
             </h1>
@@ -162,12 +157,13 @@ export function App() {
             ))}
           </div>
         </section>
+        <Manual />
       </main>
 
       <footer className="border-t border-white/8 px-5 py-10 text-sm text-slate-500">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row lg:px-3">
           <p>Tracelet · Backend-agnostic browser analytics</p>
-          <div className="flex gap-5"><a className="hover:text-white" href="https://github.com/shishikami/Tracelet">GitHub</a><a className="hover:text-white" href="#docs">Documentation</a></div>
+          <div className="flex gap-5"><a className="hover:text-white" href="https://www.npmjs.com/package/tracelet-browser" target="_blank" rel="noreferrer">npm</a><a className="hover:text-white" href="https://github.com/shishikami/Tracelet" target="_blank" rel="noreferrer">GitHub</a><a className="hover:text-white" href="#manual">Documentation</a></div>
         </div>
       </footer>
     </div>

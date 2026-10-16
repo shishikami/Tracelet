@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "tracelet-browser": ["./src/index.ts"]
+    }
+  },
+  "include": ["examples/**/*.ts", "src/**/*.ts"]
+}

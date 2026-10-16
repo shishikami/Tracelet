@@ -2,6 +2,25 @@
 
 本项目的所有重要变更都会记录在此文件中。
 
+## 0.1.2 - Unreleased
+
+Tracelet 的可靠性和用户手册增强版本。
+
+### Fixed
+
+- 内部 HTTP 超时现在保留事件并进入重试，不再被当作不可重试的主动取消。
+- 事件上下文中的 SDK 名称与 npm 包名统一为 `tracelet-browser`。
+- `Retry-After` 只在值有效时生效，并同时支持秒数和 HTTP 日期格式。
+- LocalStorage 不可用或抛出安全异常时自动降级到内存存储。
+- IndexedDB 打开失败后允许后续重试，并在版本变化时正确关闭旧连接。
+
+### Added
+
+- 根包版本生成和一致性检查，官网构建时自动读取版本。
+- HTTP Transport、存储降级和 SDK 元数据测试，测试数由 4 增加到 11。
+- 配置参考、Consent、服务端契约、投递语义和故障排查用户手册。
+- Quickstart 作为真实 TypeScript 示例进入 CI 类型检查。
+
 ## 0.1.1 - 2026-10-16
 
 Tracelet 的发布基础设施补丁版本，不包含 SDK API 的破坏性变更。
@@ -32,5 +51,6 @@ Tracelet 首个公开版本。
 - 指数退避、随机抖动和可重试状态判断。
 - 本地 Collector、浏览器验证台和 React 文档官网。
 
+[0.1.2]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.2
 [0.1.1]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.1
 [0.1.0]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.0

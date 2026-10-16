@@ -3,6 +3,8 @@ import test from "node:test";
 
 import {
   MemoryEventStorage,
+  SDK_NAME,
+  SDK_VERSION,
   createAnalytics,
 } from "../dist/index.js";
 
@@ -91,5 +93,48 @@ test("retries a transient delivery failure with exponential backoff", async () =
   await sdk.flush();
   await new Promise((resolve) => setTimeout(resolve, 30));
   assert.equal(calls, 2);
+  await sdk.shutdown();
+});
+
+test("reports the published package name and version in event context", async () => {
+  let payload;
+  const sdk = createAnalytics({
+    appId: "test",
+    pageLifecycle: false,
+    transport: {
+      name: "capture",
+      async send(batch) {
+        payload = JSON.parse(batch.body);
+        return { success: true };
+      },
+    },
+  });
+
+  await sdk.track("metadata", {});
+  await sdk.flush();
+  assert.deepEqual(payload.events[0].context.sdk, {
+    name: SDK_NAME,
+    version: SDK_VERSION,
+  });
+  await sdk.shutdown();
+});
+
+test("removes events after a non-retryable delivery response", async () => {
+  const storage = new MemoryEventStorage();
+  const sdk = createAnalytics({
+    appId: "test",
+    eventStorage: storage,
+    pageLifecycle: false,
+    transport: {
+      name: "bad-request",
+      async send() {
+        return { success: false, retryable: false, status: 400 };
+      },
+    },
+  });
+
+  await sdk.track("invalid", {});
+  await sdk.flush();
+  assert.equal(await storage.size(), 0);
   await sdk.shutdown();
 });

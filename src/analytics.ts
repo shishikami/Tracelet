@@ -14,6 +14,7 @@ import { NoCompression } from "./compression.js";
 import { ConsentManager, type ConsentState } from "./consent.js";
 import { IdentityManager, createId } from "./identity.js";
 import { MemoryEventStorage, MemoryKeyValueStorage } from "./storage.js";
+import { SDK_NAME, SDK_VERSION } from "./version.js";
 import type {
   AnalyticsEvent,
   EventContext,
@@ -21,9 +22,6 @@ import type {
   EventType,
   TrackOptions,
 } from "./types.js";
-
-const SDK_NAME = "@et/analytics-sdk";
-const SDK_VERSION = "0.1.1";
 
 export interface AnalyticsOptions {
   appId: string;

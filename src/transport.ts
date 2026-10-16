@@ -14,8 +14,12 @@ export class HttpTransport implements Transport {
 
   async send(batch: EncodedBatch, context: TransportContext): Promise<TransportResult> {
     const controller = new AbortController();
+    let timedOut = false;
     const timeout = globalThis.setTimeout(
-      () => controller.abort(),
+      () => {
+        timedOut = true;
+        controller.abort();
+      },
       this.options.timeoutMs ?? 10_000,
     );
     const abort = () => controller.abort();
@@ -43,23 +47,35 @@ export class HttpTransport implements Transport {
         signal: controller.signal,
       });
 
-      const retryAfter = response.headers.get("retry-after");
+      const retryAfterMs = parseRetryAfter(response.headers.get("retry-after"));
       return {
         success: response.ok,
         retryable: response.status === 408 || response.status === 429 || response.status >= 500,
         status: response.status,
-        ...(retryAfter ? { retryAfterMs: Number(retryAfter) * 1_000 } : {}),
+        ...(retryAfterMs === undefined ? {} : { retryAfterMs }),
       };
     } catch (error) {
+      const externallyAborted = context.signal?.aborted === true && !timedOut;
       return {
         success: false,
-        retryable: !(error instanceof DOMException && error.name === "AbortError"),
+        retryable: !externallyAborted,
       };
     } finally {
       globalThis.clearTimeout(timeout);
       context.signal?.removeEventListener("abort", abort);
     }
   }
+}
+
+function parseRetryAfter(value: string | null, now = Date.now()): number | undefined {
+  if (!value) return undefined;
+
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.round(seconds * 1_000);
+
+  const date = Date.parse(value);
+  if (Number.isNaN(date)) return undefined;
+  return Math.max(0, date - now);
 }
 
 export class ConsoleTransport implements Transport {

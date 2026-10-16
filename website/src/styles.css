@@ -19,6 +19,11 @@ html {
   scroll-behavior: smooth;
 }
 
+section[id],
+article[id] {
+  scroll-margin-top: 5.5rem;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -69,6 +74,52 @@ h3 {
   font-size: 1.05rem;
   line-height: 1.8;
   color: #94a3b8;
+}
+
+.manual-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #6ee7b7;
+}
+
+.manual-heading h3 {
+  margin: 0;
+  color: #f1f5f9;
+  font-size: 1.35rem;
+}
+
+.manual-copy {
+  margin-top: 0.9rem;
+  max-width: 760px;
+  color: #94a3b8;
+  line-height: 1.8;
+}
+
+.manual-card {
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 0.75rem;
+  background: rgb(0 0 0 / 18%);
+  padding: 1.25rem;
+}
+
+.manual-card h4 {
+  margin: 1rem 0 0.45rem;
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+.manual-card p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  line-height: 1.75;
+}
+
+th,
+td {
+  padding: 0.9rem 1rem;
+  vertical-align: top;
 }
 
 .hero-glow {

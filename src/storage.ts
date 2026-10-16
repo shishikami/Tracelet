@@ -43,18 +43,37 @@ export class MemoryKeyValueStorage implements KeyValueStorage {
 }
 
 export class BrowserLocalStorage implements KeyValueStorage {
+  private readonly fallback = new MemoryKeyValueStorage();
+
   constructor(private readonly prefix = "et_analytics_") {}
 
   get(key: string): string | null {
-    return globalThis.localStorage?.getItem(this.prefix + key) ?? null;
+    try {
+      const storage = globalThis.localStorage;
+      return storage ? storage.getItem(this.prefix + key) ?? this.fallback.get(key) : this.fallback.get(key);
+    } catch {
+      return this.fallback.get(key);
+    }
   }
 
   set(key: string, value: string): void {
-    globalThis.localStorage?.setItem(this.prefix + key, value);
+    try {
+      const storage = globalThis.localStorage;
+      if (storage) storage.setItem(this.prefix + key, value);
+      else this.fallback.set(key, value);
+    } catch {
+      this.fallback.set(key, value);
+    }
   }
 
   remove(key: string): void {
-    globalThis.localStorage?.removeItem(this.prefix + key);
+    try {
+      const storage = globalThis.localStorage;
+      if (storage) storage.removeItem(this.prefix + key);
+      else this.fallback.remove(key);
+    } catch {
+      this.fallback.remove(key);
+    }
   }
 }
 
@@ -144,7 +163,7 @@ export class IndexedDbEventStorage implements EventStorage {
       return Promise.reject(new Error("IndexedDB is not supported in this environment"));
     }
 
-    this.databasePromise = new Promise((resolve, reject) => {
+    const opening = new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(this.databaseName, this.version);
       request.onupgradeneeded = () => {
         const database = request.result;
@@ -156,11 +175,23 @@ export class IndexedDbEventStorage implements EventStorage {
           store.createIndex("eventId", "eventId", { unique: true });
         }
       };
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        const database = request.result;
+        database.onversionchange = () => {
+          database.close();
+          this.databasePromise = undefined;
+        };
+        resolve(database);
+      };
       request.onerror = () => reject(request.error ?? new Error("Unable to open IndexedDB"));
       request.onblocked = () => reject(new Error("IndexedDB upgrade is blocked"));
     });
-    return this.databasePromise;
+    const guarded = opening.catch((error: unknown) => {
+      if (this.databasePromise === guarded) this.databasePromise = undefined;
+      throw error;
+    });
+    this.databasePromise = guarded;
+    return guarded;
   }
 
   private request<T = undefined>(request: IDBRequest<T>): Promise<T> {

@@ -26,7 +26,7 @@ yarn add tracelet-browser
 
 ## 项目状态与浏览器支持
 
-当前版本为 `0.1.1`，适合评估、原型和对投递行为有明确验证方案的早期项目。
+当前版本见页面顶部的 npm badge，适合评估、原型和对投递行为有明确验证方案的早期项目。
 
 Tracelet 以现代 Chrome、Edge、Firefox 和 Safari 为目标。核心逻辑、npm JavaScript 导入和 TypeScript 声明已经验证；完整跨浏览器自动化测试将在后续版本补充。使用 `IndexedDbEventStorage`、`CompressionStream` 等浏览器能力前，请结合目标浏览器验证支持情况。
 
@@ -119,7 +119,7 @@ const analytics = createAnalytics({
 });
 ```
 
-完整示例见 `examples/browser.ts`。
+完整示例见 `examples/browser.ts`；官网 Quickstart 来自 `examples/quickstart.ts`，并在 CI 中执行 TypeScript 类型检查。
 
 ## 接入 Protobuf
 
@@ -193,7 +193,7 @@ pnpm dev:docs
 pnpm build:docs
 ```
 
-官网源码位于 `website/`，构建产物位于 `out/`。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。
+官网源码位于 `website/`，构建产物位于 `out/`。首页包含 Quickstart，用户手册覆盖配置、Consent、服务端契约、投递语义和故障排查。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。
 
 ## 仓库结构
 

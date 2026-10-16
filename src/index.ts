@@ -8,3 +8,4 @@ export * from "./plugins.js";
 export * from "./storage.js";
 export * from "./transport.js";
 export * from "./types.js";
+export * from "./version.js";
