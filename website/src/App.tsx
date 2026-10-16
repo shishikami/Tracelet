@@ -86,7 +86,7 @@ export function App() {
           <div className="grid-pattern" aria-hidden="true" />
           <div className="relative mx-auto max-w-5xl text-center">
             <a href="https://www.npmjs.com/package/tracelet-browser" target="_blank" rel="noreferrer">
-              <Badge><span className="mr-2 size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />v0.1.0 · Published on npm</Badge>
+              <Badge><span className="mr-2 size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />v0.1.1 · Release ready</Badge>
             </a>
             <h1 className="mt-8 text-balance text-5xl font-semibold tracking-[-0.045em] sm:text-7xl lg:text-8xl">
               每一个事件，都有迹可循。

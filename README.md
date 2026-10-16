@@ -26,7 +26,7 @@ yarn add tracelet-browser
 
 ## 项目状态与浏览器支持
 
-当前公开版本为 `0.1.0`，适合评估、原型和对投递行为有明确验证方案的早期项目。
+当前版本为 `0.1.1`，适合评估、原型和对投递行为有明确验证方案的早期项目。
 
 Tracelet 以现代 Chrome、Edge、Firefox 和 Safari 为目标。核心逻辑、npm JavaScript 导入和 TypeScript 声明已经验证；完整跨浏览器自动化测试将在后续版本补充。使用 `IndexedDbEventStorage`、`CompressionStream` 等浏览器能力前，请结合目标浏览器验证支持情况。
 

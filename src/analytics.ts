@@ -23,7 +23,7 @@ import type {
 } from "./types.js";
 
 const SDK_NAME = "@et/analytics-sdk";
-const SDK_VERSION = "0.1.0";
+const SDK_VERSION = "0.1.1";
 
 export interface AnalyticsOptions {
   appId: string;
