@@ -1,6 +1,7 @@
 {
   "name": "tracelet-browser",
   "version": "0.1.0",
+  "packageManager": "pnpm@10.18.3",
   "private": false,
   "type": "module",
   "description": "A backend-agnostic, privacy-aware analytics SDK for browsers.",
@@ -20,6 +21,10 @@
   "bugs": {
     "url": "https://github.com/shishikami/Tracelet/issues"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "build:docs": "pnpm --dir website build",
@@ -29,7 +34,7 @@
     "check": "pnpm typecheck && pnpm typecheck:docs && pnpm test && pnpm build:docs",
     "test": "pnpm build && node --test tests/*.test.mjs",
     "prepack": "pnpm build",
-    "pack:check": "pnpm pack --dry-run",
+    "pack:check": "npm pack --dry-run",
     "local:server": "node scripts/local-server.mjs"
   },
   "devDependencies": {

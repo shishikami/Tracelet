@@ -207,14 +207,35 @@ proto/     可选的 Protobuf 协议示例
 
 ## 发布 npm 包
 
-发布前先验证类型、测试、官网构建和包内容：
+项目通过 GitHub Actions 自动完成持续集成与 npm 发布：
+
+- Pull Request 和 `main` 分支推送会在 Node.js 20、24 上运行类型检查、测试、官网构建和 npm 包内容检查。
+- 发布正式 GitHub Release 后，工作流会校验 Git tag 与 `package.json` 版本一致，再通过 npm Trusted Publishing 发布。
+- Vercel 保持 Git 集成：Pull Request 生成 Preview，`main` 更新生产站点，不在 Actions 中重复部署。
+
+首次启用自动发布时，需要在 npm 包的 **Settings → Trusted Publisher** 中添加 GitHub Actions：
+
+- Organization or user：`shishikami`
+- Repository：`Tracelet`
+- Workflow filename：`publish.yml`
+- Environment：留空
+- Allowed action：允许 `npm publish`
+
+日常发布步骤：
+
+1. 更新 `package.json` 版本和 `CHANGELOG.md`。
+2. 合并到 `main`，等待 CI 通过。
+3. 创建同版本 tag（例如版本 `0.2.0` 对应 `v0.2.0`）。
+4. 发布 GitHub Release；`Publish npm package` 工作流会自动发布到 npm。
+
+本地发布前检查仍可使用：
 
 ```bash
 pnpm check
 pnpm pack:check
 ```
 
-确认 npm 登录状态、升级版本并发布：
+紧急情况下也可以手动发布：
 
 ```bash
 npm login
@@ -222,11 +243,11 @@ npm version patch
 npm publish
 ```
 
-正式发布前请更新 `package.json` 版本号。npm 包只包含 `dist/`、README 和 LICENSE，不包含官网与测试文件。
+正式发布前请更新 `package.json` 版本号。npm 包只包含 `dist/`、README、CHANGELOG 和 LICENSE，不包含官网与测试文件。
 
 ## Roadmap
 
-- GitHub Actions CI 与 npm Trusted Publishing
+- 跨浏览器自动化测试
 - Chrome、Firefox 和 WebKit 真实浏览器测试
 - Session 空闲超时和自动续期策略
 - 多 Tab 发送锁与队列容量管理
