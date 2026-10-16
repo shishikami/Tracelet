@@ -1,14 +1,35 @@
 {
-  "name": "@et/analytics-sdk",
+  "name": "tracelet-browser",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
-  "description": "Backend-agnostic browser analytics SDK starter",
+  "description": "A backend-agnostic, privacy-aware analytics SDK for browsers.",
+  "license": "MIT",
+  "keywords": [
+    "analytics",
+    "browser",
+    "sdk",
+    "tracking",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shishikami/Tracelet.git"
+  },
+  "homepage": "https://tracelet-opal.vercel.app",
+  "bugs": {
+    "url": "https://github.com/shishikami/Tracelet/issues"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "build:docs": "node scripts/build-docs.mjs",
+    "build:docs": "pnpm --dir website build",
+    "dev:docs": "pnpm --dir website dev",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "pnpm run build && node --test tests/*.test.mjs",
+    "typecheck:docs": "pnpm --dir website typecheck",
+    "check": "pnpm typecheck && pnpm typecheck:docs && pnpm test && pnpm build:docs",
+    "test": "pnpm build && node --test tests/*.test.mjs",
+    "prepack": "pnpm build",
+    "pack:check": "pnpm pack --dry-run",
     "local:server": "node scripts/local-server.mjs"
   },
   "devDependencies": {
@@ -20,7 +41,14 @@
       "import": "./dist/index.js"
     }
   },
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ]
 }

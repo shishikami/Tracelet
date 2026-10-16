@@ -1,5 +1,10 @@
 node_modules/
 .pnpm-store/
+dist/
+out/
+website/dist/
+*.tsbuildinfo
+.vercel/
 
 # Local environment files
 .env

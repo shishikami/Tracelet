@@ -181,7 +181,7 @@ const server = createServer(async (request, response) => {
   }
 
   if (request.method === "GET" && url.pathname === "/") {
-    serveFile(response, "docs/index.html");
+    serveFile(response, "out/index.html");
     return;
   }
 
@@ -190,8 +190,8 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (request.method === "GET" && url.pathname.startsWith("/docs/")) {
-    serveFile(response, url.pathname.slice(1));
+  if (request.method === "GET" && url.pathname.startsWith("/assets/")) {
+    serveFile(response, `out${url.pathname}`);
     return;
   }
 

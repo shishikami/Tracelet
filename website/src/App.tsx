@@ -1,0 +1,174 @@
+import { useState } from "react";
+import {
+  ArrowRight,
+  Boxes,
+  Braces,
+  Database,
+  Code2,
+  LockKeyhole,
+  Network,
+  PackageCheck,
+  Plug,
+  Radio,
+  RotateCcw,
+  ShieldCheck,
+  X,
+  Zap,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CodeBlock } from "@/components/code-block";
+import { SiteHeader } from "@/components/site-header";
+
+const installCode = "# npm 发布后\npnpm add tracelet-browser";
+
+const quickstartCode = `import {
+  createAnalytics,
+  HttpTransport,
+  IndexedDbEventStorage,
+} from "tracelet-browser";
+
+const analytics = createAnalytics({
+  appId: "commerce-web",
+  eventStorage: new IndexedDbEventStorage(),
+  transport: new HttpTransport({
+    endpoint: "https://events.example.com/v1/batch",
+  }),
+});
+
+await analytics.init();
+await analytics.track("product_viewed", {
+  productId: "sku_123",
+});`;
+
+const features = [
+  { icon: Braces, title: "类型安全事件", description: "以 EventMap 在编译期约束事件名和属性，重构业务代码时更安心。" },
+  { icon: Database, title: "可靠本地队列", description: "IndexedDB 持久化未发送事件，刷新页面和网络抖动都不轻易丢失。" },
+  { icon: ShieldCheck, title: "隐私优先", description: "Consent 在身份生成与事件创建前执行，拒绝后可立即清理本地数据。" },
+  { icon: Plug, title: "完全可插拔", description: "Codec、Compression、Storage 与 Transport 都通过稳定契约独立替换。" },
+];
+
+const deliverySteps = [
+  { icon: Radio, label: "Collect", detail: "业务事件进入统一生命周期" },
+  { icon: Boxes, label: "Process", detail: "插件清洗、采样与补充上下文" },
+  { icon: Database, label: "Persist", detail: "先入队，再按批次读取" },
+  { icon: Network, label: "Deliver", detail: "编码、压缩并交给 Transport" },
+];
+
+function MobileMenu({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-[#070b0d]/96 p-5 backdrop-blur-xl md:hidden">
+      <div className="flex items-center justify-between">
+        <strong>Tracelet</strong>
+        <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="关闭导航"><X className="size-5" /></Button>
+      </div>
+      <nav className="mt-12 grid gap-3 text-2xl" aria-label="移动端导航">
+        <a href="#architecture" onClick={onClose}>架构</a>
+        <a href="#docs" onClick={onClose}>文档</a>
+        <a href="#delivery" onClick={onClose}>可靠投递</a>
+        <a href="https://github.com/shishikami/Tracelet">GitHub</a>
+      </nav>
+    </div>
+  );
+}
+
+export function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <div id="top" className="min-h-screen overflow-hidden bg-[#070b0d] text-slate-100">
+      <SiteHeader onMenuClick={() => setMenuOpen(true)} />
+      {menuOpen ? <MobileMenu onClose={() => setMenuOpen(false)} /> : null}
+
+      <main>
+        <section className="relative isolate border-b border-white/8 px-5 py-24 sm:py-32 lg:px-8">
+          <div className="hero-glow" aria-hidden="true" />
+          <div className="grid-pattern" aria-hidden="true" />
+          <div className="relative mx-auto max-w-5xl text-center">
+            <Badge><span className="mr-2 size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />Backend-agnostic · TypeScript · Browser</Badge>
+            <h1 className="mt-8 text-balance text-5xl font-semibold tracking-[-0.045em] sm:text-7xl lg:text-8xl">
+              每一个事件，都有迹可循。
+            </h1>
+            <p className="mx-auto mt-7 max-w-2xl text-pretty text-lg leading-8 text-slate-400 sm:text-xl">
+              Tracelet 将业务埋点与后端实现解耦，以稳定、可替换的管线完成采集、持久化、编码和投递。
+            </p>
+            <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+              <Button asChild size="lg"><a href="#docs">五分钟接入 <ArrowRight className="size-4" /></a></Button>
+              <Button asChild size="lg" variant="outline"><a href="https://github.com/shishikami/Tracelet" target="_blank" rel="noreferrer"><Code2 className="size-4" />查看源码</a></Button>
+            </div>
+            <div className="mx-auto mt-14 flex max-w-xl items-center justify-between gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/25 p-3 text-xs text-slate-400 shadow-2xl shadow-emerald-950/20 sm:text-sm">
+              {[
+                ["track()", Zap], ["plugins", Plug], ["queue", Database], ["codec", Braces], ["transport", Network],
+              ].map(([label, Icon], index) => {
+                const PipelineIcon = Icon as typeof Zap;
+                return <div className="contents" key={label as string}><span className="flex shrink-0 items-center gap-2 rounded-lg bg-white/5 px-3 py-2"><PipelineIcon className="size-3.5 text-emerald-300" />{label as string}</span>{index < 4 ? <ArrowRight className="size-3 shrink-0 text-slate-700" /> : null}</div>;
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section id="architecture" className="mx-auto max-w-7xl px-5 py-24 lg:px-8">
+          <div className="max-w-2xl">
+            <span className="section-kicker">01 / Architecture</span>
+            <h2>SDK Core 只负责稳定的事情</h2>
+            <p className="section-copy">业务依赖公开 API，核心依赖抽象契约，具体平台能力停留在 Adapter 边界。</p>
+          </div>
+          <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {features.map(({ icon: Icon, title, description }) => (
+              <Card key={title} className="group transition-colors hover:border-emerald-300/25 hover:bg-emerald-300/[0.035]">
+                <CardHeader><span className="grid size-11 place-items-center rounded-xl border border-white/10 bg-white/5 text-emerald-300"><Icon className="size-5" /></span><h3>{title}</h3></CardHeader>
+                <CardContent><p className="text-sm leading-7 text-slate-400">{description}</p></CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <section id="docs" className="border-y border-white/8 bg-white/[0.018]">
+          <div className="mx-auto grid max-w-7xl gap-12 px-5 py-24 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
+            <div>
+              <span className="section-kicker">02 / Quickstart</span>
+              <h2>通过 npm 接入，五分钟开始采集</h2>
+              <p className="section-copy">GitHub 用于协作与阅读源码；应用项目通过 npm 锁定版本、安装类型声明并接收升级。当前包名已配置，首次公开发布后即可安装。</p>
+              <div className="mt-8 flex flex-wrap gap-2">
+                <Badge className="border-white/10 bg-white/5 text-slate-300"><PackageCheck className="mr-1.5 size-3.5" />ES Modules</Badge>
+                <Badge className="border-white/10 bg-white/5 text-slate-300"><LockKeyhole className="mr-1.5 size-3.5" />Consent first</Badge>
+                <Badge className="border-white/10 bg-white/5 text-slate-300"><RotateCcw className="mr-1.5 size-3.5" />Retry built-in</Badge>
+              </div>
+            </div>
+            <div className="space-y-5">
+              <CodeBlock code={installCode} language="shell" />
+              <CodeBlock code={quickstartCode} />
+            </div>
+          </div>
+        </section>
+
+        <section id="delivery" className="mx-auto max-w-7xl px-5 py-24 lg:px-8">
+          <div className="max-w-2xl">
+            <span className="section-kicker">03 / Delivery</span>
+            <h2>浏览器里可解释的可靠投递</h2>
+            <p className="section-copy">Tracelet 采用客户端至少一次投递，并建议服务端基于 eventId 幂等去重。</p>
+          </div>
+          <div className="relative mt-14 grid gap-4 lg:grid-cols-4">
+            <div className="absolute left-[12.5%] right-[12.5%] top-8 hidden h-px bg-gradient-to-r from-emerald-400/10 via-emerald-300/60 to-emerald-400/10 lg:block" />
+            {deliverySteps.map(({ icon: Icon, label, detail }, index) => (
+              <div key={label} className="relative rounded-2xl border border-white/8 bg-[#090e10] p-6">
+                <span className="grid size-16 place-items-center rounded-full border border-emerald-300/20 bg-[#07100d] text-emerald-300"><Icon className="size-6" /></span>
+                <small className="mt-7 block font-mono text-emerald-400/70">0{index + 1}</small>
+                <h3 className="mt-2">{label}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-white/8 px-5 py-10 text-sm text-slate-500">
+        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row lg:px-3">
+          <p>Tracelet · Backend-agnostic browser analytics</p>
+          <div className="flex gap-5"><a className="hover:text-white" href="https://github.com/shishikami/Tracelet">GitHub</a><a className="hover:text-white" href="#docs">Documentation</a></div>
+        </div>
+      </footer>
+    </div>
+  );
+}

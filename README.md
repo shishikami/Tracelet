@@ -1,4 +1,14 @@
-# ET Analytics SDK starter
+# Tracelet
+
+Backend-agnostic、隐私优先的浏览器埋点 SDK。SDK 核心保持框架无关，React 官网作为独立 workspace 维护。
+
+## 安装
+
+```bash
+pnpm add tracelet-browser
+```
+
+> `tracelet` 已在 npm 被其他项目占用，因此本项目使用 `tracelet-browser` 作为 npm 包名。
 
 一个后端无关的浏览器埋点 SDK 初始实现。核心只依赖抽象协议，JSON、Protobuf、压缩算法和网络传输都可以替换。
 
@@ -23,7 +33,7 @@ import {
   HttpTransport,
   IndexedDbEventStorage,
   createAnalytics,
-} from "@et/analytics-sdk";
+} from "tracelet-browser";
 
 interface Events {
   order_submitted: {
@@ -98,7 +108,7 @@ const analytics = createAnalytics({
 Core 不依赖具体 Protobuf Runtime。使用 `protobufjs`、`ts-proto` 或 Buf 生成编码器后，通过 `ProtobufCodec` 注入：
 
 ```ts
-import { ProtobufCodec, createAnalytics } from "@et/analytics-sdk";
+import { ProtobufCodec, createAnalytics } from "tracelet-browser";
 import { EventBatch } from "./generated/analytics.js";
 
 const codec = new ProtobufCodec((batch) => {
@@ -112,7 +122,7 @@ const analytics = createAnalytics({
 });
 ```
 
-示例协议位于 `proto/analytics.proto`。实际项目建议把生成代码放在独立包，例如 `@et/analytics-codec-protobuf`。
+示例协议位于 `proto/analytics.proto`。实际项目建议把生成代码放在独立包，例如 `@tracelet/codec-protobuf`。
 
 ## 当前限制
 
@@ -125,6 +135,7 @@ const analytics = createAnalytics({
 
 ```bash
 pnpm build
+pnpm build:docs
 pnpm local:server
 ```
 
@@ -157,10 +168,39 @@ http://127.0.0.1:4318/v1/stats
 
 ## 构建和部署手册站点
 
-手册站点采用零依赖静态 HTML/CSS/JS，无需 Tailwind 或框架运行时：
+官网采用 React、Vite、Tailwind CSS 和 shadcn/ui 的源码组件模式；这些依赖只存在于私有的 `website` workspace，不会进入 SDK 的 npm 包：
 
 ```bash
+pnpm dev:docs
 pnpm build:docs
 ```
 
-产物位于 `out/`。仓库附带 `vercel.json`，导入 Vercel 后会自动运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。
+官网源码位于 `website/`，构建产物位于 `out/`。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。
+
+## 仓库结构
+
+```text
+src/       SDK 源码（不依赖 React）
+tests/     SDK 行为测试
+examples/  浏览器接入和本地验证示例
+website/   React + Vite + Tailwind 官网
+proto/     可选的 Protobuf 协议示例
+```
+
+## 发布 npm 包
+
+发布前先验证类型、测试、官网构建和包内容：
+
+```bash
+pnpm check
+pnpm pack:check
+```
+
+确认 npm 登录状态并发布：
+
+```bash
+npm login
+npm publish
+```
+
+正式发布前请更新 `package.json` 版本号。npm 包只包含 `dist/`、README 和 LICENSE，不包含官网与测试文件。
