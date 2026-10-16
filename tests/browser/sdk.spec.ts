@@ -160,3 +160,69 @@ test("coordinates a shared IndexedDB queue across tabs", async ({ page, request,
     .toEqual(["first", "second"]);
   await secondPage.close();
 });
+
+test("autocaptures navigation and errors, then removes listeners on shutdown", async ({ page }) => {
+  await page.goto("/");
+
+  const result = await page.evaluate(async () => {
+    const {
+      MemoryEventStorage,
+      createAnalytics,
+      createAutoCapturePlugin,
+    } = await import("/dist/index.js");
+    const storage = new MemoryEventStorage();
+    const analytics = createAnalytics({
+      appId: "autocapture-e2e",
+      pageLifecycle: false,
+      eventStorage: storage,
+      flushIntervalMs: 60_000,
+      plugins: [createAutoCapturePlugin({ pageViews: true, errors: true })],
+      transport: { name: "offline", async send() { return { success: false, retryable: true }; } },
+    });
+
+    await analytics.init();
+    history.pushState({}, "", "/products?token=hidden#private-fragment");
+    dispatchEvent(new ErrorEvent("error", {
+      message: "Example failure",
+      filename: "https://example.com/app.js?token=hidden",
+      lineno: 12,
+      colno: 8,
+      error: new Error("Example failure"),
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const beforeShutdown = await storage.peek(10);
+    await analytics.shutdown();
+
+    history.pushState({}, "", "/after-shutdown");
+    dispatchEvent(new ErrorEvent("error", { message: "Ignored after shutdown" }));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    return {
+      beforeShutdown: beforeShutdown.map((event) => ({
+        name: event.name,
+        properties: event.properties,
+        pageUrl: event.context.page?.url,
+      })),
+      finalSize: await storage.size(),
+    };
+  });
+
+  expect(result.beforeShutdown).toHaveLength(3);
+  expect(result.beforeShutdown[0]).toMatchObject({ properties: { trigger: "initial", path: "/" } });
+  expect(result.beforeShutdown[1]).toMatchObject({
+    properties: { trigger: "pushState", path: "/products", previousPath: "/" },
+    pageUrl: "http://127.0.0.1:4318/products",
+  });
+  expect(result.beforeShutdown[2]).toMatchObject({
+    name: "$error",
+    properties: {
+      errorType: "Error",
+      message: "Example failure",
+      filename: "https://example.com/app.js",
+      line: 12,
+      column: 8,
+    },
+  });
+  expect(result.finalSize).toBe(3);
+});

@@ -75,6 +75,41 @@ await analytics.track("order_submitted", {
 });
 ```
 
+## 低侵入自动采集
+
+自动采集是可选插件，不会扫描 DOM，也不会读取元素文本、表单值或 `data-*` 属性。它目前只处理 SPA 页面浏览和浏览器全局错误：
+
+```ts
+import {
+  createAnalytics,
+  createAutoCapturePlugin,
+} from "tracelet-browser";
+
+const analytics = createAnalytics({
+  appId: "shop-web",
+  transport,
+  plugins: [
+    createAutoCapturePlugin({
+      pageViews: {
+        initial: true,
+        // Hash 可能包含敏感信息，仅 Hash Router 项目显式开启。
+        includeHash: false,
+      },
+      errors: {
+        // 堆栈可能包含文件路径或参数，因此默认关闭。
+        includeStack: false,
+      },
+    }),
+  ],
+});
+
+await analytics.init();
+```
+
+页面浏览通过 `page()` 事件进入统一管线。URL 上下文默认移除 query 和 hash；Hash Router 可以用 `includeHash: true` 开启 fragment 路由采集。`window.error` 生成 `$error`，未处理的 Promise 拒绝生成 `$unhandled_rejection`。它们都会遵守 Consent，调用 `shutdown()` 后会移除监听器并恢复被包装的 History 方法。
+
+关键业务事实仍应使用显式 `track()`，例如支付成功或订单创建；自动采集适合补充页面访问和技术异常，而不是替代业务事件设计。
+
 ## Consent
 
 需要用户授权后才能采集时，将初始状态设为 `pending`：
@@ -149,6 +184,7 @@ const analytics = createAnalytics({
 - 默认队列仍是内存存储；浏览器生产环境应显式使用 `IndexedDbEventStorage`。
 - gzip 使用浏览器原生 `CompressionStream`，不支持时不会自动降级。
 - 尚未实现多 Transport 路由和按编码后字节数拆分批次。
+- 自动采集暂不包含点击、输入和 DOM 内容采集；这是有意的隐私与稳定性边界。
 - `properties` 和 `context` 在示例 Protobuf 中以 JSON bytes 保存，优先保持通用性；稳定后可以逐步强类型化。
 
 ## 本地端到端测试
@@ -256,6 +292,6 @@ npm publish
 - 浏览器测试覆盖 pagehide、gzip 和异常恢复
 - 多 Transport 路由与条件投递
 - 队列容量和存储配额诊断
-- MDX 用户手册、搜索和完整 API 文档
+- 独立 API Reference、文档搜索和框架适配示例
 
 版本变化见 [CHANGELOG.md](./CHANGELOG.md)。

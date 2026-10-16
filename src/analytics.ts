@@ -25,6 +25,7 @@ import type {
 } from "./types.js";
 
 export interface AnalyticsOptions {
+  /** Stable identifier for the browser application that produces events. */
   appId: string;
   appVersion?: string;
   environment?: string;
@@ -40,6 +41,7 @@ export interface AnalyticsOptions {
   maxBatchSize?: number;
   maxQueueSize?: number;
   deliveryLock?: DeliveryLock;
+  /** Idle time after which the next event starts a new session. Defaults to 30 minutes. */
   sessionTimeoutMs?: number;
   consent?: {
     initialState?: ConsentState;
@@ -54,6 +56,12 @@ export interface AnalyticsOptions {
   onDiagnostic?: DiagnosticHandler;
 }
 
+/**
+ * Framework-independent analytics client.
+ *
+ * Create one long-lived instance per application and call shutdown when the
+ * owning application or micro-frontend is permanently unmounted.
+ */
 export class Analytics<TEvents extends object = Record<string, EventProperties>> {
   private readonly codec: Codec;
   private readonly compression: Compression;
@@ -84,15 +92,33 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     this.deliveryLock = options.deliveryLock ?? new BrowserDeliveryLock(`tracelet:${options.appId}:delivery`);
   }
 
+  /** Initialize plugins and lifecycle listeners. Safe to call more than once. */
   async init(): Promise<void> {
     if (this.initialized) return;
-    for (const plugin of this.plugins) await plugin.setup?.({ appId: this.options.appId });
+    // Mark the instance ready before plugin setup so capture plugins can safely
+    // emit an initial event without recursively entering init().
     this.initialized = true;
-    this.bindPageLifecycle();
-    this.scheduleFlush();
-    this.emit({ type: "sdk_initialized" });
+    const initializedPlugins: AnalyticsPlugin[] = [];
+    try {
+      for (const plugin of this.plugins) {
+        await plugin.setup?.({
+          appId: this.options.appId,
+          track: (name, properties = {}) => this.enqueue("track", name, properties),
+          page: (name, properties = {}) => this.page(name, properties),
+        });
+        initializedPlugins.push(plugin);
+      }
+      this.bindPageLifecycle();
+      this.scheduleFlush();
+      this.emit({ type: "sdk_initialized" });
+    } catch (error) {
+      this.initialized = false;
+      for (const plugin of initializedPlugins.reverse()) await plugin.teardown?.();
+      throw error;
+    }
   }
 
+  /** Record a typed business event. */
   async track<K extends keyof TEvents & string>(
     name: K,
     properties: TEvents[K] extends EventProperties ? TEvents[K] : never,
@@ -101,10 +127,12 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     await this.enqueue("track", name, properties, options);
   }
 
+  /** Record a semantic page view. */
   async page(name: string, properties: EventProperties = {}): Promise<void> {
     await this.enqueue("page", name, properties);
   }
 
+  /** Associate subsequent events with an authenticated user. */
   async identify(userId: string, traits: EventProperties = {}): Promise<void> {
     if (!this.consent.canCollect()) {
       this.emit({ type: "event_dropped", eventName: "$identify", reason: "consent" });
@@ -114,10 +142,12 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     await this.enqueue("identify", "$identify", traits);
   }
 
+  /** Read the current in-memory collection consent state. */
   getConsent(): ConsentState {
     return this.consent.get();
   }
 
+  /** Update consent and optionally clear queued events and identity. */
   async setConsent(state: ConsentState): Promise<void> {
     this.consent.set(state);
     if (state === "denied" && (this.options.consent?.clearQueueOnDenied ?? true)) {
@@ -126,10 +156,12 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     }
   }
 
+  /** Rotate anonymous and session identifiers, typically after sign-out. */
   reset(): void {
     this.identity.reset();
   }
 
+  /** Attempt to deliver one batch immediately. Concurrent calls are coalesced. */
   async flush(reason: TransportContext["reason"] = "manual"): Promise<void> {
     if (this.flushPromise) return this.flushPromise;
     this.flushPromise = this.performFlush(reason).finally(() => {
@@ -138,13 +170,15 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     return this.flushPromise;
   }
 
+  /** Flush once, remove listeners, and tear down plugins. */
   async shutdown(): Promise<void> {
     if (this.flushTimer !== undefined) globalThis.clearTimeout(this.flushTimer);
     this.unbindPageLifecycle();
     // Mark inactive before flushing so performFlush does not schedule another timer.
     this.initialized = false;
     await this.flush("shutdown");
-    for (const plugin of this.plugins) await plugin.teardown?.();
+    // Reverse order mirrors nested resource acquisition during plugin setup.
+    for (const plugin of [...this.plugins].reverse()) await plugin.teardown?.();
     this.emit({ type: "sdk_shutdown" });
   }
 
@@ -322,10 +356,12 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
       ...(location
         ? {
             page: {
-              url: location.href,
+              // Query strings and fragments frequently carry tokens, search
+              // terms, or user identifiers, so the default context omits them.
+              url: sanitizeUrl(location.href),
               path: location.pathname,
               ...(document?.title ? { title: document.title } : {}),
-              ...(document?.referrer ? { referrer: document.referrer } : {}),
+              ...(document?.referrer ? { referrer: sanitizeUrl(document.referrer) } : {}),
             },
           }
         : {}),
@@ -340,6 +376,16 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
   }
 }
 
+function sanitizeUrl(value: string): string {
+  try {
+    const url = new URL(value, globalThis.location?.origin);
+    return `${url.origin}${url.pathname}`;
+  } catch {
+    return value.split(/[?#]/, 1)[0] ?? value;
+  }
+}
+
+/** Create a typed Analytics client without coupling it to a UI framework. */
 export function createAnalytics<TEvents extends object = Record<string, EventProperties>>(
   options: AnalyticsOptions,
 ): Analytics<TEvents> {

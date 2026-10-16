@@ -3,6 +3,7 @@ import {
   ConsoleTransport,
   HttpTransport,
   IndexedDbEventStorage,
+  createAutoCapturePlugin,
   createAnalytics,
   redactPlugin,
 } from "../src/index.js";
@@ -35,7 +36,12 @@ const analytics = createAnalytics<AppEvents>({
     location.hostname === "localhost"
       ? new ConsoleTransport()
       : new HttpTransport({ endpoint: "https://events.example.com/v1/batch" }),
-  plugins: [redactPlugin(["password", "token", "authorization"])],
+  // Plugins run in declaration order. Autocapture does not inspect DOM content;
+  // redactPlugin protects manually tracked properties before persistence.
+  plugins: [
+    createAutoCapturePlugin({ pageViews: true, errors: true }),
+    redactPlugin(["password", "token", "authorization"]),
+  ],
 });
 
 await analytics.init();

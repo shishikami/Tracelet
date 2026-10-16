@@ -52,8 +52,16 @@ export interface KeyValueStorage {
 
 export interface PluginContext {
   readonly appId: string;
+  /** Enqueue a regular analytics event through consent, storage, and delivery. */
+  track(name: string, properties?: Record<string, unknown>): Promise<void>;
+  /** Enqueue a page-view event through the same lifecycle as manual page calls. */
+  page(name: string, properties?: Record<string, unknown>): Promise<void>;
 }
 
+/**
+ * Extension point for observing or transforming the event lifecycle.
+ * Plugins are initialized in declaration order and torn down in reverse order.
+ */
 export interface AnalyticsPlugin {
   readonly name: string;
   setup?(context: PluginContext): void | Promise<void>;

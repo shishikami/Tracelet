@@ -28,7 +28,7 @@ const features = [
   { icon: Braces, title: "类型安全事件", description: "以 EventMap 在编译期约束事件名和属性，重构业务代码时更安心。" },
   { icon: Database, title: "可靠本地队列", description: "IndexedDB 持久化未发送事件，Web Locks 协调多 Tab，刷新页面和网络抖动都不轻易丢失。" },
   { icon: ShieldCheck, title: "隐私优先", description: "Consent 在身份生成与事件创建前执行，拒绝后可立即清理本地数据。" },
-  { icon: Plug, title: "完全可插拔", description: "Codec、Compression、Storage 与 Transport 都通过稳定契约独立替换。" },
+  { icon: Plug, title: "低侵入自动采集", description: "可选捕获 SPA 页面浏览和全局错误，不扫描 DOM，也不要求业务组件增加属性。" },
 ];
 
 const deliverySteps = [

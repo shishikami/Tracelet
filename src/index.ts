@@ -1,4 +1,5 @@
 export * from "./analytics.js";
+export * from "./autocapture.js";
 export * from "./codecs.js";
 export * from "./compression.js";
 export * from "./consent.js";

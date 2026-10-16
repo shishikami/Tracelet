@@ -23,6 +23,8 @@ Tracelet 的可靠性和用户手册增强版本。
 - Chromium、Firefox 和 WebKit 共 12 个端到端测试，覆盖 Collector 投递、Consent、刷新恢复和多 Tab 协调。
 - 基于 Web Locks API 的同源多 Tab 发送锁。
 - 默认 30 分钟空闲 Session 超时以及 `sessionTimeoutMs` 配置。
+- 低侵入 `createAutoCapturePlugin`，支持 SPA 页面浏览、全局错误和 Promise 拒绝采集。
+- 面向首次接入者的分步骤用户手册、生产检查清单和更多可复制代码示例。
 
 ## 0.1.1 - 2026-10-16
 

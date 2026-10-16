@@ -1,5 +1,6 @@
 import type { AnalyticsPlugin } from "./contracts.js";
 
+/** Remove exact property keys before an event reaches persistent storage. */
 export function redactPlugin(blockedKeys: readonly string[]): AnalyticsPlugin {
   const blocked = new Set(blockedKeys);
 
@@ -14,6 +15,7 @@ export function redactPlugin(blockedKeys: readonly string[]): AnalyticsPlugin {
   };
 }
 
+/** Sample individual event names with rates clamped to the inclusive 0..1 range. */
 export function samplingPlugin(rates: Record<string, number>): AnalyticsPlugin {
   return {
     name: "sampling",
