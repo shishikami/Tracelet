@@ -1,0 +1,14 @@
+node_modules/
+.pnpm-store/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Logs and editor metadata
+*.log
+.DS_Store
+.idea/
+.vscode/
+
