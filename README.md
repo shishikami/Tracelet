@@ -210,7 +210,7 @@ proto/     可选的 Protobuf 协议示例
 项目通过 GitHub Actions 自动完成持续集成与 npm 发布：
 
 - Pull Request 和 `main` 分支推送会在 Node.js 20、24 上运行类型检查、测试、官网构建和 npm 包内容检查。
-- 发布正式 GitHub Release 后，工作流会校验 Git tag 与 `package.json` 版本一致，再通过 npm Trusted Publishing 发布。
+- 发布正式 GitHub Release 后，工作流会校验 Git tag 与 `package.json` 版本一致，再通过 npm Trusted Publishing 提交待审核版本。
 - Vercel 保持 Git 集成：Pull Request 生成 Preview，`main` 更新生产站点，不在 Actions 中重复部署。
 
 首次启用自动发布时，需要在 npm 包的 **Settings → Trusted Publisher** 中添加 GitHub Actions：
@@ -219,14 +219,15 @@ proto/     可选的 Protobuf 协议示例
 - Repository：`Tracelet`
 - Workflow filename：`publish.yml`
 - Environment：留空
-- Allowed action：允许 `npm publish`
+- Allowed action：保持直接 `npm publish` 关闭；`npm stage publish` 默认允许
 
 日常发布步骤：
 
 1. 更新 `package.json` 版本和 `CHANGELOG.md`。
 2. 合并到 `main`，等待 CI 通过。
 3. 创建同版本 tag（例如版本 `0.2.0` 对应 `v0.2.0`）。
-4. 发布 GitHub Release；`Publish npm package` 工作流会自动发布到 npm。
+4. 发布 GitHub Release；`Publish npm package` 工作流会把版本提交到 npm 暂存区。
+5. 在 npm 的 **Staged Packages** 中检查包内容，并通过 Passkey/2FA 批准，版本才会正式公开。
 
 本地发布前检查仍可使用：
 

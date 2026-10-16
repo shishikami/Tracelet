@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   publish:
-    name: Publish to npm
+    name: Stage package on npm
     if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
 
@@ -34,7 +34,7 @@ jobs:
           package-manager-cache: false
 
       - name: Install release tooling
-        run: npm install --global npm@11.6.2 pnpm@10.18.3
+        run: npm install --global npm@11.21.0 pnpm@10.18.3
 
       - name: Verify tag matches package version
         env:
@@ -54,5 +54,5 @@ jobs:
       - name: Verify npm package contents
         run: pnpm pack:check
 
-      - name: Publish package
-        run: npm publish
+      - name: Stage package for maintainer approval
+        run: npm stage publish
