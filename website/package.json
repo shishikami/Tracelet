@@ -12,6 +12,7 @@
     "class-variance-authority": "latest",
     "clsx": "latest",
     "lucide-react": "latest",
+    "prism-react-renderer": "^2.4.1",
     "react": "latest",
     "react-dom": "latest",
     "tailwind-merge": "latest"

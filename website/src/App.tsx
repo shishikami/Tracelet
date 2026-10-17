@@ -134,7 +134,7 @@ export function App() {
             </div>
             <div className="space-y-5">
               <InstallCommand />
-              <CodeBlock code={quickstartCode} />
+              <CodeBlock code={quickstartCode} filename="analytics.ts" />
             </div>
           </div>
         </section>

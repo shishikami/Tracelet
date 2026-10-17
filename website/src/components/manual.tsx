@@ -220,13 +220,13 @@ export function Manual() {
             <article id="manual-setup">
               <div className="manual-heading"><Plug className="size-5" /><h3>1. 安装与初始化</h3></div>
               <p className="manual-copy">安装 <code>tracelet-browser</code> 后，在独立模块中创建单例。生产环境推荐同时配置 IndexedDB 事件队列和 LocalStorage 身份存储。</p>
-              <div className="mt-6"><CodeBlock code={setupCode} /></div>
+              <div className="mt-6"><CodeBlock code={setupCode} filename="analytics.ts" /></div>
             </article>
 
             <article id="manual-api">
               <div className="manual-heading"><Braces className="size-5" /><h3>2. 定义事件并调用核心 API</h3></div>
               <p className="manual-copy">为业务事件定义 EventMap 后，<code>track()</code> 会检查事件名和属性。<code>page()</code> 用于页面语义，<code>identify()</code> 用于登录用户关联。</p>
-              <div className="mt-6"><CodeBlock code={typedEventsCode} /></div>
+              <div className="mt-6"><CodeBlock code={typedEventsCode} filename="events.ts" /></div>
               <div className="mt-5 grid gap-4 md:grid-cols-3">
                 <div className="manual-card"><Badge>track</Badge><h4>业务事实</h4><p>下单、搜索、收藏等有稳定业务含义的事件。</p></div>
                 <div className="manual-card"><Badge>page</Badge><h4>页面访问</h4><p>传统页面或 SPA 路由对应的页面浏览。</p></div>
@@ -237,7 +237,7 @@ export function Manual() {
             <article id="manual-autocapture">
               <div className="manual-heading"><Bug className="size-5" /><h3>3. 可选的低侵入自动采集</h3></div>
               <p className="manual-copy">自动采集插件只观察导航和全局错误，不扫描 DOM，也不读取元素文本、表单值或 <code>data-*</code> 属性。页面事件和错误事件仍会经过 Consent、用户插件与可靠队列。</p>
-              <div className="mt-6"><CodeBlock code={autoCaptureCode} /></div>
+              <div className="mt-6"><CodeBlock code={autoCaptureCode} filename="analytics.ts" /></div>
               <div className="mt-5 overflow-x-auto rounded-xl border border-white/10">
                 <table className="w-full min-w-[620px] border-collapse text-left text-sm">
                   <thead className="bg-white/5 text-slate-300"><tr><th scope="col">来源</th><th scope="col">事件</th><th scope="col">默认隐私策略</th></tr></thead>
@@ -253,13 +253,13 @@ export function Manual() {
             <article id="manual-consent">
               <div className="manual-heading"><ShieldCheck className="size-5" /><h3>4. Consent 优先接入</h3></div>
               <p className="manual-copy">如果授权由 CMP 或隐私弹窗管理，请从 <code>pending</code> 开始。只有 <code>granted</code> 状态才会创建身份和事件，包括自动采集事件。</p>
-              <div className="mt-6"><CodeBlock code={consentCode} /></div>
+              <div className="mt-6"><CodeBlock code={consentCode} filename="consent.ts" /></div>
             </article>
 
             <article id="manual-lifecycle">
               <div className="manual-heading"><BookOpen className="size-5" /><h3>5. 身份和应用生命周期</h3></div>
               <p className="manual-copy">SDK 会自动维护匿名 ID 与 Session。Session 连续 30 分钟没有事件后自动更新；用户退出登录时应调用 <code>reset()</code>。</p>
-              <div className="mt-6"><CodeBlock code={lifecycleCode} /></div>
+              <div className="mt-6"><CodeBlock code={lifecycleCode} filename="app-lifecycle.ts" /></div>
             </article>
 
             <article id="manual-options">
@@ -278,14 +278,14 @@ export function Manual() {
             <article id="manual-collector">
               <div className="manual-heading"><Server className="size-5" /><h3>7. 服务端接收契约</h3></div>
               <p className="manual-copy">默认 JSON Codec 提交一个 EventBatch。任意 2xx 表示成功；408、429 和 5xx 会保留队列并重试。服务端应鉴权、校验大小，并按 <code>eventId</code> 幂等去重。</p>
-              <div className="mt-6"><CodeBlock code={collectorCode} language="http" /></div>
+              <div className="mt-6"><CodeBlock code={collectorCode} language="http" filename="collector.http" /></div>
               <div className="mt-5 flex gap-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.04] p-4 text-sm leading-6 text-amber-100/80"><AlertTriangle className="mt-0.5 size-5 shrink-0" /><p>Tracelet 是至少一次投递。超时边界可能造成服务端已经接收、客户端仍然重试，因此去重不是可选优化。</p></div>
             </article>
 
             <article id="manual-production">
               <div className="manual-heading"><CheckCircle2 className="size-5" /><h3>8. 诊断与上线清单</h3></div>
               <p className="manual-copy"><code>onDiagnostic</code> 观察 SDK 状态，但不会创建业务事件。建议先在测试环境模拟网络失败和 429，再投入生产。</p>
-              <div className="mt-6"><CodeBlock code={diagnosticCode} /></div>
+              <div className="mt-6"><CodeBlock code={diagnosticCode} filename="diagnostics.ts" /></div>
               <ul className="mt-6 grid gap-3 sm:grid-cols-2">
                 {productionChecklist.map((item) => <li key={item} className="flex gap-3 rounded-xl border border-white/8 bg-black/15 p-4 text-sm leading-6 text-slate-300"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-300" />{item}</li>)}
               </ul>
