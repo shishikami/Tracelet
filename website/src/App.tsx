@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CodeBlock } from "@/components/code-block";
 import { InstallCommand } from "@/components/install-command";
 import { Manual } from "@/components/manual";
+import { ApiReference } from "@/components/api-reference";
 import { SiteHeader } from "@/components/site-header";
 import quickstartCode from "../../examples/quickstart.ts?raw";
 
@@ -63,6 +64,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
         <a href="#docs" onClick={onClose}>文档</a>
         <a href="#delivery" onClick={onClose}>可靠投递</a>
         <a href="#manual" onClick={onClose}>用户手册</a>
+        <a href="#api-reference" onClick={onClose}>API Reference</a>
         <a href="https://github.com/shishikami/Tracelet">GitHub</a>
       </nav>
     </div>
@@ -158,12 +160,13 @@ export function App() {
           </div>
         </section>
         <Manual />
+        <ApiReference />
       </main>
 
       <footer className="border-t border-white/8 px-5 py-10 text-sm text-slate-500">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row lg:px-3">
           <p>Tracelet · Backend-agnostic browser analytics</p>
-          <div className="flex gap-5"><a className="hover:text-white" href="https://www.npmjs.com/package/tracelet-browser" target="_blank" rel="noreferrer">npm</a><a className="hover:text-white" href="https://github.com/shishikami/Tracelet" target="_blank" rel="noreferrer">GitHub</a><a className="hover:text-white" href="#manual">Documentation</a></div>
+          <div className="flex gap-5"><a className="hover:text-white" href="https://www.npmjs.com/package/tracelet-browser" target="_blank" rel="noreferrer">npm</a><a className="hover:text-white" href="https://github.com/shishikami/Tracelet" target="_blank" rel="noreferrer">GitHub</a><a className="hover:text-white" href="#manual">Guide</a><a className="hover:text-white" href="#api-reference">API</a></div>
         </div>
       </footer>
     </div>

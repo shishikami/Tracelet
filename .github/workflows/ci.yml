@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run type checks, tests, and website build
+      - name: Run type checks, tests, package smoke test, and website build
         run: pnpm check
 
       - name: Verify npm package contents

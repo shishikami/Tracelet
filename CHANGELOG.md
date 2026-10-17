@@ -17,15 +17,17 @@ Tracelet 的可靠性和用户手册增强版本。
 ### Added
 
 - 根包版本生成和一致性检查，官网构建时自动读取版本。
-- HTTP Transport、存储降级、SDK 元数据和 Session 生命周期测试，单元测试由 4 个增加到 13 个。
+- HTTP Transport、存储降级、SDK 元数据、Session 生命周期和插件回滚测试，单元测试由 4 个增加到 15 个。
 - 配置参考、Consent、服务端契约、投递语义和故障排查用户手册。
 - Quickstart 作为真实 TypeScript 示例进入 CI 类型检查。
-- Chromium、Firefox 和 WebKit 共 12 个端到端测试，覆盖 Collector 投递、Consent、刷新恢复和多 Tab 协调。
+- Chromium、Firefox 和 WebKit 共 18 个端到端测试，覆盖 Collector 投递、Consent、刷新恢复、多 Tab 协调及自动采集边界。
 - 基于 Web Locks API 的同源多 Tab 发送锁。
 - 默认 30 分钟空闲 Session 超时以及 `sessionTimeoutMs` 配置。
 - 低侵入 `createAutoCapturePlugin`，支持 SPA 页面浏览、全局错误和 Promise 拒绝采集。
 - 面向首次接入者的分步骤用户手册、生产检查清单和更多可复制代码示例。
 - 用户手册代码块增加语法高亮、行号、文件名和更明确的复制反馈。
+- 新增公开 API Reference，集中查询 Analytics 方法、内置 Adapter、插件和诊断事件。
+- 新增发布包冒烟测试：安装本地 tarball 后验证运行时导入、TypeScript 声明和空白 Vite 项目构建。
 
 ## 0.1.1 - 2026-10-16
 

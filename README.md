@@ -232,7 +232,7 @@ pnpm dev:docs
 pnpm build:docs
 ```
 
-官网源码位于 `website/`，构建产物位于 `out/`。首页包含 Quickstart，用户手册覆盖配置、Consent、服务端契约、投递语义和故障排查。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。
+官网源码位于 `website/`，构建产物位于 `out/`。首页包含 Quickstart，用户手册覆盖配置、Consent、服务端契约、投递语义和故障排查，并提供独立的公开 API Reference。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。
 
 ## 仓库结构
 
@@ -249,6 +249,7 @@ proto/     可选的 Protobuf 协议示例
 项目通过 GitHub Actions 自动完成持续集成与 npm 发布：
 
 - Pull Request 和 `main` 分支推送会在 Node.js 20、24 上运行类型检查、测试、官网构建和 npm 包内容检查。
+- CI 会把 `npm pack` 生成的 tarball 安装进空白项目，验证 JavaScript 导入、TypeScript 声明和 Vite 构建，避免“源码能用但发布包不可用”。
 - Node.js 检查通过后，会在 Chromium、Firefox 和 WebKit 上运行浏览器端到端测试。
 - 发布正式 GitHub Release 后，工作流会校验 Git tag 与 `package.json` 版本一致，再通过 npm Trusted Publishing 提交待审核版本。
 - Vercel 保持 Git 集成：Pull Request 生成 Preview，`main` 更新生产站点，不在 Actions 中重复部署。
@@ -273,8 +274,11 @@ proto/     可选的 Protobuf 协议示例
 
 ```bash
 pnpm check
+pnpm smoke:package
 pnpm pack:check
 ```
+
+完整发布检查表和故障处理见 [RELEASING.md](./RELEASING.md)。
 
 紧急情况下也可以手动发布：
 
@@ -292,6 +296,6 @@ npm publish
 - 浏览器测试覆盖 pagehide、gzip 和异常恢复
 - 多 Transport 路由与条件投递
 - 队列容量和存储配额诊断
-- 独立 API Reference、文档搜索和框架适配示例
+- 文档搜索和框架适配示例
 
 版本变化见 [CHANGELOG.md](./CHANGELOG.md)。

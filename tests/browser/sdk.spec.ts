@@ -226,3 +226,62 @@ test("autocaptures navigation and errors, then removes listeners on shutdown", a
   });
   expect(result.finalSize).toBe(3);
 });
+
+test("autocapture respects consent and explicit hash routing", async ({ page }) => {
+  await page.goto("/");
+
+  const events = await page.evaluate(async () => {
+    const {
+      MemoryEventStorage,
+      createAnalytics,
+      createAutoCapturePlugin,
+    } = await import("/dist/index.js");
+    const storage = new MemoryEventStorage();
+    const analytics = createAnalytics({
+      appId: "autocapture-consent-e2e",
+      pageLifecycle: false,
+      eventStorage: storage,
+      consent: { initialState: "pending" },
+      plugins: [createAutoCapturePlugin({
+        pageViews: { initial: true, includeHash: true },
+        errors: true,
+      })],
+      transport: { name: "offline", async send() { return { success: false, retryable: true }; } },
+    });
+
+    await analytics.init();
+    dispatchEvent(new ErrorEvent("error", { message: "Blocked before consent" }));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    if (await storage.size() !== 0) throw new Error("Autocapture bypassed consent");
+
+    await analytics.setConsent("granted");
+    history.replaceState({}, "", "/app#dashboard");
+    dispatchEvent(new PromiseRejectionEvent("unhandledrejection", {
+      promise: Promise.resolve(),
+      reason: new Error("Async failure"),
+    }));
+    location.hash = "settings";
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    const captured = await storage.peek(10);
+    await analytics.shutdown();
+    return captured.map((event) => ({ name: event.name, properties: event.properties }));
+  });
+
+  expect(events).toEqual(expect.arrayContaining([
+    expect.objectContaining({ properties: expect.objectContaining({
+      trigger: "replaceState",
+      path: "/app#dashboard",
+    }) }),
+    expect.objectContaining({ properties: expect.objectContaining({
+      // Browsers may emit popstate before hashchange for direct hash updates;
+      // the plugin intentionally de-duplicates the second navigation signal.
+      trigger: expect.stringMatching(/^(hashchange|popstate)$/),
+      path: "/app#settings",
+    }) }),
+    {
+      name: "$unhandled_rejection",
+      properties: { errorType: "Error", message: "Async failure" },
+    },
+  ]));
+});

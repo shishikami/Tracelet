@@ -138,3 +138,47 @@ test("removes events after a non-retryable delivery response", async () => {
   assert.equal(await storage.size(), 0);
   await sdk.shutdown();
 });
+
+test("initializes plugins once and tears them down once", async () => {
+  let setupCalls = 0;
+  let teardownCalls = 0;
+  const sdk = createAnalytics({
+    appId: "test",
+    pageLifecycle: false,
+    plugins: [{
+      name: "lifecycle",
+      setup() { setupCalls += 1; },
+      teardown() { teardownCalls += 1; },
+    }],
+    transport: { name: "test", async send() { return { success: true }; } },
+  });
+
+  await sdk.init();
+  await sdk.init();
+  assert.equal(setupCalls, 1);
+
+  await sdk.shutdown();
+  assert.equal(teardownCalls, 1);
+});
+
+test("rolls back initialized plugins when a later setup fails", async () => {
+  let teardownCalls = 0;
+  const sdk = createAnalytics({
+    appId: "test",
+    pageLifecycle: false,
+    plugins: [
+      {
+        name: "initialized",
+        teardown() { teardownCalls += 1; },
+      },
+      {
+        name: "broken",
+        setup() { throw new Error("Plugin setup failed"); },
+      },
+    ],
+    transport: { name: "test", async send() { return { success: true }; } },
+  });
+
+  await assert.rejects(() => sdk.init(), /Plugin setup failed/);
+  assert.equal(teardownCalls, 1);
+});

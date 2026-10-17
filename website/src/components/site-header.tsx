@@ -18,6 +18,7 @@ export function SiteHeader({ onMenuClick }: SiteHeaderProps) {
           <Button asChild variant="ghost"><a href="#docs">文档</a></Button>
           <Button asChild variant="ghost"><a href="#delivery">投递</a></Button>
           <Button asChild variant="ghost"><a href="#manual">手册</a></Button>
+          <Button asChild variant="ghost"><a href="#api-reference">API</a></Button>
           <Button asChild variant="outline"><a href="https://github.com/shishikami/Tracelet" target="_blank" rel="noreferrer"><Code2 className="size-4" />GitHub</a></Button>
         </nav>
         <Button type="button" variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick} aria-label="打开导航"><Menu className="size-5" /></Button>
