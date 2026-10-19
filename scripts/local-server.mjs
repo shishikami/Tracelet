@@ -25,7 +25,7 @@ function json(response, status, value) {
   response.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "access-control-allow-origin": "*",
-    "access-control-allow-headers": "content-type, content-encoding",
+    "access-control-allow-headers": "content-type, content-encoding, x-analytics-event-count",
   });
   response.end(JSON.stringify(value, null, 2));
 }
@@ -50,6 +50,14 @@ async function readJson(request) {
 function addRequestLog(entry) {
   requestLog.unshift({ at: new Date().toISOString(), ...entry });
   if (requestLog.length > 100) requestLog.length = 100;
+}
+
+function requestMetadata(request) {
+  return {
+    contentType: request.headers["content-type"] ?? null,
+    contentEncoding: request.headers["content-encoding"] ?? null,
+    declaredEventCount: request.headers["x-analytics-event-count"] ?? null,
+  };
 }
 
 function wait(delayMs) {
@@ -84,7 +92,7 @@ const server = createServer(async (request, response) => {
     response.writeHead(204, {
       "access-control-allow-origin": "*",
       "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
-      "access-control-allow-headers": "content-type, content-encoding",
+      "access-control-allow-headers": "content-type, content-encoding, x-analytics-event-count",
     });
     response.end();
     return;
@@ -97,7 +105,13 @@ const server = createServer(async (request, response) => {
       if (failureControl.remaining > 0) {
         failureControl.remaining -= 1;
         metrics.failedRequests += 1;
-        addRequestLog({ method: "POST", path: url.pathname, status: failureControl.status, accepted: 0 });
+        addRequestLog({
+          method: "POST",
+          path: url.pathname,
+          status: failureControl.status,
+          accepted: 0,
+          ...requestMetadata(request),
+        });
         json(response, failureControl.status, {
           error: "injected_failure",
           remainingFailures: failureControl.remaining,
@@ -116,7 +130,13 @@ const server = createServer(async (request, response) => {
       }
       receivedEvents.push(...batch.events);
       metrics.acceptedEvents += batch.events.length;
-      addRequestLog({ method: "POST", path: url.pathname, status: 202, accepted: batch.events.length });
+      addRequestLog({
+        method: "POST",
+        path: url.pathname,
+        status: 202,
+        accepted: batch.events.length,
+        ...requestMetadata(request),
+      });
       console.log(`[collector] received ${batch.events.length} event(s):`, batch.events.map((e) => e.name));
       json(response, 202, {
         accepted: batch.events.length,
@@ -125,7 +145,13 @@ const server = createServer(async (request, response) => {
     } catch (error) {
       metrics.failedRequests += 1;
       const status = error instanceof Error && error.message === "PAYLOAD_TOO_LARGE" ? 413 : 400;
-      addRequestLog({ method: "POST", path: url.pathname, status, accepted: 0 });
+      addRequestLog({
+        method: "POST",
+        path: url.pathname,
+        status,
+        accepted: 0,
+        ...requestMetadata(request),
+      });
       json(response, status, { error: error instanceof Error ? error.message : "invalid_request" });
     }
     return;
@@ -144,6 +170,9 @@ const server = createServer(async (request, response) => {
     metrics.acceptedEvents = 0;
     metrics.batchRequests = 0;
     metrics.failedRequests = 0;
+    failureControl.remaining = 0;
+    failureControl.status = 503;
+    failureControl.delayMs = 0;
     json(response, 200, { cleared: true });
     return;
   }

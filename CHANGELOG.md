@@ -14,6 +14,8 @@ Tracelet 的生产队列治理与可发现性增强版本。
 - 官网 canonical、Open Graph、结构化数据、robots、sitemap 和面向 AI 工具的文本入口。
 - 中文 `/` 与英文 `/en` 双语入口，以及本地化导航、手册、API Reference、canonical 和 `hreflang`。
 - Google Search Console 所有权验证标记。
+- Chromium、Firefox 和 WebKit 浏览器测试覆盖 pagehide Flush、gzip 投递和可重试服务端故障恢复。
+- 本地 Collector 请求日志记录 Content-Type、Content-Encoding 和声明的事件数量，方便验证真实传输行为。
 
 ## 0.1.2 - 2026-10-19
 

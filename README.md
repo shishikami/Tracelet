@@ -293,7 +293,6 @@ npm publish
 
 ## Roadmap
 
-- 浏览器测试覆盖 pagehide、gzip 和异常恢复
 - 多 Transport 路由与条件投递
 - 存储配额估算与 IndexedDB 配额诊断
 - 文档搜索和框架适配示例

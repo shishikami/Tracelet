@@ -44,6 +44,151 @@ test("sends a browser event through the real collector", async ({ page, request,
   });
 });
 
+test("flushes the queue with the page-hide lifecycle reason", async ({ page, request }) => {
+  await page.goto("/");
+
+  const result = await page.evaluate(async () => {
+    const { createAnalytics, HttpTransport, MemoryEventStorage } = await import("/dist/index.js");
+    const storage = new MemoryEventStorage();
+    const diagnostics: Array<{ type: string; reason?: string }> = [];
+    const analytics = createAnalytics({
+      appId: "pagehide-e2e",
+      eventStorage: storage,
+      flushIntervalMs: 60_000,
+      transport: new HttpTransport({ endpoint: "/v1/batch" }),
+      onDiagnostic(event) {
+        diagnostics.push(event);
+      },
+    });
+
+    await analytics.track("pagehide_event", { source: "lifecycle" });
+    dispatchEvent(new Event("pagehide"));
+
+    const deadline = Date.now() + 3_000;
+    while (await storage.size() !== 0) {
+      if (Date.now() >= deadline) throw new Error("pagehide flush did not finish");
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+
+    const remaining = await storage.size();
+    await analytics.shutdown();
+    return { diagnostics, remaining };
+  });
+
+  expect(result.remaining).toBe(0);
+  expect(result.diagnostics).toEqual(expect.arrayContaining([
+    expect.objectContaining({ type: "flush_started", reason: "page-hide" }),
+    expect.objectContaining({ type: "flush_succeeded" }),
+  ]));
+  const body = await (await request.get("/v1/events")).json();
+  expect(body.events).toEqual([
+    expect.objectContaining({ name: "pagehide_event", properties: { source: "lifecycle" } }),
+  ]);
+});
+
+test("compresses a browser batch with gzip before delivery", async ({ page, request }) => {
+  await page.goto("/");
+
+  const result = await page.evaluate(async () => {
+    const {
+      createAnalytics,
+      GzipCompression,
+      HttpTransport,
+      MemoryEventStorage,
+    } = await import("/dist/index.js");
+    const storage = new MemoryEventStorage();
+    const analytics = createAnalytics({
+      appId: "gzip-e2e",
+      pageLifecycle: false,
+      eventStorage: storage,
+      compression: new GzipCompression(),
+      transport: new HttpTransport({ endpoint: "/v1/batch" }),
+    });
+
+    await analytics.track("gzip_event", { compressed: true });
+    await analytics.flush();
+    const remaining = await storage.size();
+    await analytics.shutdown();
+    return { remaining };
+  });
+
+  expect(result.remaining).toBe(0);
+  const stats = await (await request.get("/v1/stats")).json();
+  expect(stats).toMatchObject({ batchRequests: 1, acceptedEvents: 1, failedRequests: 0 });
+  expect(stats.requestLog[0]).toMatchObject({
+    status: 202,
+    accepted: 1,
+    contentEncoding: "gzip",
+    declaredEventCount: "1",
+  });
+  const body = await (await request.get("/v1/events")).json();
+  expect(body.events[0]).toMatchObject({ name: "gzip_event", properties: { compressed: true } });
+});
+
+test("recovers automatically after a retryable collector failure", async ({ page, request }) => {
+  const configured = await request.post("/v1/control/failure", {
+    data: { count: 1, status: 503 },
+  });
+  expect(configured.ok()).toBeTruthy();
+  await page.goto("/");
+
+  const result = await page.evaluate(async () => {
+    const { createAnalytics, HttpTransport, MemoryEventStorage } = await import("/dist/index.js");
+    const storage = new MemoryEventStorage();
+    const diagnostics: Array<{
+      type: string;
+      status?: number;
+      retryable?: boolean;
+      attempt?: number;
+    }> = [];
+    const analytics = createAnalytics({
+      appId: "recovery-e2e",
+      pageLifecycle: false,
+      eventStorage: storage,
+      flushIntervalMs: 60_000,
+      retry: { baseDelayMs: 10, maxDelayMs: 10, jitterRatio: 0 },
+      transport: new HttpTransport({ endpoint: "/v1/batch" }),
+      onDiagnostic(event) {
+        diagnostics.push(event);
+      },
+    });
+
+    await analytics.track("recovered_event", { recovered: true });
+    await analytics.flush();
+
+    const deadline = Date.now() + 3_000;
+    while (await storage.size() !== 0) {
+      if (Date.now() >= deadline) throw new Error("retry did not recover the queued event");
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+
+    const remaining = await storage.size();
+    await analytics.shutdown();
+    return { diagnostics, remaining };
+  });
+
+  expect(result.remaining).toBe(0);
+  expect(result.diagnostics).toEqual(expect.arrayContaining([
+    expect.objectContaining({ type: "flush_failed", status: 503, retryable: true }),
+    expect.objectContaining({ type: "flush_retry_scheduled", attempt: 1 }),
+    expect.objectContaining({ type: "flush_succeeded", status: 202 }),
+  ]));
+  const stats = await (await request.get("/v1/stats")).json();
+  expect(stats).toMatchObject({
+    batchRequests: 2,
+    acceptedEvents: 1,
+    failedRequests: 1,
+    storedEvents: 1,
+    failureControl: { remaining: 0 },
+  });
+  expect(stats.requestLog.map((entry: { status: number }) => entry.status)).toEqual([202, 503]);
+  const body = await (await request.get("/v1/events")).json();
+  expect(body.events[0]).toMatchObject({
+    name: "recovered_event",
+    properties: { recovered: true },
+  });
+});
+
 test("does not create or deliver events before consent", async ({ page, request }) => {
   await page.goto("/");
 
