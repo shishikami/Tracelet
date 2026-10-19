@@ -19,13 +19,24 @@ const adapters = [
   ["ConsoleTransport", "Transport", "把编码批次输出到控制台，适合本地调试。"],
   ["EventRouter", "TransportResolver", "按事件条件选择 Transport；首条匹配规则优先，未匹配事件进入 fallback。"],
   ["IndexedDbEventStorage", "EventStorage", "浏览器持久化 FIFO 队列，生产环境推荐。"],
-  ["estimateBrowserStorage", "function", "读取整个 Origin 的近似用量、配额、可用空间与持久化状态。"],
   ["MemoryEventStorage", "EventStorage", "刷新即丢失的内存队列，适合测试。"],
   ["BrowserLocalStorage", "KeyValueStorage", "持久化身份；不可用时自动退回内存。"],
+  ["MemoryKeyValueStorage", "KeyValueStorage", "只在内存中保存身份，适合测试和非浏览器环境。"],
   ["JsonCodec", "Codec", "默认 JSON EventBatch 编码。"],
   ["ProtobufCodec", "Codec", "接收外部生成的 Protobuf 编码函数，核心不绑定 Runtime。"],
   ["NoCompression", "Compression", "默认不压缩。"],
   ["GzipCompression", "Compression", "使用浏览器 CompressionStream 生成 gzip。"],
+] as const;
+
+const advanced = [
+  ["BrowserDeliveryLock", "DeliveryLock", "通过 Web Locks 协调同源多 Tab；Analytics 默认自动创建。"],
+  ["ConsentManager", "class", "底层 Consent 状态机；普通接入使用 Analytics.getConsent/setConsent。"],
+  ["IdentityManager", "class", "底层匿名、用户和 Session 身份管理；普通接入使用 identify/reset。"],
+  ["estimateBrowserStorage", "function", "读取整个 Origin 的近似存储用量与配额。"],
+  ["isStorageQuotaExceededError", "function", "在自定义存储实现中统一判断浏览器配额错误。"],
+  ["StorageQuotaExceededError", "Error", "IndexedDbEventStorage 写入空间不足时使用的标准错误。"],
+  ["createId", "function", "生成事件或自定义 Adapter 可用的 UUID 风格标识。"],
+  ["SDK_NAME / SDK_VERSION", "constants", "读取运行中 SDK 的包名与版本。"],
 ] as const;
 
 const plugins = [
@@ -64,13 +75,24 @@ const englishAdapters = [
   ["ConsoleTransport", "Transport", "Writes encoded batches to the console for local development."],
   ["EventRouter", "TransportResolver", "Selects a Transport per event; first match wins and unmatched events use the fallback."],
   ["IndexedDbEventStorage", "EventStorage", "Persistent browser FIFO queue recommended for production."],
-  ["estimateBrowserStorage", "function", "Reads approximate origin-wide usage, quota, available bytes and persistence state."],
   ["MemoryEventStorage", "EventStorage", "Non-persistent queue suitable for tests."],
   ["BrowserLocalStorage", "KeyValueStorage", "Persists identity and falls back to memory when unavailable."],
+  ["MemoryKeyValueStorage", "KeyValueStorage", "Keeps identity in memory for tests and non-browser environments."],
   ["JsonCodec", "Codec", "Default JSON EventBatch encoder."],
   ["ProtobufCodec", "Codec", "Accepts externally generated Protobuf encoding without coupling the core to a runtime."],
   ["NoCompression", "Compression", "Default pass-through compression strategy."],
   ["GzipCompression", "Compression", "Produces gzip with the browser CompressionStream API."],
+] as const;
+
+const englishAdvanced = [
+  ["BrowserDeliveryLock", "DeliveryLock", "Coordinates same-origin tabs with Web Locks; Analytics creates it by default."],
+  ["ConsentManager", "class", "Low-level consent state; regular integrations use Analytics.getConsent/setConsent."],
+  ["IdentityManager", "class", "Low-level anonymous, user and session identity; regular integrations use identify/reset."],
+  ["estimateBrowserStorage", "function", "Reads approximate storage usage and quota for the whole origin."],
+  ["isStorageQuotaExceededError", "function", "Normalizes browser quota errors in a custom storage implementation."],
+  ["StorageQuotaExceededError", "Error", "Standard error used when IndexedDbEventStorage runs out of space."],
+  ["createId", "function", "Creates UUID-style identifiers for events or custom adapters."],
+  ["SDK_NAME / SDK_VERSION", "constants", "Read the package name and version of the running SDK."],
 ] as const;
 
 const englishPlugins = [
@@ -128,6 +150,12 @@ export function ApiReference() {
           <article id="api-adapters">
             <div className="manual-heading"><Database className="size-5" /><h3>{en ? "Built-in adapters" : "内置 Adapter"}</h3></div>
             <ReferenceTable columns={en ? ["Export", "Contract", "Purpose"] : ["导出", "契约", "用途"]} rows={en ? englishAdapters : adapters} />
+          </article>
+
+          <article id="api-advanced">
+            <div className="manual-heading"><Database className="size-5" /><h3>{en ? "Advanced objects and utilities" : "高级对象与工具"}</h3></div>
+            <p className="manual-copy">{en ? <>These exports support custom adapters and tests. Most applications should use the higher-level <code>Analytics</code> methods described above.</> : <>这些导出主要用于自定义 Adapter 与测试。大多数应用应优先使用上方列出的 <code>Analytics</code> 高层方法。</>}</p>
+            <ReferenceTable columns={en ? ["Export", "Kind", "Purpose"] : ["导出", "类别", "用途"]} rows={en ? englishAdvanced : advanced} />
           </article>
 
           <div className="grid gap-8 lg:grid-cols-2">

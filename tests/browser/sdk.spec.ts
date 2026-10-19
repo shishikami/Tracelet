@@ -37,6 +37,28 @@ test("searches localized documentation with keyboard navigation", async ({ page 
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/#manual-frameworks$/);
   await expect(englishDialog).not.toBeVisible();
+
+  await page.getByRole("button", { name: "Search documentation" }).click();
+  const objectDialog = page.getByRole("dialog", { name: "Search documentation" });
+  await objectDialog.getByRole("searchbox", { name: "Search query" }).fill("ProtobufCodec");
+  await objectDialog.getByRole("link", { name: /Codec and Compression/ }).click();
+  await expect(page).toHaveURL(/#manual-object-processing$/);
+  await expect(page.getByRole("heading", { name: "Codec and Compression: how request bodies are built" })).toBeVisible();
+});
+
+test("keeps the manual table of contents compact on smaller screens", async ({ page }) => {
+  await page.setViewportSize({ width: 690, height: 900 });
+  await page.goto("/#manual");
+
+  const contents = page.getByTestId("manual-mobile-contents");
+  await expect(contents).not.toHaveAttribute("open", "");
+  await contents.locator("summary").click();
+  await expect(contents).toHaveAttribute("open", "");
+  await contents.getByRole("link", { name: "SDK 对象选型" }).click();
+
+  await expect(page).toHaveURL(/#manual-objects$/);
+  await expect(contents).not.toHaveAttribute("open", "");
+  await expect(page.getByRole("heading", { name: "2. 认识并选择 SDK 对象" })).toBeVisible();
 });
 
 test("sends a browser event through the real collector", async ({ page, request, browserName }) => {

@@ -15,6 +15,7 @@
 
 - 语法高亮运行时改为接近视口时按需加载，降低官网首屏 JavaScript。
 - 发布文档不再建议绕过 staged publishing 直接发布。
+- 用户手册新增 SDK 对象选型表、生产配置模板，以及 Transport、Storage、Codec、Compression、Plugin 和高级工具的逐对象示例。
 
 ## 0.2.0 - 2026-10-20
 
