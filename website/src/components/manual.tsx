@@ -11,7 +11,6 @@ import {
   Wrench,
 } from "lucide-react";
 import { CodeBlock } from "@/components/code-block";
-import { ObjectGuide } from "@/components/object-guide";
 import { Badge } from "@/components/ui/badge";
 import { useLocale } from "@/i18n";
 import reactFrameworkCode from "../../../examples/frameworks/react.tsx?raw";
@@ -207,32 +206,6 @@ X-Analytics-Event-Count: 2
 
 HTTP/1.1 202 Accepted`;
 
-const options = [
-  ["appId", "string", "—", "应用的稳定标识，必填"],
-  ["appVersion", "string", "—", "随事件发送的应用版本"],
-  ["environment", "string", "—", "例如 development、staging 或 production"],
-  ["schemaVersion", "string", "\"1\"", "单事件的数据 Schema 版本"],
-  ["protocolVersion", "string", "\"1\"", "批次传输协议版本"],
-  ["transport", "Transport | TransportResolver", "—", "向单个后端投递，或按事件选择多个 Transport；必填"],
-  ["codec", "Codec", "JsonCodec", "把 EventBatch 编码成字符串或二进制"],
-  ["compression", "Compression", "NoCompression", "在 Transport 发送前压缩编码结果"],
-  ["eventStorage", "EventStorage", "Memory", "未发送事件队列；生产环境推荐 IndexedDB"],
-  ["identityStorage", "KeyValueStorage", "Memory", "匿名 ID、用户 ID 和 Session ID 的存储"],
-  ["plugins", "AnalyticsPlugin[]", "[]", "自动采集、脱敏、采样等扩展"],
-  ["flushIntervalMs", "number", "5000", "定时 Flush 间隔"],
-  ["maxBatchSize", "number", "30", "单次投递的最大事件数"],
-  ["maxBatchBytes", "number", "262144", "Codec 编码后单批次的最大字节数"],
-  ["maxQueueSize", "number", "2000", "本地队列的最大事件数"],
-  ["maxEventBytes", "number", "65536", "插件处理后单事件的最大 JSON 字节数"],
-  ["sessionTimeoutMs", "number", "1800000", "连续无事件多久后创建新 Session"],
-  ["deliveryLock", "DeliveryLock", "Web Locks", "协调同源多 Tab 对共享队列的 Flush"],
-  ["pageLifecycle", "boolean", "true", "页面隐藏或退出时尝试最后一次 Flush"],
-  ["consent.initialState", "pending | granted | denied", "granted", "首次采集前的授权状态"],
-  ["consent.clearQueueOnDenied", "boolean", "true", "拒绝或撤回授权时清理队列与身份"],
-  ["retry", "object", "指数退避", "基础延迟、最大延迟和随机抖动"],
-  ["onDiagnostic", "DiagnosticHandler", "—", "观察 SDK 状态，不产生新的业务事件"],
-] as const;
-
 const troubleshooting = [
   ["浏览器出现 CORS 错误", "在 Collector 允许站点 Origin、POST、Content-Type 和 X-Analytics-Event-Count 请求头。"],
   ["刷新页面后队列消失", "显式使用 IndexedDbEventStorage；默认 MemoryEventStorage 不持久化。"],
@@ -256,44 +229,16 @@ const productionChecklist = [
 
 const manualNavigation = [
   ["安装与初始化", "manual-setup"],
-  ["SDK 对象选型", "manual-objects"],
   ["核心 API", "manual-api"],
   ["自动采集", "manual-autocapture"],
   ["Consent", "manual-consent"],
   ["生命周期", "manual-lifecycle"],
   ["多 Collector 路由", "manual-routing"],
-  ["配置参考", "manual-options"],
   ["存储配额", "manual-storage"],
   ["框架适配", "manual-frameworks"],
   ["服务端契约", "manual-collector"],
   ["诊断与上线", "manual-production"],
   ["故障排查", "manual-troubleshooting"],
-] as const;
-
-const englishOptions = [
-  ["appId", "string", "—", "Stable application identifier; required"],
-  ["appVersion", "string", "—", "Application version attached to each event"],
-  ["environment", "string", "—", "For example development, staging or production"],
-  ["schemaVersion", "string", "\"1\"", "Schema version attached to each event"],
-  ["protocolVersion", "string", "\"1\"", "Batch delivery protocol version"],
-  ["transport", "Transport | TransportResolver", "—", "Delivers to one backend or selects among multiple transports per event; required"],
-  ["codec", "Codec", "JsonCodec", "Encodes EventBatch as text or binary"],
-  ["compression", "Compression", "NoCompression", "Compresses encoded output before the Transport sends it"],
-  ["eventStorage", "EventStorage", "Memory", "Pending-event queue; use IndexedDB in production"],
-  ["identityStorage", "KeyValueStorage", "Memory", "Stores anonymous, user and session identifiers"],
-  ["plugins", "AnalyticsPlugin[]", "[]", "Autocapture, redaction, sampling and other extensions"],
-  ["flushIntervalMs", "number", "5000", "Scheduled flush interval"],
-  ["maxBatchSize", "number", "30", "Maximum events in one delivery attempt"],
-  ["maxBatchBytes", "number", "262144", "Maximum encoded bytes in one batch"],
-  ["maxQueueSize", "number", "2000", "Maximum events in the local queue"],
-  ["maxEventBytes", "number", "65536", "Maximum JSON bytes after plugin processing"],
-  ["sessionTimeoutMs", "number", "1800000", "Idle time before creating a new session"],
-  ["deliveryLock", "DeliveryLock", "Web Locks", "Coordinates flushes across same-origin tabs"],
-  ["pageLifecycle", "boolean", "true", "Attempts a final flush when the page is hidden or closed"],
-  ["consent.initialState", "pending | granted | denied", "granted", "Consent state before the first event"],
-  ["consent.clearQueueOnDenied", "boolean", "true", "Clears queued events and identity when consent is denied or withdrawn"],
-  ["retry", "object", "Exponential", "Base delay, maximum delay and jitter"],
-  ["onDiagnostic", "DiagnosticHandler", "—", "Observes SDK state without creating a product event"],
 ] as const;
 
 const englishTroubleshooting = [
@@ -318,8 +263,8 @@ const englishChecklist = [
 ] as const;
 
 const englishNavigation = [
-  ["Install and initialize", "manual-setup"], ["Choose SDK objects", "manual-objects"], ["Core API", "manual-api"], ["Autocapture", "manual-autocapture"],
-  ["Consent", "manual-consent"], ["Lifecycle", "manual-lifecycle"], ["Multi-collector routing", "manual-routing"], ["Options", "manual-options"],
+  ["Install and initialize", "manual-setup"], ["Core API", "manual-api"], ["Autocapture", "manual-autocapture"],
+  ["Consent", "manual-consent"], ["Lifecycle", "manual-lifecycle"], ["Multi-collector routing", "manual-routing"],
   ["Storage quota", "manual-storage"], ["Frameworks", "manual-frameworks"], ["Collector contract", "manual-collector"], ["Production checklist", "manual-production"], ["Troubleshooting", "manual-troubleshooting"],
 ] as const;
 
@@ -350,16 +295,15 @@ function codeForLocale(code: string, english: boolean): string {
 
 export function Manual() {
   const en = useLocale() === "en";
-  const localizedOptions = en ? englishOptions : options;
   const localizedTroubleshooting = en ? englishTroubleshooting : troubleshooting;
   const localizedChecklist = en ? englishChecklist : productionChecklist;
   const localizedNavigation = en ? englishNavigation : manualNavigation;
   return (
-    <section id="manual" className="border-t border-white/8 bg-white/[0.018]">
+    <section id="manual" className="bg-white/[0.018]">
       <div className="mx-auto max-w-7xl px-5 py-24 lg:px-8">
         <div className="max-w-3xl">
-          <span className="section-kicker">04 / User manual</span>
-          <h2>{en ? "From first install to production delivery" : "从第一次安装到生产投递"}</h2>
+          <span className="section-kicker">Quickstart</span>
+          <h1 className="mt-4 text-balance text-4xl font-semibold tracking-[-0.04em] sm:text-6xl">{en ? "From first install to production delivery" : "从第一次安装到生产投递"}</h1>
           <p className="section-copy">{en ? "Follow the guide in order. It covers client creation, typed events, autocapture, consent, application lifecycle and collector requirements." : "按顺序完成下面的步骤即可接入。示例覆盖实例创建、类型安全事件、自动采集、隐私授权、应用生命周期和 Collector 实现要求。"}</p>
         </div>
 
@@ -396,10 +340,8 @@ export function Manual() {
               <div className="mt-6"><CodeBlock code={codeForLocale(setupCode, en)} filename="analytics.ts" /></div>
             </article>
 
-            <ObjectGuide />
-
             <article id="manual-api">
-              <div className="manual-heading"><Braces className="size-5" /><h3>{en ? "3. Define events and call the core API" : "3. 定义事件并调用核心 API"}</h3></div>
+              <div className="manual-heading"><Braces className="size-5" /><h3>{en ? "2. Define events and call the core API" : "2. 定义事件并调用核心 API"}</h3></div>
               <p className="manual-copy">{en ? <>Define an EventMap so <code>track()</code> validates names and properties. Use <code>page()</code> for page semantics and <code>identify()</code> for signed-in users.</> : <>为业务事件定义 EventMap 后，<code>track()</code> 会检查事件名和属性。<code>page()</code> 用于页面语义，<code>identify()</code> 用于登录用户关联。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(typedEventsCode, en)} filename="events.ts" /></div>
               <div className="mt-5 grid gap-4 md:grid-cols-3">
@@ -410,7 +352,7 @@ export function Manual() {
             </article>
 
             <article id="manual-autocapture">
-              <div className="manual-heading"><Bug className="size-5" /><h3>{en ? "4. Optional, low-impact autocapture" : "4. 可选的低侵入自动采集"}</h3></div>
+              <div className="manual-heading"><Bug className="size-5" /><h3>{en ? "3. Optional, low-impact autocapture" : "3. 可选的低侵入自动采集"}</h3></div>
               <p className="manual-copy">{en ? <>The plugin observes navigation and global errors only. It does not scan the DOM or read element text, form values or <code>data-*</code> attributes. Generated events still pass through consent, plugins and the durable queue.</> : <>自动采集插件只观察导航和全局错误，不扫描 DOM，也不读取元素文本、表单值或 <code>data-*</code> 属性。页面事件和错误事件仍会经过 Consent、用户插件与可靠队列。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(autoCaptureCode, en)} filename="analytics.ts" /></div>
               <div className="mt-5 overflow-x-auto rounded-xl border border-white/10">
@@ -426,44 +368,31 @@ export function Manual() {
             </article>
 
             <article id="manual-consent">
-              <div className="manual-heading"><ShieldCheck className="size-5" /><h3>{en ? "5. Consent-first integration" : "5. Consent 优先接入"}</h3></div>
+              <div className="manual-heading"><ShieldCheck className="size-5" /><h3>{en ? "4. Consent-first integration" : "4. Consent 优先接入"}</h3></div>
               <p className="manual-copy">{en ? <>When a CMP or privacy dialog owns consent, start in <code>pending</code>. Identities and events—including autocapture—are created only after consent becomes <code>granted</code>.</> : <>如果授权由 CMP 或隐私弹窗管理，请从 <code>pending</code> 开始。只有 <code>granted</code> 状态才会创建身份和事件，包括自动采集事件。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(consentCode, en)} filename="consent.ts" /></div>
             </article>
 
             <article id="manual-lifecycle">
-              <div className="manual-heading"><BookOpen className="size-5" /><h3>{en ? "6. Identity and application lifecycle" : "6. 身份和应用生命周期"}</h3></div>
+              <div className="manual-heading"><BookOpen className="size-5" /><h3>{en ? "5. Identity and application lifecycle" : "5. 身份和应用生命周期"}</h3></div>
               <p className="manual-copy">{en ? <>The SDK maintains anonymous and session IDs. A session rotates after 30 idle minutes; call <code>reset()</code> when a user signs out.</> : <>SDK 会自动维护匿名 ID 与 Session。Session 连续 30 分钟没有事件后自动更新；用户退出登录时应调用 <code>reset()</code>。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(lifecycleCode, en)} filename="app-lifecycle.ts" /></div>
             </article>
 
             <article id="manual-routing">
-              <div className="manual-heading"><Server className="size-5" /><h3>{en ? "7. Route events across collectors" : "7. 多 Collector 条件路由"}</h3></div>
+              <div className="manual-heading"><Server className="size-5" /><h3>{en ? "6. Route events across collectors" : "6. 多 Collector 条件路由"}</h3></div>
               <p className="manual-copy">{en ? <>Use <code>EventRouter</code> when technical errors and product analytics must reach different backends. Routing runs before encoding, the first matching rule wins, and a batch never mixes destinations. FIFO order is preserved, so one <code>flush()</code> still sends one contiguous batch.</> : <>当技术错误和业务分析需要进入不同后端时，可以使用 <code>EventRouter</code>。路由发生在编码之前，第一条匹配规则优先，同一批次不会混合目标。队列仍保持 FIFO，因此一次 <code>flush()</code> 依旧只发送一个连续批次。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(routingCode, en)} filename="analytics-routing.ts" /></div>
             </article>
 
-            <article id="manual-options">
-              <div className="manual-heading"><Gauge className="size-5" /><h3>{en ? "8. Configuration reference" : "8. 配置参考"}</h3></div>
-              <p className="manual-copy">{en ? "Only the application ID and transport are required; every other capability can be replaced for the target environment." : "核心只要求应用标识和 Transport，其余能力都可以按运行环境替换。"}</p>
-              <div className="mt-6 overflow-x-auto rounded-xl border border-white/10">
-                <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-                  <thead className="bg-white/5 text-slate-300"><tr><th scope="col">{en ? "Option" : "选项"}</th><th scope="col">{en ? "Type" : "类型"}</th><th scope="col">{en ? "Default" : "默认值"}</th><th scope="col">{en ? "Description" : "说明"}</th></tr></thead>
-                  <tbody>{localizedOptions.map(([name, type, defaultValue, description]) => (
-                    <tr key={name} className="border-t border-white/8"><td><code className="text-emerald-300">{name}</code></td><td>{type}</td><td>{defaultValue}</td><td className="text-slate-400">{description}</td></tr>
-                  ))}</tbody>
-                </table>
-              </div>
-            </article>
-
             <article id="manual-storage">
-              <div className="manual-heading"><Gauge className="size-5" /><h3>{en ? "9. Inspect browser storage quota" : "9. 检查浏览器存储配额"}</h3></div>
+              <div className="manual-heading"><Gauge className="size-5" /><h3>{en ? "7. Inspect browser storage quota" : "7. 检查浏览器存储配额"}</h3></div>
               <p className="manual-copy">{en ? <><code>getStorageEstimate()</code> returns advisory values for the whole origin, including data outside Tracelet. Browsers can round or omit fields. If IndexedDB actually runs out of space, the current event is dropped safely and <code>storage_quota_exceeded</code> is emitted; Tracelet never deletes unrelated application data.</> : <><code>getStorageEstimate()</code> 返回整个 Origin 的近似值，其中可能包含 Tracelet 之外的数据；浏览器也可能舍入或省略字段。IndexedDB 真正耗尽空间时，当前事件会被安全丢弃并触发 <code>storage_quota_exceeded</code>；Tracelet 不会删除其他应用数据。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(storageEstimateCode, en)} filename="storage-health.ts" /></div>
             </article>
 
             <article id="manual-frameworks">
-              <div className="manual-heading"><Plug className="size-5" /><h3>{en ? "10. Framework lifecycle adapters" : "10. 框架生命周期适配"}</h3></div>
+              <div className="manual-heading"><Plug className="size-5" /><h3>{en ? "8. Framework lifecycle adapters" : "8. 框架生命周期适配"}</h3></div>
               <p className="manual-copy">{en ? <>Tracelet stays framework-independent. Create one singleton outside rendering, initialize it once at the application root, and keep SSR initialization behind a client boundary. Ordinary component cleanup should not shut down an application-wide singleton.</> : <>Tracelet 本身保持框架无关。请在渲染过程之外创建单例、在应用根部初始化一次，并在 SSR 框架中把初始化放到客户端边界之后。普通组件卸载不应关闭应用级单例。</>}</p>
               <div className="mt-6 grid gap-6">
                 <div><h4 className="mb-3 text-sm font-medium text-slate-300">React</h4><CodeBlock code={reactFrameworkCode} filename="react.tsx" /></div>
@@ -473,14 +402,14 @@ export function Manual() {
             </article>
 
             <article id="manual-collector">
-              <div className="manual-heading"><Server className="size-5" /><h3>{en ? "11. Collector contract" : "11. 服务端接收契约"}</h3></div>
+              <div className="manual-heading"><Server className="size-5" /><h3>{en ? "9. Collector contract" : "9. 服务端接收契约"}</h3></div>
               <p className="manual-copy">{en ? <>The default JSON codec sends an EventBatch. Any 2xx succeeds; 408, 429 and 5xx responses keep the queue for retry. The collector should authenticate, validate size and deduplicate by <code>eventId</code>.</> : <>默认 JSON Codec 提交一个 EventBatch。任意 2xx 表示成功；408、429 和 5xx 会保留队列并重试。服务端应鉴权、校验大小，并按 <code>eventId</code> 幂等去重。</>}</p>
               <div className="mt-6"><CodeBlock code={collectorCode} language="http" filename="collector.http" /></div>
               <div className="mt-5 flex gap-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.04] p-4 text-sm leading-6 text-amber-100/80"><AlertTriangle className="mt-0.5 size-5 shrink-0" /><p>{en ? "Tracelet delivers at least once. A timeout may occur after the collector accepted a request, so deduplication is a correctness requirement—not an optional optimization." : "Tracelet 是至少一次投递。超时边界可能造成服务端已经接收、客户端仍然重试，因此去重不是可选优化。"}</p></div>
             </article>
 
             <article id="manual-production">
-              <div className="manual-heading"><CheckCircle2 className="size-5" /><h3>{en ? "12. Diagnostics and production checklist" : "12. 诊断与上线清单"}</h3></div>
+              <div className="manual-heading"><CheckCircle2 className="size-5" /><h3>{en ? "10. Diagnostics and production checklist" : "10. 诊断与上线清单"}</h3></div>
               <p className="manual-copy">{en ? <><code>onDiagnostic</code> observes SDK state without creating product events. Exercise network failures and 429 responses before production.</> : <><code>onDiagnostic</code> 观察 SDK 状态，但不会创建业务事件。建议先在测试环境模拟网络失败和 429，再投入生产。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(diagnosticCode, en)} filename="diagnostics.ts" /></div>
               <ul className="mt-6 grid gap-3 sm:grid-cols-2">

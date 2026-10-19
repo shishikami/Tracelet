@@ -8,6 +8,12 @@ Tracelet is an open-source, backend-agnostic and privacy-first analytics SDK for
 npm install tracelet-browser
 ```
 
+Documentation routes:
+
+- Quickstart: https://tracelet-opal.vercel.app/quickstart
+- Examples: https://tracelet-opal.vercel.app/examples
+- API reference: https://tracelet-opal.vercel.app/reference
+
 ## Minimal TypeScript setup
 
 ```ts

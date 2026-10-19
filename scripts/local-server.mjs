@@ -212,13 +212,20 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (request.method === "GET" && url.pathname === "/") {
-    serveFile(response, "out/index.html");
-    return;
-  }
-
-  if (request.method === "GET" && (url.pathname === "/en" || url.pathname === "/en/")) {
-    serveFile(response, "out/en/index.html");
+  const staticPages = new Map([
+    ["/", "out/index.html"],
+    ["/en", "out/en/index.html"],
+    ["/quickstart", "out/quickstart/index.html"],
+    ["/examples", "out/examples/index.html"],
+    ["/reference", "out/reference/index.html"],
+    ["/en/quickstart", "out/en/quickstart/index.html"],
+    ["/en/examples", "out/en/examples/index.html"],
+    ["/en/reference", "out/en/reference/index.html"],
+  ]);
+  const normalizedPagePath = url.pathname.length > 1 ? url.pathname.replace(/\/$/, "") : url.pathname;
+  const staticPage = staticPages.get(normalizedPagePath);
+  if (request.method === "GET" && staticPage) {
+    serveFile(response, staticPage);
     return;
   }
 

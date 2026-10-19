@@ -130,18 +130,18 @@ function ReferenceTable({
   );
 }
 
-export function ApiReference() {
+export function ApiReference({ embedded = false }: { embedded?: boolean }) {
   const en = useLocale() === "en";
   return (
-    <section id="api-reference" className="border-t border-white/8">
-      <div className="mx-auto max-w-7xl px-5 py-24 lg:px-8">
-        <div className="max-w-3xl">
+    <section id="api-reference" className={embedded ? "" : "border-t border-white/8"}>
+      <div className={embedded ? "" : "mx-auto max-w-7xl px-5 py-24 lg:px-8"}>
+        {!embedded ? <div className="max-w-3xl">
           <span className="section-kicker">05 / API Reference</span>
           <h2>{en ? "Public API at a glance" : "公开 API 快速查询"}</h2>
           <p className="section-copy">{en ? <>Methods, built-in adapters, plugins and diagnostics commonly used by application code. Everything is exported from the <code>tracelet-browser</code> package root.</> : <>这里列出应用代码通常会直接使用的实例方法、内置 Adapter、插件和诊断事件。所有入口均从 <code>tracelet-browser</code> 根包导出。</>}</p>
-        </div>
+        </div> : null}
 
-        <div className="mt-14 space-y-16">
+        <div className={embedded ? "space-y-16" : "mt-14 space-y-16"}>
           <article id="api-client">
             <div className="manual-heading"><Braces className="size-5" /><h3>{en ? "Analytics instance methods" : "Analytics 实例方法"}</h3></div>
             <ReferenceTable columns={en ? ["Method", "Returns", "Behavior"] : ["方法", "返回值", "行为"]} rows={en ? englishMethods : methods} />

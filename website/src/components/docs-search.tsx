@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocale, type Locale } from "@/i18n";
+import { sitePath, type SitePage } from "@/routing";
 
 interface SearchEntry {
   id: string;
@@ -14,7 +15,7 @@ interface SearchEntry {
 const searchEntries: Record<Locale, readonly SearchEntry[]> = {
   "zh-CN": [
     { id: "architecture", category: "概览", title: "SDK 架构", description: "核心契约、Adapter 与后端解耦边界。", keywords: "architecture 架构 pipeline 管线 adapter" },
-    { id: "docs", category: "快速开始", title: "安装与 Quickstart", description: "从 npm 安装并创建第一个 SDK 实例。", keywords: "install npm pnpm yarn quickstart 安装" },
+    { id: "manual-setup", category: "快速开始", title: "安装与 Quickstart", description: "从 npm 安装并创建第一个 SDK 实例。", keywords: "install npm pnpm yarn quickstart 安装" },
     { id: "delivery", category: "可靠性", title: "可靠投递", description: "本地队列、批次、重试和 eventId 去重。", keywords: "delivery retry queue eventId 重试 队列" },
     { id: "manual-api", category: "用户手册", title: "类型安全核心 API", description: "track、page、identify 与 EventMap。", keywords: "track page identify EventMap 类型" },
     { id: "manual-objects", category: "用户手册", title: "SDK 对象选型", description: "客户端、Transport、Storage、Codec、Compression 与 Plugin 的选择和实例代码。", keywords: "对象 实例 createAnalytics HttpTransport IndexedDbEventStorage Codec Compression Plugin" },
@@ -33,13 +34,14 @@ const searchEntries: Record<Locale, readonly SearchEntry[]> = {
     { id: "manual-collector", category: "服务端", title: "Collector 接收契约", description: "EventBatch、CORS、状态码和幂等去重。", keywords: "collector backend CORS HTTP EventBatch 服务端" },
     { id: "manual-production", category: "上线", title: "诊断与上线清单", description: "onDiagnostic、CSP 与生产验证。", keywords: "diagnostic CSP production 上线 诊断" },
     { id: "api-client", category: "API Reference", title: "Analytics 实例方法", description: "查询全部客户端公开方法与返回值。", keywords: "API methods analytics 方法" },
+    { id: "api-options", category: "API Reference", title: "createAnalytics 配置项", description: "查询必填项、默认值、限制与可替换边界。", keywords: "options config createAnalytics 配置 默认值" },
     { id: "api-adapters", category: "API Reference", title: "内置 Adapter", description: "Transport、Storage、Codec 与 Compression。", keywords: "adapter transport storage codec compression" },
     { id: "api-advanced", category: "API Reference", title: "高级对象与工具", description: "底层 Manager、DeliveryLock、配额错误和 SDK 常量。", keywords: "ConsentManager IdentityManager DeliveryLock createId StorageQuota SDK_VERSION" },
     { id: "api-diagnostics", category: "API Reference", title: "DiagnosticEvent", description: "SDK 生命周期与异常诊断事件。", keywords: "DiagnosticEvent event_dropped flush_failed 诊断" },
   ],
   en: [
     { id: "architecture", category: "Overview", title: "SDK architecture", description: "Core contracts, adapters and backend decoupling boundaries.", keywords: "architecture pipeline adapter core" },
-    { id: "docs", category: "Quickstart", title: "Install and quickstart", description: "Install from npm and create the first SDK instance.", keywords: "install npm pnpm yarn quickstart" },
+    { id: "manual-setup", category: "Quickstart", title: "Install and quickstart", description: "Install from npm and create the first SDK instance.", keywords: "install npm pnpm yarn quickstart" },
     { id: "delivery", category: "Reliability", title: "Reliable delivery", description: "Local queues, batching, retries and eventId deduplication.", keywords: "delivery retry queue eventId" },
     { id: "manual-api", category: "User guide", title: "Type-safe core API", description: "track, page, identify and EventMap.", keywords: "track page identify EventMap types" },
     { id: "manual-objects", category: "User guide", title: "Choose SDK objects", description: "Client, Transport, Storage, Codec, Compression and Plugin examples.", keywords: "objects instances createAnalytics HttpTransport IndexedDbEventStorage Codec Compression Plugin" },
@@ -58,6 +60,7 @@ const searchEntries: Record<Locale, readonly SearchEntry[]> = {
     { id: "manual-collector", category: "Backend", title: "Collector contract", description: "EventBatch, CORS, status codes and idempotency.", keywords: "collector backend CORS HTTP EventBatch" },
     { id: "manual-production", category: "Production", title: "Diagnostics and launch checklist", description: "onDiagnostic, CSP and production verification.", keywords: "diagnostic CSP production checklist" },
     { id: "api-client", category: "API Reference", title: "Analytics methods", description: "Browse public client methods and return types.", keywords: "API methods analytics" },
+    { id: "api-options", category: "API Reference", title: "createAnalytics options", description: "Look up required values, defaults, limits and replaceable boundaries.", keywords: "options config createAnalytics defaults" },
     { id: "api-adapters", category: "API Reference", title: "Built-in adapters", description: "Transport, Storage, Codec and Compression exports.", keywords: "adapter transport storage codec compression" },
     { id: "api-advanced", category: "API Reference", title: "Advanced objects and utilities", description: "Low-level managers, DeliveryLock, quota errors and SDK constants.", keywords: "ConsentManager IdentityManager DeliveryLock createId StorageQuota SDK_VERSION" },
     { id: "api-diagnostics", category: "API Reference", title: "DiagnosticEvent", description: "SDK lifecycle and failure diagnostics.", keywords: "DiagnosticEvent event_dropped flush_failed" },
@@ -163,7 +166,7 @@ export function DocsSearch({ open, onOpenChange }: DocsSearchProps) {
               <li key={entry.id}>
                 <a
                   data-search-result
-                  href={`#${entry.id}`}
+                  href={`${sitePath(pageForEntry(entry.id), locale)}#${entry.id}`}
                   onClick={close}
                   className="group flex items-start justify-between gap-4 rounded-xl px-4 py-3.5 outline-none hover:bg-white/6 focus-visible:bg-white/7 focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                 >
@@ -188,6 +191,13 @@ export function DocsSearch({ open, onOpenChange }: DocsSearchProps) {
       </div>
     </dialog>
   );
+}
+
+function pageForEntry(id: string): SitePage {
+  if (id.startsWith("api-")) return "reference";
+  if (id === "manual-objects" || id.startsWith("manual-object-")) return "examples";
+  if (id.startsWith("manual-")) return "quickstart";
+  return "home";
 }
 
 function rankEntries(entries: readonly SearchEntry[], query: string): SearchEntry[] {

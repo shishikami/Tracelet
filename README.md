@@ -21,6 +21,9 @@ yarn add tracelet-browser
 一个后端无关的浏览器埋点 SDK 初始实现。核心只依赖抽象协议，JSON、Protobuf、压缩算法和网络传输都可以替换。
 
 - 官网：[tracelet-opal.vercel.app](https://tracelet-opal.vercel.app)
+- 快速开始：[Quickstart](https://tracelet-opal.vercel.app/quickstart)
+- 场景示例：[Examples](https://tracelet-opal.vercel.app/examples)
+- API 查询：[Reference](https://tracelet-opal.vercel.app/reference)
 - npm：[tracelet-browser](https://www.npmjs.com/package/tracelet-browser)
 - 源码：[shishikami/Tracelet](https://github.com/shishikami/Tracelet)
 
@@ -289,7 +292,7 @@ pnpm dev:docs
 pnpm build:docs
 ```
 
-官网源码位于 `website/`，构建产物位于 `out/`。中文入口为 `/`，英文入口为 `/en`；两者共享组件，并具有独立的 canonical、`hreflang` 和搜索元数据。首页包含 Quickstart，用户手册覆盖配置、Consent、服务端契约、投递语义和故障排查，并提供独立的公开 API Reference、`⌘/Ctrl + K` 中英文搜索和框架适配示例。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。框架演进判断见 [docs/website-framework.md](./docs/website-framework.md)。
+官网源码位于 `website/`，构建产物位于 `out/`。精简首页、Quickstart、Examples 和 API Reference 分别使用独立 URL，中文为 `/`、`/quickstart`、`/examples`、`/reference`，英文页面统一增加 `/en` 前缀。所有页面共享组件与中英文搜索，文档页提供粘性侧边目录，并具有各自的 canonical、`hreflang` 和搜索元数据。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。框架演进判断见 [docs/website-framework.md](./docs/website-framework.md)。
 
 ## 仓库结构
 

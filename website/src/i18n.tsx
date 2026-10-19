@@ -15,7 +15,3 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 export function useLocale(): Locale {
   return useContext(LocaleContext);
 }
-
-export function localizedPath(locale: Locale): string {
-  return locale === "en" ? "/en" : "/";
-}

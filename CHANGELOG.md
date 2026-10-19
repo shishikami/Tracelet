@@ -13,6 +13,9 @@
 
 ### Changed
 
+- 官网重构为独立的首页、Quickstart、Examples 和 API Reference 路由，文档页增加桌面粘性侧栏与移动端折叠目录。
+- 文档搜索改为跨页面跳转，并为六个新增中英文文档 URL 补齐 canonical、`hreflang` 和 sitemap。
+- 长篇文档按路由懒加载，降低首页首屏 JavaScript 体积。
 - 语法高亮运行时改为接近视口时按需加载，降低官网首屏 JavaScript。
 - 发布文档不再建议绕过 staged publishing 直接发布。
 - 用户手册新增 SDK 对象选型表、生产配置模板，以及 Transport、Storage、Codec、Compression、Plugin 和高级工具的逐对象示例。

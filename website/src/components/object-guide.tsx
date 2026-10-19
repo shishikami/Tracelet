@@ -321,7 +321,7 @@ export function ObjectGuide() {
     <article id="manual-objects">
       <div className="manual-heading">
         <Boxes className="size-5" />
-        <h3>{en ? "2. Understand and choose SDK objects" : "2. 认识并选择 SDK 对象"}</h3>
+        <h2 className="!m-0 !text-2xl">{en ? "Understand and choose SDK objects" : "认识并选择 SDK 对象"}</h2>
       </div>
       <p className="manual-copy">
         {en
