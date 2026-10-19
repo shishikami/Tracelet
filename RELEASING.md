@@ -30,8 +30,8 @@ pnpm pack:check
 
 ## 3. 创建 GitHub Release
 
-1. 创建与包版本完全一致的 tag，例如 `package.json` 为 `0.1.2` 时使用 `v0.1.2`。
-2. Release 标题建议使用 `Tracelet v0.1.2`。
+1. 创建与包版本完全一致的 tag，例如 `package.json` 为 `x.y.z` 时使用 `vx.y.z`。
+2. Release 标题建议使用 `Tracelet vx.y.z`。
 3. 从 `CHANGELOG.md` 复制本版本的 Fixed、Added 和 Changed 内容作为 Release Notes。
 4. 发布正式 Release；不要勾选 prerelease，除非版本本身是预发布版本。
 
@@ -49,17 +49,28 @@ Passkey 不会生成六位验证码；浏览器弹出 Passkey 验证时，直接
 
 ```bash
 npm view tracelet-browser version
-npm view tracelet-browser@0.1.2 dist.integrity
+npm view tracelet-browser@<version> dist.integrity
 ```
 
 再在一个空目录中安装公开版本，验证最小导入：
 
 ```bash
 npm init -y
-npm install tracelet-browser@0.1.2
+npm install tracelet-browser@<version>
 ```
 
 最后确认 npm badge、Vercel 文档站、GitHub Release 和 `CHANGELOG.md` 展示的是同一版本。
+
+## 6. 恢复开发版本
+
+公开版本验证完成后，将 `main` 的 `package.json` 切换到下一里程碑的开发版本，例如 `0.3.0-dev.0`，在 Changelog 顶部创建对应的 `Unreleased` 段，并运行：
+
+```bash
+pnpm version:sync
+pnpm check
+```
+
+开发版本只用于仓库后续迭代，不要发布到 npm 的 `latest`。这样可以避免在已公开且不可覆盖的版本号上继续生成内容不同的 tarball。
 
 ## 发布失败时
 

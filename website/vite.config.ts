@@ -13,6 +13,7 @@ export default defineConfig({
   build: {
     outDir: "../out",
     emptyOutDir: true,
+    manifest: true,
     rollupOptions: {
       input: {
         main: fileURLToPath(new URL("./index.html", import.meta.url)),

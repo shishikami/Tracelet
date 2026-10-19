@@ -5,6 +5,18 @@ test.beforeEach(async ({ request }) => {
   expect(response.ok()).toBeTruthy();
 });
 
+test("injects the Vercel Web Analytics client without cookies", async ({ page }) => {
+  await page.route("**/_vercel/insights/script.js", (route) =>
+    route.fulfill({ contentType: "application/javascript", body: "" }),
+  );
+
+  await page.goto("/");
+
+  await expect(page.locator('script[src="/_vercel/insights/script.js"]')).toHaveCount(1);
+  await expect(page.locator("footer")).toContainText("Vercel Web Analytics");
+  expect(await page.context().cookies()).toEqual([]);
+});
+
 test("searches localized documentation with keyboard navigation", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "搜索文档" }).click();

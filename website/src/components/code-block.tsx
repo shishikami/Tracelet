@@ -1,8 +1,9 @@
 import { Check, Copy } from "lucide-react";
-import { Highlight, themes } from "prism-react-renderer";
-import { useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/i18n";
+
+const HighlightedCode = lazy(() => import("@/components/highlighted-code"));
 
 interface CodeBlockProps {
   code: string;
@@ -30,6 +31,36 @@ const languageLabels: Record<string, string> = {
   tsx: "TSX",
 };
 
+function PlainCode({
+  code,
+  label,
+  showLineNumbers,
+}: {
+  code: string;
+  label: string;
+  showLineNumbers: boolean;
+}) {
+  return (
+    <pre
+      className="overflow-x-auto bg-[#282c34] py-5 text-[13px] leading-6 text-slate-300 sm:text-sm sm:leading-7"
+      aria-label={label}
+    >
+      <code className="block min-w-max">
+        {code.split("\n").map((line, lineIndex) => (
+          <span className="block px-4 sm:px-5" key={lineIndex}>
+            {showLineNumbers ? (
+              <span className="mr-5 inline-block w-6 select-none text-right text-slate-600" aria-hidden="true">
+                {lineIndex + 1}
+              </span>
+            ) : null}
+            {line || " "}
+          </span>
+        ))}
+      </code>
+    </pre>
+  );
+}
+
 export function CodeBlock({
   code,
   language = "ts",
@@ -39,8 +70,33 @@ export function CodeBlock({
   const en = useLocale() === "en";
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
+  const [shouldHighlight, setShouldHighlight] = useState(false);
+  const codeBodyRef = useRef<HTMLDivElement>(null);
   const normalizedLanguage = languageAliases[language] ?? language;
   const languageLabel = languageLabels[normalizedLanguage] ?? normalizedLanguage.toUpperCase();
+  const accessibilityLabel = en ? `${languageLabel} code example` : `${languageLabel} 代码示例`;
+
+  useEffect(() => {
+    if (shouldHighlight) return;
+    const codeBody = codeBodyRef.current;
+    if (!codeBody || !("IntersectionObserver" in window)) {
+      setShouldHighlight(true);
+      return;
+    }
+
+    // Syntax highlighting is decorative and relatively heavy. Load it shortly
+    // before the code block enters the viewport instead of delaying first paint.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setShouldHighlight(true);
+        observer.disconnect();
+      },
+      { rootMargin: "500px 0px" },
+    );
+    observer.observe(codeBody);
+    return () => observer.disconnect();
+  }, [shouldHighlight]);
 
   async function copyCode() {
     try {
@@ -78,37 +134,20 @@ export function CodeBlock({
           {copied ? (en ? "Copied" : "已复制") : copyFailed ? (en ? "Failed" : "复制失败") : (en ? "Copy" : "复制")}
         </Button>
       </div>
-      <Highlight theme={themes.oneDark} code={code} language={normalizedLanguage}>
-        {({ className, style, tokens, getLineProps, getTokenProps }) => (
-          <pre
-            className={`${className} overflow-x-auto py-5 text-[13px] leading-6 sm:text-sm sm:leading-7`}
-            style={{ ...style, background: "transparent" }}
-            aria-label={en ? `${languageLabel} code example` : `${languageLabel} 代码示例`}
-          >
-            <code className="block min-w-max">
-              {tokens.map((line, lineIndex) => (
-                <span
-                  {...getLineProps({ line })}
-                  className="block px-4 sm:px-5"
-                  key={lineIndex}
-                >
-                  {showLineNumbers ? (
-                    <span
-                      className="mr-5 inline-block w-6 select-none text-right text-slate-700"
-                      aria-hidden="true"
-                    >
-                      {lineIndex + 1}
-                    </span>
-                  ) : null}
-                  {line.map((token, tokenIndex) => (
-                    <span {...getTokenProps({ token })} key={tokenIndex} />
-                  ))}
-                </span>
-              ))}
-            </code>
-          </pre>
+      <div ref={codeBodyRef}>
+        {shouldHighlight ? (
+          <Suspense fallback={<PlainCode code={code} label={accessibilityLabel} showLineNumbers={showLineNumbers} />}>
+            <HighlightedCode
+              code={code}
+              label={accessibilityLabel}
+              language={normalizedLanguage}
+              showLineNumbers={showLineNumbers}
+            />
+          </Suspense>
+        ) : (
+          <PlainCode code={code} label={accessibilityLabel} showLineNumbers={showLineNumbers} />
         )}
-      </Highlight>
+      </div>
       <span className="sr-only" role="status" aria-live="polite">
         {copied ? (en ? "Code copied to clipboard" : "代码已复制到剪贴板") : copyFailed ? (en ? "Copy failed" : "复制失败") : ""}
       </span>

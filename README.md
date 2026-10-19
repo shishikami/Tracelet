@@ -337,13 +337,7 @@ pnpm pack:check
 
 完整发布检查表和故障处理见 [RELEASING.md](./RELEASING.md)。
 
-紧急情况下也可以手动发布：
-
-```bash
-npm login
-npm version patch
-npm publish
-```
+如果自动发布失败，请先修复 CI、Trusted Publisher 或 staged publishing 配置，再重新创建新的版本；不要绕过人工审批直接执行 `npm publish`。已经公开到 npm 的版本号不能覆盖。
 
 正式发布前请更新 `package.json` 版本号。npm 包只包含 `dist/`、README、CHANGELOG 和 LICENSE，不包含官网与测试文件。
 
@@ -356,6 +350,13 @@ npm publish
 - [x] 存储配额估算与 IndexedDB 配额诊断
 - [x] 文档搜索和框架适配示例
 
-后续方向将根据实际接入反馈与 Issue 排期。
+0.3.0 候选方向：
+
+- CDN / IIFE 构建，支持无需打包器的 `<script>` 接入。
+- 队列、投递失败与重试状态的公开可观测 API。
+- CSP、广告拦截器、离线环境和更多打包器兼容性验证。
+- 根据真实接入反馈完善插件和框架适配层。
+
+候选功能会先通过 Issue 收集使用场景，再决定是否进入正式里程碑。
 
 版本变化见 [CHANGELOG.md](./CHANGELOG.md)。

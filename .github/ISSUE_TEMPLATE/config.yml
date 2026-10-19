@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/shishikami/Tracelet/security/advisories/new
+    about: 请通过 Private Vulnerability Reporting 私下提交安全问题。
+  - name: Documentation
+    url: https://tracelet-opal.vercel.app/
+    about: 查看接入手册、框架示例和 API Reference。

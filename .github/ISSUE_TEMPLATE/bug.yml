@@ -1,0 +1,53 @@
+name: Bug report
+description: 报告可复现的 SDK、文档或兼容性问题
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: 感谢反馈。安全漏洞请不要在这里提交，请阅读 SECURITY.md。
+  - type: input
+    id: version
+    attributes:
+      label: Tracelet version
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: 浏览器、操作系统、框架与打包器版本
+      placeholder: Chrome 141 / macOS / React 19 / Vite 8
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: 请提供最小代码、仓库链接或明确的复现步骤，不要包含凭据和用户数据。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and diagnostics
+      description: 可包含 onDiagnostic 输出、错误堆栈或网络状态。
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: 我已确认这不是需要私下报告的安全漏洞。
+          required: true
+        - label: 我已搜索现有 Issue，未发现相同问题。
+          required: true

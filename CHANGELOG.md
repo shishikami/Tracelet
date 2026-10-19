@@ -2,6 +2,20 @@
 
 本项目的所有重要变更都会记录在此文件中。
 
+## 0.3.0 - Unreleased
+
+### Added
+
+- Vercel Web Analytics 官网访问统计，并增加无 Cookie 注入的跨浏览器验证。
+- npm 包体积、发布文件边界和公开运行时导出的 CI 防回归检查。
+- 官网首屏与总 JavaScript gzip 体积预算。
+- 贡献指南、安全报告政策、Issue 模板和 Pull Request 模板。
+
+### Changed
+
+- 语法高亮运行时改为接近视口时按需加载，降低官网首屏 JavaScript。
+- 发布文档不再建议绕过 staged publishing 直接发布。
+
 ## 0.2.0 - 2026-10-20
 
 Tracelet 的生产队列治理与可发现性增强版本。
@@ -80,6 +94,7 @@ Tracelet 首个公开版本。
 - 指数退避、随机抖动和可重试状态判断。
 - 本地 Collector、浏览器验证台和 React 文档官网。
 
+[0.3.0]: https://github.com/shishikami/Tracelet/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/shishikami/Tracelet/releases/tag/v0.2.0
 [0.1.2]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.2
 [0.1.1]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.1

@@ -187,7 +187,12 @@ export function App() {
 
       <footer className="border-t border-white/8 px-5 py-10 text-sm text-slate-500">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row lg:px-3">
-          <p>Tracelet · Backend-agnostic browser analytics</p>
+          <div>
+            <p>Tracelet · Backend-agnostic browser analytics</p>
+            <p className="mt-1 text-xs text-slate-600">
+              {en ? "Cookie-free page traffic is measured with Vercel Web Analytics." : "本站使用不依赖 Cookie 的 Vercel Web Analytics 统计页面访问。"}
+            </p>
+          </div>
           <div className="flex gap-5"><a className="hover:text-white" href="https://www.npmjs.com/package/tracelet-browser" target="_blank" rel="noreferrer">npm</a><a className="hover:text-white" href="https://github.com/shishikami/Tracelet" target="_blank" rel="noreferrer">GitHub</a><a className="hover:text-white" href="#manual">Guide</a><a className="hover:text-white" href="#api-reference">API</a></div>
         </div>
       </footer>
