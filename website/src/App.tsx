@@ -23,6 +23,7 @@ import { InstallCommand } from "@/components/install-command";
 import { Manual } from "@/components/manual";
 import { ApiReference } from "@/components/api-reference";
 import { SiteHeader } from "@/components/site-header";
+import { localizedPath, useLocale } from "@/i18n";
 import quickstartCode from "../../examples/quickstart.ts?raw";
 
 const features = [
@@ -39,7 +40,23 @@ const deliverySteps = [
   { icon: Network, label: "Deliver", detail: "编码、压缩并交给 Transport" },
 ];
 
+const englishFeatures = [
+  { icon: Braces, title: "Type-safe events", description: "Use an EventMap to validate event names and properties at compile time, making application refactors safer." },
+  { icon: Database, title: "Durable local queue", description: "IndexedDB persists pending events while Web Locks coordinate tabs, surviving reloads and unstable networks." },
+  { icon: ShieldCheck, title: "Privacy first", description: "Consent runs before identity or event creation, and denial can immediately clear local analytics data." },
+  { icon: Plug, title: "Low-impact autocapture", description: "Optionally observe SPA navigation and global errors without scanning the DOM or changing application components." },
+];
+
+const englishDeliverySteps = [
+  { icon: Radio, label: "Collect", detail: "Business events enter one lifecycle" },
+  { icon: Boxes, label: "Process", detail: "Plugins redact, sample and enrich context" },
+  { icon: Database, label: "Persist", detail: "Queue first, then read an ordered batch" },
+  { icon: Network, label: "Deliver", detail: "Encode, compress and call the transport" },
+];
+
 function MobileMenu({ onClose }: { onClose: () => void }) {
+  const locale = useLocale();
+  const en = locale === "en";
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -54,17 +71,18 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#070b0d]/96 p-5 backdrop-blur-xl md:hidden" role="dialog" aria-modal="true" aria-label="移动端导航">
+    <div className="fixed inset-0 z-50 bg-[#070b0d]/96 p-5 backdrop-blur-xl md:hidden" role="dialog" aria-modal="true" aria-label={en ? "Mobile navigation" : "移动端导航"}>
       <div className="flex items-center justify-between">
         <strong>Tracelet</strong>
-        <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="关闭导航" autoFocus><X className="size-5" /></Button>
+        <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label={en ? "Close navigation" : "关闭导航"} autoFocus><X className="size-5" /></Button>
       </div>
-      <nav className="mt-12 grid gap-3 text-2xl" aria-label="移动端导航">
-        <a href="#architecture" onClick={onClose}>架构</a>
-        <a href="#docs" onClick={onClose}>文档</a>
-        <a href="#delivery" onClick={onClose}>可靠投递</a>
-        <a href="#manual" onClick={onClose}>用户手册</a>
+      <nav className="mt-12 grid gap-3 text-2xl" aria-label={en ? "Mobile navigation" : "移动端导航"}>
+        <a href="#architecture" onClick={onClose}>{en ? "Architecture" : "架构"}</a>
+        <a href="#docs" onClick={onClose}>{en ? "Docs" : "文档"}</a>
+        <a href="#delivery" onClick={onClose}>{en ? "Reliable delivery" : "可靠投递"}</a>
+        <a href="#manual" onClick={onClose}>{en ? "User guide" : "用户手册"}</a>
         <a href="#api-reference" onClick={onClose}>API Reference</a>
+        <a href={localizedPath(en ? "zh-CN" : "en")}>{en ? "中文" : "English"}</a>
         <a href="https://github.com/shishikami/Tracelet">GitHub</a>
       </nav>
     </div>
@@ -72,7 +90,11 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
 }
 
 export function App() {
+  const locale = useLocale();
+  const en = locale === "en";
   const [menuOpen, setMenuOpen] = useState(false);
+  const localizedFeatures = en ? englishFeatures : features;
+  const localizedDeliverySteps = en ? englishDeliverySteps : deliverySteps;
 
   return (
     <div id="top" className="min-h-screen overflow-hidden bg-[#070b0d] text-slate-100">
@@ -86,14 +108,14 @@ export function App() {
           <div className="relative mx-auto max-w-5xl text-center">
             <Badge><span className="mr-2 size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />Open source · Browser SDK</Badge>
             <h1 className="mt-8 text-balance text-5xl font-semibold tracking-[-0.045em] sm:text-7xl lg:text-8xl">
-              每一个事件，都有迹可循。
+              {en ? "Every event, clearly accounted for." : "每一个事件，都有迹可循。"}
             </h1>
             <p className="mx-auto mt-7 max-w-2xl text-pretty text-lg leading-8 text-slate-400 sm:text-xl">
-              Tracelet 将业务埋点与后端实现解耦，以稳定、可替换的管线完成采集、持久化、编码和投递。
+              {en ? "Tracelet decouples product instrumentation from your backend through a stable, replaceable pipeline for collection, persistence, encoding and delivery." : "Tracelet 将业务埋点与后端实现解耦，以稳定、可替换的管线完成采集、持久化、编码和投递。"}
             </p>
             <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg"><a href="#docs">五分钟接入 <ArrowRight className="size-4" /></a></Button>
-              <Button asChild size="lg" variant="outline"><a href="https://github.com/shishikami/Tracelet" target="_blank" rel="noreferrer"><Code2 className="size-4" />查看源码</a></Button>
+              <Button asChild size="lg"><a href="#docs">{en ? "Start in five minutes" : "五分钟接入"} <ArrowRight className="size-4" /></a></Button>
+              <Button asChild size="lg" variant="outline"><a href="https://github.com/shishikami/Tracelet" target="_blank" rel="noreferrer"><Code2 className="size-4" />{en ? "View source" : "查看源码"}</a></Button>
             </div>
             <div className="mx-auto mt-14 flex max-w-xl items-center justify-between gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/25 p-3 text-xs text-slate-400 shadow-2xl shadow-emerald-950/20 sm:text-sm">
               {[
@@ -109,11 +131,11 @@ export function App() {
         <section id="architecture" className="mx-auto max-w-7xl px-5 py-24 lg:px-8">
           <div className="max-w-2xl">
             <span className="section-kicker">01 / Architecture</span>
-            <h2>SDK Core 只负责稳定的事情</h2>
-            <p className="section-copy">业务依赖公开 API，核心依赖抽象契约，具体平台能力停留在 Adapter 边界。</p>
+            <h2>{en ? "Keep the SDK core focused on stable contracts" : "SDK Core 只负责稳定的事情"}</h2>
+            <p className="section-copy">{en ? "Applications depend on the public API, the core depends on abstract contracts, and platform-specific behavior stays behind adapters." : "业务依赖公开 API，核心依赖抽象契约，具体平台能力停留在 Adapter 边界。"}</p>
           </div>
           <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {features.map(({ icon: Icon, title, description }) => (
+            {localizedFeatures.map(({ icon: Icon, title, description }) => (
               <Card key={title} className="group transition-colors hover:border-emerald-300/25 hover:bg-emerald-300/[0.035]">
                 <CardHeader><span className="grid size-11 place-items-center rounded-xl border border-white/10 bg-white/5 text-emerald-300"><Icon className="size-5" /></span><h3>{title}</h3></CardHeader>
                 <CardContent><p className="text-sm leading-7 text-slate-400">{description}</p></CardContent>
@@ -126,8 +148,8 @@ export function App() {
           <div className="mx-auto grid max-w-7xl gap-12 px-5 py-24 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
             <div>
               <span className="section-kicker">02 / Quickstart</span>
-              <h2>通过 npm 接入，五分钟开始采集</h2>
-              <p className="section-copy">GitHub 用于协作与阅读源码；应用项目通过 npm 安装正式发布的 SDK、锁定版本并获得完整 TypeScript 类型。</p>
+              <h2>{en ? "Install from npm and start collecting in five minutes" : "通过 npm 接入，五分钟开始采集"}</h2>
+              <p className="section-copy">{en ? "Use GitHub for collaboration and source review; install the released SDK from npm to pin versions and receive complete TypeScript types." : "GitHub 用于协作与阅读源码；应用项目通过 npm 安装正式发布的 SDK、锁定版本并获得完整 TypeScript 类型。"}</p>
               <div className="mt-8 flex flex-wrap gap-2">
                 <Badge className="border-white/10 bg-white/5 text-slate-300"><PackageCheck className="mr-1.5 size-3.5" />ES Modules</Badge>
                 <Badge className="border-white/10 bg-white/5 text-slate-300"><LockKeyhole className="mr-1.5 size-3.5" />Consent first</Badge>
@@ -144,12 +166,12 @@ export function App() {
         <section id="delivery" className="mx-auto max-w-7xl px-5 py-24 lg:px-8">
           <div className="max-w-2xl">
             <span className="section-kicker">03 / Delivery</span>
-            <h2>浏览器里可解释的可靠投递</h2>
-            <p className="section-copy">Tracelet 采用客户端至少一次投递，并建议服务端基于 eventId 幂等去重。</p>
+            <h2>{en ? "Reliable delivery you can reason about" : "浏览器里可解释的可靠投递"}</h2>
+            <p className="section-copy">{en ? "Tracelet provides at-least-once client delivery; collectors should deduplicate idempotently using eventId." : "Tracelet 采用客户端至少一次投递，并建议服务端基于 eventId 幂等去重。"}</p>
           </div>
           <div className="relative mt-14 grid gap-4 lg:grid-cols-4">
             <div className="absolute left-[12.5%] right-[12.5%] top-8 hidden h-px bg-gradient-to-r from-emerald-400/10 via-emerald-300/60 to-emerald-400/10 lg:block" />
-            {deliverySteps.map(({ icon: Icon, label, detail }, index) => (
+            {localizedDeliverySteps.map(({ icon: Icon, label, detail }, index) => (
               <div key={label} className="relative rounded-2xl border border-white/8 bg-[#090e10] p-6">
                 <span className="grid size-16 place-items-center rounded-full border border-emerald-300/20 bg-[#07100d] text-emerald-300"><Icon className="size-6" /></span>
                 <small className="mt-7 block font-mono text-emerald-400/70">0{index + 1}</small>

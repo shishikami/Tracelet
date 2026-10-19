@@ -12,6 +12,7 @@ Tracelet 的生产队列治理与可发现性增强版本。
 - `maxBatchBytes` 编码后批次字节上限，适用于 JSON、Protobuf 等任意 Codec。
 - 事件序列化失败、事件过大和编码后批次过大的诊断原因。
 - 官网 canonical、Open Graph、结构化数据、robots、sitemap 和面向 AI 工具的文本入口。
+- 中文 `/` 与英文 `/en/` 双语入口，以及本地化导航、手册、API Reference、canonical 和 `hreflang`。
 
 ## 0.1.2 - 2026-10-19
 

@@ -2,6 +2,7 @@ import { Check, Copy } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/i18n";
 
 interface CodeBlockProps {
   code: string;
@@ -35,6 +36,7 @@ export function CodeBlock({
   filename,
   showLineNumbers = true,
 }: CodeBlockProps) {
+  const en = useLocale() === "en";
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
   const normalizedLanguage = languageAliases[language] ?? language;
@@ -70,10 +72,10 @@ export function CodeBlock({
           variant="ghost"
           size="sm"
           onClick={copyCode}
-          aria-label={copied ? "代码已复制" : copyFailed ? "复制代码失败，请重试" : "复制代码"}
+          aria-label={copied ? (en ? "Code copied" : "代码已复制") : copyFailed ? (en ? "Copy failed, try again" : "复制代码失败，请重试") : (en ? "Copy code" : "复制代码")}
         >
           {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-          {copied ? "已复制" : copyFailed ? "复制失败" : "复制"}
+          {copied ? (en ? "Copied" : "已复制") : copyFailed ? (en ? "Failed" : "复制失败") : (en ? "Copy" : "复制")}
         </Button>
       </div>
       <Highlight theme={themes.oneDark} code={code} language={normalizedLanguage}>
@@ -81,7 +83,7 @@ export function CodeBlock({
           <pre
             className={`${className} overflow-x-auto py-5 text-[13px] leading-6 sm:text-sm sm:leading-7`}
             style={{ ...style, background: "transparent" }}
-            aria-label={`${languageLabel} 代码示例`}
+            aria-label={en ? `${languageLabel} code example` : `${languageLabel} 代码示例`}
           >
             <code className="block min-w-max">
               {tokens.map((line, lineIndex) => (
@@ -108,7 +110,7 @@ export function CodeBlock({
         )}
       </Highlight>
       <span className="sr-only" role="status" aria-live="polite">
-        {copied ? "代码已复制到剪贴板" : copyFailed ? "复制失败" : ""}
+        {copied ? (en ? "Code copied to clipboard" : "代码已复制到剪贴板") : copyFailed ? (en ? "Copy failed" : "复制失败") : ""}
       </span>
     </div>
   );

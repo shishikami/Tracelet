@@ -233,7 +233,7 @@ pnpm dev:docs
 pnpm build:docs
 ```
 
-官网源码位于 `website/`，构建产物位于 `out/`。首页包含 Quickstart，用户手册覆盖配置、Consent、服务端契约、投递语义和故障排查，并提供独立的公开 API Reference。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。
+官网源码位于 `website/`，构建产物位于 `out/`。中文入口为 `/`，英文入口为 `/en/`；两者共享组件，并具有独立的 canonical、`hreflang` 和搜索元数据。首页包含 Quickstart，用户手册覆盖配置、Consent、服务端契约、投递语义和故障排查，并提供独立的公开 API Reference。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。框架演进判断见 [docs/website-framework.md](./docs/website-framework.md)。
 
 ## 仓库结构
 

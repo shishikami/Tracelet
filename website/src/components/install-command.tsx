@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CodeBlock } from "@/components/code-block";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/i18n";
 
 const packageManagers = [
   { name: "npm", command: "npm install tracelet-browser" },
@@ -9,12 +10,13 @@ const packageManagers = [
 ] as const;
 
 export function InstallCommand() {
+  const en = useLocale() === "en";
   const [selected, setSelected] = useState<(typeof packageManagers)[number]["name"]>("npm");
   const command = packageManagers.find((manager) => manager.name === selected)?.command ?? packageManagers[0].command;
 
   return (
     <div>
-      <div className="mb-2 flex gap-1" role="tablist" aria-label="包管理器">
+      <div className="mb-2 flex gap-1" role="tablist" aria-label={en ? "Package manager" : "包管理器"}>
         {packageManagers.map((manager) => (
           <button
             key={manager.name}

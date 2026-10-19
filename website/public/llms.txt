@@ -7,7 +7,8 @@ Use Tracelet when an application needs typed events, consent-aware collection, a
 ## Primary resources
 
 - [Complete product and API context](https://tracelet-opal.vercel.app/llms-full.txt)
-- [Documentation](https://tracelet-opal.vercel.app/)
+- [English documentation](https://tracelet-opal.vercel.app/en/)
+- [简体中文文档](https://tracelet-opal.vercel.app/)
 - [Source code](https://github.com/shishikami/Tracelet)
 - [npm package](https://www.npmjs.com/package/tracelet-browser)
 - [Changelog](https://github.com/shishikami/Tracelet/blob/main/CHANGELOG.md)

@@ -1,4 +1,5 @@
 import { Braces, Database, Network, Puzzle } from "lucide-react";
+import { useLocale } from "@/i18n";
 
 const methods = [
   ["init()", "Promise<void>", "初始化插件、页面生命周期监听和定时 Flush；重复调用安全。"],
@@ -41,6 +42,36 @@ const diagnostics = [
   "sdk_shutdown",
 ] as const;
 
+const englishMethods = [
+  ["init()", "Promise<void>", "Initializes plugins, lifecycle listeners and scheduled flushes; safe to call repeatedly."],
+  ["track(name, properties, options?)", "Promise<void>", "Records a typed product event and initializes the client when necessary."],
+  ["page(name, properties?)", "Promise<void>", "Records a page event for page or route semantics."],
+  ["identify(userId, traits?)", "Promise<void>", "Associates a signed-in user and records an $identify event."],
+  ["getConsent()", "ConsentState", "Reads the current in-memory consent state."],
+  ["setConsent(state)", "Promise<void>", "Updates consent; denied clears the queue and identity by default."],
+  ["reset()", "void", "Clears the user association and rotates anonymous and session IDs."],
+  ["flush(reason?)", "Promise<void>", "Immediately attempts one batch; concurrent calls on one instance are coalesced."],
+  ["shutdown()", "Promise<void>", "Performs a final flush, removes listeners and tears down plugins in reverse order."],
+] as const;
+
+const englishAdapters = [
+  ["HttpTransport", "Transport", "POSTs encoded batches with timeout, Retry-After and keepalive support."],
+  ["ConsoleTransport", "Transport", "Writes encoded batches to the console for local development."],
+  ["IndexedDbEventStorage", "EventStorage", "Persistent browser FIFO queue recommended for production."],
+  ["MemoryEventStorage", "EventStorage", "Non-persistent queue suitable for tests."],
+  ["BrowserLocalStorage", "KeyValueStorage", "Persists identity and falls back to memory when unavailable."],
+  ["JsonCodec", "Codec", "Default JSON EventBatch encoder."],
+  ["ProtobufCodec", "Codec", "Accepts externally generated Protobuf encoding without coupling the core to a runtime."],
+  ["NoCompression", "Compression", "Default pass-through compression strategy."],
+  ["GzipCompression", "Compression", "Produces gzip with the browser CompressionStream API."],
+] as const;
+
+const englishPlugins = [
+  ["createAutoCapturePlugin(options)", "Observes SPA navigation, window.error and unhandledrejection."],
+  ["redactPlugin(blockedKeys)", "Removes selected top-level properties before persistence."],
+  ["samplingPlugin(rates)", "Applies a client sampling rate from 0 to 1 per event name."],
+] as const;
+
 function ReferenceTable({
   columns,
   rows,
@@ -71,31 +102,32 @@ function ReferenceTable({
 }
 
 export function ApiReference() {
+  const en = useLocale() === "en";
   return (
     <section id="api-reference" className="border-t border-white/8">
       <div className="mx-auto max-w-7xl px-5 py-24 lg:px-8">
         <div className="max-w-3xl">
           <span className="section-kicker">05 / API Reference</span>
-          <h2>公开 API 快速查询</h2>
-          <p className="section-copy">这里列出应用代码通常会直接使用的实例方法、内置 Adapter、插件和诊断事件。所有入口均从 <code>tracelet-browser</code> 根包导出。</p>
+          <h2>{en ? "Public API at a glance" : "公开 API 快速查询"}</h2>
+          <p className="section-copy">{en ? <>Methods, built-in adapters, plugins and diagnostics commonly used by application code. Everything is exported from the <code>tracelet-browser</code> package root.</> : <>这里列出应用代码通常会直接使用的实例方法、内置 Adapter、插件和诊断事件。所有入口均从 <code>tracelet-browser</code> 根包导出。</>}</p>
         </div>
 
         <div className="mt-14 space-y-16">
           <article id="api-client">
-            <div className="manual-heading"><Braces className="size-5" /><h3>Analytics 实例方法</h3></div>
-            <ReferenceTable columns={["方法", "返回值", "行为"]} rows={methods} />
+            <div className="manual-heading"><Braces className="size-5" /><h3>{en ? "Analytics instance methods" : "Analytics 实例方法"}</h3></div>
+            <ReferenceTable columns={en ? ["Method", "Returns", "Behavior"] : ["方法", "返回值", "行为"]} rows={en ? englishMethods : methods} />
           </article>
 
           <article id="api-adapters">
-            <div className="manual-heading"><Database className="size-5" /><h3>内置 Adapter</h3></div>
-            <ReferenceTable columns={["导出", "契约", "用途"]} rows={adapters} />
+            <div className="manual-heading"><Database className="size-5" /><h3>{en ? "Built-in adapters" : "内置 Adapter"}</h3></div>
+            <ReferenceTable columns={en ? ["Export", "Contract", "Purpose"] : ["导出", "契约", "用途"]} rows={en ? englishAdapters : adapters} />
           </article>
 
           <div className="grid gap-8 lg:grid-cols-2">
             <article id="api-plugins">
-              <div className="manual-heading"><Puzzle className="size-5" /><h3>内置插件</h3></div>
+              <div className="manual-heading"><Puzzle className="size-5" /><h3>{en ? "Built-in plugins" : "内置插件"}</h3></div>
               <div className="mt-5 divide-y divide-white/8 rounded-xl border border-white/10 bg-black/15">
-                {plugins.map(([name, description]) => (
+                {(en ? englishPlugins : plugins).map(([name, description]) => (
                   <div key={name} className="p-5">
                     <code className="text-sm text-emerald-300">{name}</code>
                     <p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>
@@ -106,7 +138,7 @@ export function ApiReference() {
 
             <article id="api-diagnostics">
               <div className="manual-heading"><Network className="size-5" /><h3>DiagnosticEvent</h3></div>
-              <p className="manual-copy">通过 <code>onDiagnostic</code> 接收，不会产生新的业务埋点。</p>
+              <p className="manual-copy">{en ? <>Received through <code>onDiagnostic</code>; never creates another product event.</> : <>通过 <code>onDiagnostic</code> 接收，不会产生新的业务埋点。</>}</p>
               <ul className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {diagnostics.map((event) => (
                   <li key={event} className="rounded-lg border border-white/8 bg-black/15 px-4 py-3 font-mono text-xs text-slate-300">{event}</li>
