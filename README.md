@@ -137,6 +137,7 @@ await analytics.setConsent("denied");
 ## 可靠投递
 
 - `IndexedDbEventStorage` 按写入顺序持久化未发送事件。
+- 单事件默认限制为 64 KiB，编码后单批次默认限制为 256 KiB，可通过 `maxEventBytes` 和 `maxBatchBytes` 调整。
 - `visibilitychange` 和 `pagehide` 会触发最后一次 Flush。
 - Web Locks API 会协调同源多 Tab 的共享队列发送，避免并发 Flush 重复读取同一批事件。
 - Session 默认在连续 30 分钟无事件后自动续期，可通过 `sessionTimeoutMs` 调整。
@@ -183,7 +184,7 @@ const analytics = createAnalytics({
 
 - 默认队列仍是内存存储；浏览器生产环境应显式使用 `IndexedDbEventStorage`。
 - gzip 使用浏览器原生 `CompressionStream`，不支持时不会自动降级。
-- 尚未实现多 Transport 路由和按编码后字节数拆分批次。
+- 尚未实现多 Transport 路由。
 - 自动采集暂不包含点击、输入和 DOM 内容采集；这是有意的隐私与稳定性边界。
 - `properties` 和 `context` 在示例 Protobuf 中以 JSON bytes 保存，优先保持通用性；稳定后可以逐步强类型化。
 
@@ -292,10 +293,9 @@ npm publish
 
 ## Roadmap
 
-- 按编码后字节数拆分批次
 - 浏览器测试覆盖 pagehide、gzip 和异常恢复
 - 多 Transport 路由与条件投递
-- 队列容量和存储配额诊断
+- 存储配额估算与 IndexedDB 配额诊断
 - 文档搜索和框架适配示例
 
 版本变化见 [CHANGELOG.md](./CHANGELOG.md)。

@@ -2,6 +2,17 @@
 
 本项目的所有重要变更都会记录在此文件中。
 
+## 0.2.0 - Unreleased
+
+Tracelet 的生产队列治理与可发现性增强版本。
+
+### Added
+
+- `maxEventBytes` 单事件字节上限，避免异常 Payload 占满本地队列。
+- `maxBatchBytes` 编码后批次字节上限，适用于 JSON、Protobuf 等任意 Codec。
+- 事件序列化失败、事件过大和编码后批次过大的诊断原因。
+- 官网 canonical、Open Graph、结构化数据、robots、sitemap 和面向 AI 工具的文本入口。
+
 ## 0.1.2 - 2026-10-19
 
 Tracelet 的可靠性和用户手册增强版本。

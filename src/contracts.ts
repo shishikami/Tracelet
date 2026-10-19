@@ -73,7 +73,17 @@ export interface AnalyticsPlugin {
 export type DiagnosticEvent =
   | { type: "sdk_initialized" }
   | { type: "event_enqueued"; eventId: string; eventName: string; queueSize: number }
-  | { type: "event_dropped"; eventName: string; reason: "consent" | "plugin" | "queue-limit" }
+  | {
+      type: "event_dropped";
+      eventName: string;
+      reason:
+        | "consent"
+        | "plugin"
+        | "queue-limit"
+        | "serialization"
+        | "event-too-large"
+        | "batch-byte-limit";
+    }
   | { type: "flush_started"; eventCount: number; reason: TransportContext["reason"] }
   | { type: "flush_succeeded"; eventCount: number; status?: number }
   | { type: "flush_failed"; eventCount: number; retryable: boolean; status?: number }

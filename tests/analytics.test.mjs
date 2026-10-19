@@ -182,3 +182,88 @@ test("rolls back initialized plugins when a later setup fails", async () => {
   await assert.rejects(() => sdk.init(), /Plugin setup failed/);
   assert.equal(teardownCalls, 1);
 });
+
+test("drops events that cannot be serialized or exceed the event byte limit", async () => {
+  const storage = new MemoryEventStorage();
+  const dropped = [];
+  const sdk = createAnalytics({
+    appId: "test",
+    eventStorage: storage,
+    maxEventBytes: 600,
+    pageLifecycle: false,
+    onDiagnostic(event) {
+      if (event.type === "event_dropped") dropped.push(event.reason);
+    },
+    transport: { name: "test", async send() { return { success: true }; } },
+  });
+
+  const circular = {};
+  circular.self = circular;
+  await sdk.track("circular", circular);
+  await sdk.track("oversized", { value: "x".repeat(2_000) });
+
+  assert.equal(await storage.size(), 0);
+  assert.deepEqual(dropped, ["serialization", "event-too-large"]);
+  await sdk.shutdown();
+});
+
+test("splits flushes by encoded byte size without reordering events", async () => {
+  const storage = new MemoryEventStorage();
+  const delivered = [];
+  const sdk = createAnalytics({
+    appId: "test",
+    eventStorage: storage,
+    maxBatchBytes: 25,
+    pageLifecycle: false,
+    codec: {
+      name: "sized",
+      contentType: "application/octet-stream",
+      async encode(batch) { return new Uint8Array(batch.events.length * 10); },
+    },
+    transport: {
+      name: "capture",
+      async send(batch) {
+        delivered.push([...batch.eventIds]);
+        return { success: true };
+      },
+    },
+  });
+
+  await sdk.track("first", {});
+  await sdk.track("second", {});
+  await sdk.track("third", {});
+  await sdk.flush();
+  assert.deepEqual(delivered[0].length, 2);
+  assert.equal(await storage.size(), 1);
+  await sdk.flush();
+  assert.deepEqual(delivered.flat().length, 3);
+  assert.equal(await storage.size(), 0);
+  await sdk.shutdown();
+});
+
+test("drops an event when its codec output cannot fit in an empty batch", async () => {
+  const storage = new MemoryEventStorage();
+  const dropped = [];
+  const sdk = createAnalytics({
+    appId: "test",
+    eventStorage: storage,
+    maxBatchBytes: 5,
+    pageLifecycle: false,
+    codec: {
+      name: "oversized",
+      contentType: "application/octet-stream",
+      async encode() { return new Uint8Array(10); },
+    },
+    onDiagnostic(event) {
+      if (event.type === "event_dropped") dropped.push(event.reason);
+    },
+    transport: { name: "test", async send() { return { success: true }; } },
+  });
+
+  await sdk.track("cannot_fit", {});
+  await sdk.flush();
+
+  assert.equal(await storage.size(), 0);
+  assert.deepEqual(dropped, ["batch-byte-limit"]);
+  await sdk.shutdown();
+});

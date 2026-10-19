@@ -1,6 +1,6 @@
 {
   "name": "tracelet-browser",
-  "version": "0.1.2",
+  "version": "0.2.0-dev.0",
   "packageManager": "pnpm@10.18.3",
   "private": false,
   "type": "module",
@@ -35,11 +35,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:examples": "tsc -p tsconfig.examples.json",
     "typecheck:docs": "pnpm --dir website typecheck",
-    "check": "pnpm version:check && pnpm typecheck && pnpm typecheck:examples && pnpm typecheck:docs && pnpm test && pnpm smoke:package && pnpm build:docs",
+    "check": "pnpm version:check && pnpm typecheck && pnpm typecheck:examples && pnpm typecheck:docs && pnpm test && pnpm smoke:package && pnpm build:docs && pnpm seo:check",
     "test": "pnpm build && node --test tests/*.test.mjs",
     "test:browser": "playwright test",
     "test:browser:install": "playwright install chromium firefox webkit",
     "smoke:package": "node scripts/package-smoke.mjs",
+    "seo:check": "node scripts/seo-check.mjs",
     "prepack": "pnpm build",
     "pack:check": "npm pack --dry-run",
     "local:server": "node scripts/local-server.mjs"

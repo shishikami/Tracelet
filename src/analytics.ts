@@ -39,7 +39,11 @@ export interface AnalyticsOptions {
   plugins?: AnalyticsPlugin[];
   flushIntervalMs?: number;
   maxBatchSize?: number;
+  /** Maximum encoded bytes sent in one batch. Defaults to 256 KiB. */
+  maxBatchBytes?: number;
   maxQueueSize?: number;
+  /** Maximum JSON byte size of one processed event. Defaults to 64 KiB. */
+  maxEventBytes?: number;
   deliveryLock?: DeliveryLock;
   /** Idle time after which the next event starts a new session. Defaults to 30 minutes. */
   sessionTimeoutMs?: number;
@@ -215,6 +219,18 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
       return;
     }
 
+    let eventBytes: number;
+    try {
+      eventBytes = byteLength(JSON.stringify(event));
+    } catch {
+      this.emit({ type: "event_dropped", eventName: name, reason: "serialization" });
+      return;
+    }
+    if (eventBytes > (this.options.maxEventBytes ?? 64 * 1_024)) {
+      this.emit({ type: "event_dropped", eventName: name, reason: "event-too-large" });
+      return;
+    }
+
     if (await this.eventStorage.size() >= (this.options.maxQueueSize ?? 2_000)) {
       const oldest = await this.eventStorage.peek(1);
       if (oldest[0]) {
@@ -242,16 +258,11 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     let nextDelayMs: number | undefined;
     let eventCount = 0;
     try {
-      const events = await this.eventStorage.peek(this.options.maxBatchSize ?? 30);
-      if (events.length === 0) return;
+      const selected = await this.selectEncodedBatch();
+      if (!selected) return;
+      const { events, encoded } = selected;
       eventCount = events.length;
       this.emit({ type: "flush_started", eventCount: events.length, reason });
-
-      const encoded = await this.codec.encode({
-        protocolVersion: this.options.protocolVersion ?? "1",
-        sentAt: new Date().toISOString(),
-        events,
-      });
       const body = await this.compression.compress(encoded);
       const eventIds = events.map((event) => event.eventId);
 
@@ -302,6 +313,40 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     } finally {
       if (this.initialized) this.scheduleFlush(nextDelayMs);
     }
+  }
+
+  private async selectEncodedBatch(): Promise<{
+    events: AnalyticsEvent[];
+    encoded: string | Uint8Array;
+  } | undefined> {
+    let candidates = await this.eventStorage.peek(this.options.maxBatchSize ?? 30);
+    const byteLimit = this.options.maxBatchBytes ?? 256 * 1_024;
+
+    while (candidates.length > 0) {
+      for (let count = candidates.length; count >= 1; count -= 1) {
+        const events = candidates.slice(0, count);
+        const encoded = await this.encodeBatch(events);
+        if (byteLength(encoded) <= byteLimit) {
+          return { events, encoded };
+        }
+      }
+
+      const oversized = candidates[0];
+      if (!oversized) return undefined;
+      await this.eventStorage.remove([oversized.eventId]);
+      this.emit({ type: "event_dropped", eventName: oversized.name, reason: "batch-byte-limit" });
+      candidates = await this.eventStorage.peek(this.options.maxBatchSize ?? 30);
+    }
+
+    return undefined;
+  }
+
+  private encodeBatch(events: AnalyticsEvent[]): Promise<string | Uint8Array> {
+    return this.codec.encode({
+      protocolVersion: this.options.protocolVersion ?? "1",
+      sentAt: new Date().toISOString(),
+      events,
+    });
   }
 
   private scheduleFlush(delayMs = this.options.flushIntervalMs ?? 5_000): void {
@@ -383,6 +428,10 @@ function sanitizeUrl(value: string): string {
   } catch {
     return value.split(/[?#]/, 1)[0] ?? value;
   }
+}
+
+function byteLength(value: string | Uint8Array): number {
+  return typeof value === "string" ? new TextEncoder().encode(value).byteLength : value.byteLength;
 }
 
 /** Create a typed Analytics client without coupling it to a UI framework. */

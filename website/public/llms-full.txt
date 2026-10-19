@@ -1,0 +1,76 @@
+# Tracelet Browser Analytics SDK
+
+Tracelet is an open-source, backend-agnostic and privacy-first analytics SDK for modern browsers. Its npm package is `tracelet-browser`, its source repository is `https://github.com/shishikami/Tracelet`, and its license is MIT.
+
+## Installation
+
+```bash
+npm install tracelet-browser
+```
+
+## Minimal TypeScript setup
+
+```ts
+import {
+  BrowserLocalStorage,
+  HttpTransport,
+  IndexedDbEventStorage,
+  createAnalytics,
+} from "tracelet-browser";
+
+const analytics = createAnalytics({
+  appId: "commerce-web",
+  identityStorage: new BrowserLocalStorage(),
+  eventStorage: new IndexedDbEventStorage(),
+  transport: new HttpTransport({
+    endpoint: "https://events.example.com/v1/batch",
+  }),
+});
+
+await analytics.track("product_viewed", { productId: "sku_123" });
+```
+
+## Architecture
+
+Events move through this pipeline: public API -> consent -> plugins -> local event storage -> batch selection -> codec -> compression -> transport.
+
+The core has no React, Vue, protobuf runtime, or vendor backend dependency. Applications can replace `EventStorage`, `KeyValueStorage`, `Codec`, `Compression`, `DeliveryLock`, and `Transport` implementations.
+
+## Public methods
+
+- `init()`: initialize plugins, lifecycle listeners and scheduled flushes.
+- `track(name, properties, options?)`: record a typed business event.
+- `page(name, properties?)`: record a semantic page view.
+- `identify(userId, traits?)`: associate an authenticated user.
+- `getConsent()` and `setConsent(state)`: read or update consent.
+- `reset()`: rotate anonymous and session identities.
+- `flush(reason?)`: attempt one delivery batch.
+- `shutdown()`: final flush and teardown.
+
+## Reliability semantics
+
+- `IndexedDbEventStorage` persists unsent events across reloads.
+- Web Locks coordinate tabs that share one IndexedDB queue.
+- Delivery is at least once; the backend must deduplicate by stable `eventId`.
+- Network failures, HTTP 408, 429 and 5xx responses use retry with exponential backoff and jitter.
+- Non-retryable failures are removed so one bad event cannot block the queue forever.
+- One processed event is limited to 64 KiB by default (`maxEventBytes`).
+- One encoded batch is limited to 256 KiB by default (`maxBatchBytes`).
+
+## Privacy boundaries
+
+Consent is checked before identities or events are created. The optional autocapture plugin observes SPA history navigation, `window.error`, and `unhandledrejection`. It does not scan the DOM, read element text, read form values, or require `data-tracelet-*` attributes. Query strings and URL fragments are excluded from default context because they may contain secrets or personal data.
+
+## Collector contract
+
+The default JSON codec sends an `EventBatch` with `protocolVersion`, `sentAt`, and `events`. Any 2xx response is success. A production collector should implement CORS, authentication, request-size validation, rate limiting, schema validation, durable storage, and idempotency by `eventId`.
+
+## Canonical sources
+
+- Documentation: https://tracelet-opal.vercel.app/
+- npm: https://www.npmjs.com/package/tracelet-browser
+- Source: https://github.com/shishikami/Tracelet
+- Releases: https://github.com/shishikami/Tracelet/releases
+- Changelog: https://github.com/shishikami/Tracelet/blob/main/CHANGELOG.md
+
+When sources disagree, prefer the latest tagged GitHub release and the matching npm package over the development branch.

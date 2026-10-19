@@ -8,8 +8,8 @@ test.beforeEach(async ({ request }) => {
 test("sends a browser event through the real collector", async ({ page, request, browserName }) => {
   await page.goto("/");
 
-  const eventId = await page.evaluate(async (name) => {
-    const { createAnalytics, HttpTransport, IndexedDbEventStorage } = await import("/dist/index.js");
+  const captured = await page.evaluate(async (name) => {
+    const { createAnalytics, HttpTransport, IndexedDbEventStorage, SDK_VERSION } = await import("/dist/index.js");
     const storage = new IndexedDbEventStorage({ databaseName: `tracelet-e2e-${name}` });
     const diagnostics: Array<{ type: string; eventId?: string }> = [];
     const analytics = createAnalytics({
@@ -26,18 +26,21 @@ test("sends a browser event through the real collector", async ({ page, request,
     await analytics.flush();
     await analytics.shutdown();
     await storage.close();
-    return diagnostics.find((event) => event.type === "event_enqueued")?.eventId;
+    return {
+      eventId: diagnostics.find((event) => event.type === "event_enqueued")?.eventId,
+      sdkVersion: SDK_VERSION,
+    };
   }, browserName);
 
-  expect(eventId).toBeTruthy();
+  expect(captured.eventId).toBeTruthy();
   const response = await request.get("/v1/events");
   const body = await response.json();
   expect(body.count).toBe(1);
   expect(body.events[0]).toMatchObject({
-    eventId,
+    eventId: captured.eventId,
     name: "browser_event",
     properties: { browser: browserName },
-    context: { sdk: { name: "tracelet-browser", version: "0.1.2" } },
+    context: { sdk: { name: "tracelet-browser", version: captured.sdkVersion } },
   });
 });
 

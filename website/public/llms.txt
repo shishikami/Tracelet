@@ -1,0 +1,21 @@
+# Tracelet
+
+> Tracelet is a backend-agnostic, privacy-first browser analytics SDK written in TypeScript.
+
+Use Tracelet when an application needs typed events, consent-aware collection, a persistent browser queue, retry semantics, and replaceable codecs, compression, storage, and transports.
+
+## Primary resources
+
+- [Complete product and API context](https://tracelet-opal.vercel.app/llms-full.txt)
+- [Documentation](https://tracelet-opal.vercel.app/)
+- [Source code](https://github.com/shishikami/Tracelet)
+- [npm package](https://www.npmjs.com/package/tracelet-browser)
+- [Changelog](https://github.com/shishikami/Tracelet/blob/main/CHANGELOG.md)
+
+## Important boundaries
+
+- Package name: `tracelet-browser`
+- License: MIT
+- The SDK is backend-agnostic and does not include a hosted analytics backend.
+- Autocapture observes SPA navigation and global errors; it does not scan DOM text, form values, or `data-*` attributes.
+- Delivery is at least once. Collectors must deduplicate by `eventId`.
