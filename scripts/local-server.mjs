@@ -217,6 +217,11 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && (url.pathname === "/en" || url.pathname === "/en/")) {
+    serveFile(response, "out/en/index.html");
+    return;
+  }
+
   if (request.method === "GET" && (url.pathname === "/lab" || url.pathname === "/lab/")) {
     serveFile(response, "examples/local-test.html");
     return;

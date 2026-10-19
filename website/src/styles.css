@@ -155,3 +155,8 @@ td {
     transition-duration: 0.01ms !important;
   }
 }
+
+dialog.docs-search-dialog::backdrop {
+  background: rgb(2 6 8 / 78%);
+  backdrop-filter: blur(10px);
+}

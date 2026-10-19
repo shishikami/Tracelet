@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "rootDir": ".",
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "paths": {
+      "tracelet-browser": ["./src/index.ts"],
+      "react": ["./website/node_modules/@types/react/index.d.ts"],
+      "react/jsx-runtime": ["./website/node_modules/@types/react/jsx-runtime.d.ts"],
+      "vue": ["./website/node_modules/vue/dist/vue.d.mts"]
+    }
+  },
+  "include": ["examples/frameworks/**/*.ts", "examples/frameworks/**/*.tsx", "src/**/*.ts"]
+}

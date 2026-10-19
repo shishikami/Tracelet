@@ -20,6 +20,8 @@ Tracelet 的生产队列治理与可发现性增强版本。
 - `HttpTransport` 支持自定义诊断名称，Flush 诊断事件会报告实际 Transport。
 - `getStorageEstimate()` 和 `estimateBrowserStorage()` 提供原点级浏览器存储容量估算。
 - IndexedDB 配额耗尽时安全丢弃当前事件，并报告 `storage_quota_exceeded` 与 `storage-quota` 诊断。
+- 官网中英文文档搜索，支持 `⌘/Ctrl + K`、键盘导航和章节直达。
+- React、Vue 与 Next.js 生命周期适配示例，并纳入独立 TypeScript 检查。
 
 ## 0.1.2 - 2026-10-19
 

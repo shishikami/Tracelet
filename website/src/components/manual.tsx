@@ -13,6 +13,9 @@ import {
 import { CodeBlock } from "@/components/code-block";
 import { Badge } from "@/components/ui/badge";
 import { useLocale } from "@/i18n";
+import reactFrameworkCode from "../../../examples/frameworks/react.tsx?raw";
+import vueFrameworkCode from "../../../examples/frameworks/vue.ts?raw";
+import nextFrameworkCode from "../../../examples/frameworks/nextjs-client.tsx?raw";
 
 const setupCode = `import {
   BrowserLocalStorage,
@@ -247,6 +250,7 @@ const manualNavigation = [
   ["多 Collector 路由", "manual-routing"],
   ["配置参考", "manual-options"],
   ["存储配额", "manual-storage"],
+  ["框架适配", "manual-frameworks"],
   ["服务端契约", "manual-collector"],
   ["诊断与上线", "manual-production"],
   ["故障排查", "manual-troubleshooting"],
@@ -294,7 +298,7 @@ const englishChecklist = [
 const englishNavigation = [
   ["Install and initialize", "manual-setup"], ["Core API", "manual-api"], ["Autocapture", "manual-autocapture"],
   ["Consent", "manual-consent"], ["Lifecycle", "manual-lifecycle"], ["Multi-collector routing", "manual-routing"], ["Options", "manual-options"],
-  ["Storage quota", "manual-storage"], ["Collector contract", "manual-collector"], ["Production checklist", "manual-production"], ["Troubleshooting", "manual-troubleshooting"],
+  ["Storage quota", "manual-storage"], ["Frameworks", "manual-frameworks"], ["Collector contract", "manual-collector"], ["Production checklist", "manual-production"], ["Troubleshooting", "manual-troubleshooting"],
 ] as const;
 
 const englishCodeComments: ReadonlyArray<readonly [string, string]> = [
@@ -416,15 +420,25 @@ export function Manual() {
               <div className="mt-6"><CodeBlock code={codeForLocale(storageEstimateCode, en)} filename="storage-health.ts" /></div>
             </article>
 
+            <article id="manual-frameworks">
+              <div className="manual-heading"><Plug className="size-5" /><h3>{en ? "9. Framework lifecycle adapters" : "9. 框架生命周期适配"}</h3></div>
+              <p className="manual-copy">{en ? <>Tracelet stays framework-independent. Create one singleton outside rendering, initialize it once at the application root, and keep SSR initialization behind a client boundary. Ordinary component cleanup should not shut down an application-wide singleton.</> : <>Tracelet 本身保持框架无关。请在渲染过程之外创建单例、在应用根部初始化一次，并在 SSR 框架中把初始化放到客户端边界之后。普通组件卸载不应关闭应用级单例。</>}</p>
+              <div className="mt-6 grid gap-6">
+                <div><h4 className="mb-3 text-sm font-medium text-slate-300">React</h4><CodeBlock code={reactFrameworkCode} filename="react.tsx" /></div>
+                <div><h4 className="mb-3 text-sm font-medium text-slate-300">Vue</h4><CodeBlock code={vueFrameworkCode} filename="vue.ts" /></div>
+                <div><h4 className="mb-3 text-sm font-medium text-slate-300">Next.js</h4><CodeBlock code={nextFrameworkCode} filename="nextjs-client.tsx" /></div>
+              </div>
+            </article>
+
             <article id="manual-collector">
-              <div className="manual-heading"><Server className="size-5" /><h3>{en ? "9. Collector contract" : "9. 服务端接收契约"}</h3></div>
+              <div className="manual-heading"><Server className="size-5" /><h3>{en ? "10. Collector contract" : "10. 服务端接收契约"}</h3></div>
               <p className="manual-copy">{en ? <>The default JSON codec sends an EventBatch. Any 2xx succeeds; 408, 429 and 5xx responses keep the queue for retry. The collector should authenticate, validate size and deduplicate by <code>eventId</code>.</> : <>默认 JSON Codec 提交一个 EventBatch。任意 2xx 表示成功；408、429 和 5xx 会保留队列并重试。服务端应鉴权、校验大小，并按 <code>eventId</code> 幂等去重。</>}</p>
               <div className="mt-6"><CodeBlock code={collectorCode} language="http" filename="collector.http" /></div>
               <div className="mt-5 flex gap-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.04] p-4 text-sm leading-6 text-amber-100/80"><AlertTriangle className="mt-0.5 size-5 shrink-0" /><p>{en ? "Tracelet delivers at least once. A timeout may occur after the collector accepted a request, so deduplication is a correctness requirement—not an optional optimization." : "Tracelet 是至少一次投递。超时边界可能造成服务端已经接收、客户端仍然重试，因此去重不是可选优化。"}</p></div>
             </article>
 
             <article id="manual-production">
-              <div className="manual-heading"><CheckCircle2 className="size-5" /><h3>{en ? "10. Diagnostics and production checklist" : "10. 诊断与上线清单"}</h3></div>
+              <div className="manual-heading"><CheckCircle2 className="size-5" /><h3>{en ? "11. Diagnostics and production checklist" : "11. 诊断与上线清单"}</h3></div>
               <p className="manual-copy">{en ? <><code>onDiagnostic</code> observes SDK state without creating product events. Exercise network failures and 429 responses before production.</> : <><code>onDiagnostic</code> 观察 SDK 状态，但不会创建业务事件。建议先在测试环境模拟网络失败和 429，再投入生产。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(diagnosticCode, en)} filename="diagnostics.ts" /></div>
               <ul className="mt-6 grid gap-3 sm:grid-cols-2">

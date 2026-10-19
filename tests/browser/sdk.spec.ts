@@ -5,6 +5,28 @@ test.beforeEach(async ({ request }) => {
   expect(response.ok()).toBeTruthy();
 });
 
+test("searches localized documentation with keyboard navigation", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "搜索文档" }).click();
+  const chineseDialog = page.getByRole("dialog", { name: "搜索文档" });
+  await expect(chineseDialog).toBeVisible();
+  await chineseDialog.getByRole("searchbox", { name: "搜索关键词" }).fill("配额");
+  await chineseDialog.getByRole("link", { name: /浏览器存储配额/ }).click();
+  await expect(page).toHaveURL(/#manual-storage$/);
+  await expect(chineseDialog).not.toBeVisible();
+
+  await page.goto("/en");
+  await page.keyboard.press("Control+k");
+  const englishDialog = page.getByRole("dialog", { name: "Search documentation" });
+  await expect(englishDialog).toBeVisible();
+  const searchbox = englishDialog.getByRole("searchbox", { name: "Search query" });
+  await searchbox.fill("React");
+  await searchbox.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#manual-frameworks$/);
+  await expect(englishDialog).not.toBeVisible();
+});
+
 test("sends a browser event through the real collector", async ({ page, request, browserName }) => {
   await page.goto("/");
 

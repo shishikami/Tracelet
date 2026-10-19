@@ -174,6 +174,16 @@ if (estimate && (estimate.usageRatio ?? 0) >= 0.8) {
 
 完整示例见 `examples/browser.ts`；官网 Quickstart 来自 `examples/quickstart.ts`，并在 CI 中执行 TypeScript 类型检查。
 
+## 框架适配
+
+Tracelet 不要求框架 Wrapper。推荐在渲染过程之外创建一个应用级实例，并只把初始化连接到框架根生命周期：
+
+- React：根部渲染 `TraceletBootstrap`，避免在普通组件卸载时关闭全局单例。
+- Vue：在 `app.mount()` 前注册 `traceletPlugin`，组合式函数通过注入取得同一实例。
+- Next.js：从根布局渲染带 `"use client"` 的 `TraceletClient`，避免在 Server Component 中初始化浏览器能力。
+
+可运行代码位于 [`examples/frameworks`](./examples/frameworks)，详细边界见 [`docs/framework-integrations.md`](./docs/framework-integrations.md)。这些示例会在 CI 中由真实 React/Vue 类型检查。
+
 ## 多 Collector 条件路由
 
 `EventRouter` 会在 Codec 与 Compression 之前检查原始事件，并把每个事件交给第一个匹配的 Transport。未匹配事件必须进入 `fallback`，因此不会因规则遗漏永久阻塞队列：
@@ -279,7 +289,7 @@ pnpm dev:docs
 pnpm build:docs
 ```
 
-官网源码位于 `website/`，构建产物位于 `out/`。中文入口为 `/`，英文入口为 `/en`；两者共享组件，并具有独立的 canonical、`hreflang` 和搜索元数据。首页包含 Quickstart，用户手册覆盖配置、Consent、服务端契约、投递语义和故障排查，并提供独立的公开 API Reference。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。框架演进判断见 [docs/website-framework.md](./docs/website-framework.md)。
+官网源码位于 `website/`，构建产物位于 `out/`。中文入口为 `/`，英文入口为 `/en`；两者共享组件，并具有独立的 canonical、`hreflang` 和搜索元数据。首页包含 Quickstart，用户手册覆盖配置、Consent、服务端契约、投递语义和故障排查，并提供独立的公开 API Reference、`⌘/Ctrl + K` 中英文搜索和框架适配示例。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。框架演进判断见 [docs/website-framework.md](./docs/website-framework.md)。
 
 ## 仓库结构
 
@@ -339,6 +349,13 @@ npm publish
 
 ## Roadmap
 
-- 文档搜索和框架适配示例
+0.2.0 里程碑已完成：
+
+- [x] 浏览器测试覆盖 pagehide、gzip 和异常恢复
+- [x] 多 Transport 路由与条件投递
+- [x] 存储配额估算与 IndexedDB 配额诊断
+- [x] 文档搜索和框架适配示例
+
+后续方向将根据实际接入反馈与 Issue 排期。
 
 版本变化见 [CHANGELOG.md](./CHANGELOG.md)。
