@@ -134,6 +134,38 @@ const diagnosticCode = `const analytics = createAnalytics({
   },
 });`;
 
+const routingCode = `import {
+  EventRouter,
+  HttpTransport,
+  createAnalytics,
+} from "tracelet-browser";
+
+const productCollector = new HttpTransport({
+  name: "product-collector",
+  endpoint: "https://events.example.com/v1/batch",
+});
+
+const alertCollector = new HttpTransport({
+  name: "alert-collector",
+  endpoint: "https://alerts.example.com/v1/batch",
+});
+
+const analytics = createAnalytics({
+  appId: "commerce-web",
+  transport: new EventRouter({
+    // 规则按声明顺序匹配；每个事件只会进入一个 Transport。
+    routes: [{
+      name: "technical-errors",
+      match: (event) =>
+        event.name === "$error" ||
+        event.name === "$unhandled_rejection",
+      transport: alertCollector,
+    }],
+    // 未匹配事件必须有明确去向，避免队列永久阻塞。
+    fallback: productCollector,
+  }),
+});`;
+
 const collectorCode = `POST /v1/batch
 Content-Type: application/json
 X-Analytics-Event-Count: 2
@@ -155,7 +187,7 @@ HTTP/1.1 202 Accepted`;
 
 const options = [
   ["appId", "string", "—", "应用的稳定标识，必填"],
-  ["transport", "Transport", "—", "把编码后的批次发送到后端，必填"],
+  ["transport", "Transport | TransportResolver", "—", "向单个后端投递，或按事件选择多个 Transport；必填"],
   ["eventStorage", "EventStorage", "Memory", "未发送事件队列；生产环境推荐 IndexedDB"],
   ["identityStorage", "KeyValueStorage", "Memory", "匿名 ID、用户 ID 和 Session ID 的存储"],
   ["plugins", "AnalyticsPlugin[]", "[]", "自动采集、脱敏、采样等扩展"],
@@ -178,6 +210,7 @@ const troubleshooting = [
   ["自动页面事件没有出现", "确认已调用 init()，并启用了 createAutoCapturePlugin({ pageViews: true })。"],
   ["错误事件没有堆栈", "includeStack 默认为 false；确认隐私风险后才能显式开启。"],
   ["事件一直没有发送", "检查 Consent、Collector 地址、CSP connect-src，并观察 onDiagnostic 输出。"],
+  ["事件发往错误的 Collector", "EventRouter 使用第一条匹配规则；检查规则顺序，并查看 Flush 诊断事件中的 transport。"],
 ] as const;
 
 const productionChecklist = [
@@ -187,6 +220,7 @@ const productionChecklist = [
   "在测试环境观察 onDiagnostic 和失败重试",
   "确认 CSP 的 connect-src 允许 Collector 域名",
   "只在评估隐私风险后开启错误堆栈",
+  "为 EventRouter 配置可靠的 fallback，并让每个 Collector 按 eventId 去重",
 ] as const;
 
 const manualNavigation = [
@@ -195,6 +229,7 @@ const manualNavigation = [
   ["自动采集", "manual-autocapture"],
   ["Consent", "manual-consent"],
   ["生命周期", "manual-lifecycle"],
+  ["多 Collector 路由", "manual-routing"],
   ["配置参考", "manual-options"],
   ["服务端契约", "manual-collector"],
   ["诊断与上线", "manual-production"],
@@ -203,7 +238,7 @@ const manualNavigation = [
 
 const englishOptions = [
   ["appId", "string", "—", "Stable application identifier; required"],
-  ["transport", "Transport", "—", "Sends encoded batches to your collector; required"],
+  ["transport", "Transport | TransportResolver", "—", "Delivers to one backend or selects among multiple transports per event; required"],
   ["eventStorage", "EventStorage", "Memory", "Pending-event queue; use IndexedDB in production"],
   ["identityStorage", "KeyValueStorage", "Memory", "Stores anonymous, user and session identifiers"],
   ["plugins", "AnalyticsPlugin[]", "[]", "Autocapture, redaction, sampling and other extensions"],
@@ -226,6 +261,7 @@ const englishTroubleshooting = [
   ["Automatic page events are missing", "Confirm init() was called and createAutoCapturePlugin({ pageViews: true }) is enabled."],
   ["Error events do not include a stack", "includeStack defaults to false; enable it only after reviewing the privacy implications."],
   ["Events never get delivered", "Check consent, the collector URL and CSP connect-src, then inspect onDiagnostic output."],
+  ["Events reach the wrong collector", "EventRouter uses the first matching rule; check rule order and the transport field on flush diagnostics."],
 ] as const;
 
 const englishChecklist = [
@@ -235,11 +271,12 @@ const englishChecklist = [
   "Exercise retries and onDiagnostic in a test environment",
   "Allow the collector origin in CSP connect-src",
   "Enable error stacks only after a privacy review",
+  "Give EventRouter a reliable fallback and deduplicate by eventId at every collector",
 ] as const;
 
 const englishNavigation = [
   ["Install and initialize", "manual-setup"], ["Core API", "manual-api"], ["Autocapture", "manual-autocapture"],
-  ["Consent", "manual-consent"], ["Lifecycle", "manual-lifecycle"], ["Options", "manual-options"],
+  ["Consent", "manual-consent"], ["Lifecycle", "manual-lifecycle"], ["Multi-collector routing", "manual-routing"], ["Options", "manual-options"],
   ["Collector contract", "manual-collector"], ["Production checklist", "manual-production"], ["Troubleshooting", "manual-troubleshooting"],
 ] as const;
 
@@ -258,6 +295,8 @@ const englishCodeComments: ReadonlyArray<readonly [string, string]> = [
   ["测试或关键跳转前可以主动发送队列。", "Flush explicitly in tests or before a critical navigation."],
   ["微前端卸载、测试结束或 HMR dispose 时释放监听器。", "Release listeners on micro-frontend unmount, test teardown or HMR dispose."],
   ["这里不会创建新的埋点，可安全接入自己的日志系统。", "This does not create another analytics event and can feed your logger."],
+  ["规则按声明顺序匹配；每个事件只会进入一个 Transport。", "Rules are evaluated in declaration order; each event enters exactly one Transport."],
+  ["未匹配事件必须有明确去向，避免队列永久阻塞。", "Give unmatched events an explicit destination so the queue cannot remain blocked."],
 ];
 
 function codeForLocale(code: string, english: boolean): string {
@@ -334,8 +373,14 @@ export function Manual() {
               <div className="mt-6"><CodeBlock code={codeForLocale(lifecycleCode, en)} filename="app-lifecycle.ts" /></div>
             </article>
 
+            <article id="manual-routing">
+              <div className="manual-heading"><Server className="size-5" /><h3>{en ? "6. Route events across collectors" : "6. 多 Collector 条件路由"}</h3></div>
+              <p className="manual-copy">{en ? <>Use <code>EventRouter</code> when technical errors and product analytics must reach different backends. Routing runs before encoding, the first matching rule wins, and a batch never mixes destinations. FIFO order is preserved, so one <code>flush()</code> still sends one contiguous batch.</> : <>当技术错误和业务分析需要进入不同后端时，可以使用 <code>EventRouter</code>。路由发生在编码之前，第一条匹配规则优先，同一批次不会混合目标。队列仍保持 FIFO，因此一次 <code>flush()</code> 依旧只发送一个连续批次。</>}</p>
+              <div className="mt-6"><CodeBlock code={codeForLocale(routingCode, en)} filename="analytics-routing.ts" /></div>
+            </article>
+
             <article id="manual-options">
-              <div className="manual-heading"><Gauge className="size-5" /><h3>{en ? "6. Configuration reference" : "6. 配置参考"}</h3></div>
+              <div className="manual-heading"><Gauge className="size-5" /><h3>{en ? "7. Configuration reference" : "7. 配置参考"}</h3></div>
               <p className="manual-copy">{en ? "Only the application ID and transport are required; every other capability can be replaced for the target environment." : "核心只要求应用标识和 Transport，其余能力都可以按运行环境替换。"}</p>
               <div className="mt-6 overflow-x-auto rounded-xl border border-white/10">
                 <table className="w-full min-w-[760px] border-collapse text-left text-sm">
@@ -348,14 +393,14 @@ export function Manual() {
             </article>
 
             <article id="manual-collector">
-              <div className="manual-heading"><Server className="size-5" /><h3>{en ? "7. Collector contract" : "7. 服务端接收契约"}</h3></div>
+              <div className="manual-heading"><Server className="size-5" /><h3>{en ? "8. Collector contract" : "8. 服务端接收契约"}</h3></div>
               <p className="manual-copy">{en ? <>The default JSON codec sends an EventBatch. Any 2xx succeeds; 408, 429 and 5xx responses keep the queue for retry. The collector should authenticate, validate size and deduplicate by <code>eventId</code>.</> : <>默认 JSON Codec 提交一个 EventBatch。任意 2xx 表示成功；408、429 和 5xx 会保留队列并重试。服务端应鉴权、校验大小，并按 <code>eventId</code> 幂等去重。</>}</p>
               <div className="mt-6"><CodeBlock code={collectorCode} language="http" filename="collector.http" /></div>
               <div className="mt-5 flex gap-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.04] p-4 text-sm leading-6 text-amber-100/80"><AlertTriangle className="mt-0.5 size-5 shrink-0" /><p>{en ? "Tracelet delivers at least once. A timeout may occur after the collector accepted a request, so deduplication is a correctness requirement—not an optional optimization." : "Tracelet 是至少一次投递。超时边界可能造成服务端已经接收、客户端仍然重试，因此去重不是可选优化。"}</p></div>
             </article>
 
             <article id="manual-production">
-              <div className="manual-heading"><CheckCircle2 className="size-5" /><h3>{en ? "8. Diagnostics and production checklist" : "8. 诊断与上线清单"}</h3></div>
+              <div className="manual-heading"><CheckCircle2 className="size-5" /><h3>{en ? "9. Diagnostics and production checklist" : "9. 诊断与上线清单"}</h3></div>
               <p className="manual-copy">{en ? <><code>onDiagnostic</code> observes SDK state without creating product events. Exercise network failures and 429 responses before production.</> : <><code>onDiagnostic</code> 观察 SDK 状态，但不会创建业务事件。建议先在测试环境模拟网络失败和 429，再投入生产。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(diagnosticCode, en)} filename="diagnostics.ts" /></div>
               <ul className="mt-6 grid gap-3 sm:grid-cols-2">

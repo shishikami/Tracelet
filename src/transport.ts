@@ -1,16 +1,27 @@
-import type { EncodedBatch, Transport, TransportContext, TransportResult } from "./contracts.js";
+import type {
+  EncodedBatch,
+  Transport,
+  TransportContext,
+  TransportResolver,
+  TransportResult,
+} from "./contracts.js";
+import type { AnalyticsEvent } from "./types.js";
 
 export interface HttpTransportOptions {
   endpoint: string;
+  /** Diagnostic name used when several HTTP collectors are configured. */
+  name?: string;
   headers?: Record<string, string>;
   credentials?: RequestCredentials;
   timeoutMs?: number;
 }
 
 export class HttpTransport implements Transport {
-  readonly name = "http";
+  readonly name: string;
 
-  constructor(private readonly options: HttpTransportOptions) {}
+  constructor(private readonly options: HttpTransportOptions) {
+    this.name = options.name ?? "http";
+  }
 
   async send(batch: EncodedBatch, context: TransportContext): Promise<TransportResult> {
     const controller = new AbortController();
@@ -84,5 +95,43 @@ export class ConsoleTransport implements Transport {
   async send(batch: EncodedBatch): Promise<TransportResult> {
     console.info("[analytics] batch", batch);
     return { success: true };
+  }
+}
+
+export interface EventRoute {
+  /** Human-readable route name used only by application code and debugging. */
+  name: string;
+  /** A synchronous, deterministic predicate evaluated in declaration order. */
+  match(event: AnalyticsEvent): boolean;
+  transport: Transport;
+}
+
+export interface EventRouterOptions {
+  routes: readonly EventRoute[];
+  /** Receives events that do not match any explicit route. */
+  fallback: Transport;
+  name?: string;
+}
+
+/**
+ * Routes each event to exactly one Transport using the first matching rule.
+ *
+ * Routing happens before Codec and Compression run, so one encoded batch never
+ * mixes destinations. The fallback makes delivery total and prevents unmatched
+ * events from becoming permanently stuck in the queue.
+ */
+export class EventRouter implements TransportResolver {
+  readonly kind = "transport-resolver" as const;
+  readonly name: string;
+
+  constructor(private readonly options: EventRouterOptions) {
+    this.name = options.name ?? "event-router";
+  }
+
+  resolve(event: AnalyticsEvent): Transport {
+    for (const route of this.options.routes) {
+      if (route.match(event)) return route.transport;
+    }
+    return this.options.fallback;
   }
 }

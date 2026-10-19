@@ -1,13 +1,36 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { HttpTransport } from "../dist/index.js";
+import { EventRouter, HttpTransport } from "../dist/index.js";
 
 const batch = {
   body: "{}",
   contentType: "application/json",
   eventIds: ["event-1"],
 };
+
+test("EventRouter uses the first matching route and falls back for unmatched events", () => {
+  const first = { name: "first", async send() { return { success: true }; } };
+  const second = { name: "second", async send() { return { success: true }; } };
+  const fallback = { name: "fallback", async send() { return { success: true }; } };
+  const router = new EventRouter({
+    routes: [
+      { name: "first", match: (event) => event.type === "track", transport: first },
+      { name: "second", match: (event) => event.name === "checkout", transport: second },
+    ],
+    fallback,
+  });
+  const baseEvent = { type: "track", name: "checkout" };
+
+  assert.equal(router.resolve(baseEvent), first);
+  assert.equal(router.resolve({ ...baseEvent, type: "page" }), second);
+  assert.equal(router.resolve({ ...baseEvent, type: "identify", name: "$identify" }), fallback);
+});
+
+test("HttpTransport accepts a distinct diagnostic name", () => {
+  assert.equal(new HttpTransport({ endpoint: "https://example.test", name: "primary" }).name, "primary");
+  assert.equal(new HttpTransport({ endpoint: "https://example.test" }).name, "http");
+});
 
 test("treats an internal request timeout as retryable", async () => {
   const originalFetch = globalThis.fetch;

@@ -37,6 +37,7 @@ track / page / identify
   -> standard event
   -> plugins
   -> event storage
+  -> event route
   -> batch
   -> codec
   -> compression
@@ -159,6 +160,37 @@ const analytics = createAnalytics({
 
 完整示例见 `examples/browser.ts`；官网 Quickstart 来自 `examples/quickstart.ts`，并在 CI 中执行 TypeScript 类型检查。
 
+## 多 Collector 条件路由
+
+`EventRouter` 会在 Codec 与 Compression 之前检查原始事件，并把每个事件交给第一个匹配的 Transport。未匹配事件必须进入 `fallback`，因此不会因规则遗漏永久阻塞队列：
+
+```ts
+import { EventRouter, HttpTransport, createAnalytics } from "tracelet-browser";
+
+const analytics = createAnalytics({
+  appId: "shop-web",
+  transport: new EventRouter({
+    routes: [
+      {
+        name: "technical-errors",
+        match: (event) =>
+          event.name === "$error" || event.name === "$unhandled_rejection",
+        transport: new HttpTransport({
+          name: "alert-collector",
+          endpoint: "https://alerts.example.com/v1/batch",
+        }),
+      },
+    ],
+    fallback: new HttpTransport({
+      name: "product-collector",
+      endpoint: "https://events.example.com/v1/batch",
+    }),
+  }),
+});
+```
+
+规则按声明顺序匹配。SDK 保持队列的 FIFO 顺序，并在目标 Transport 改变时切分批次；一次 `flush()` 仍只发送一个批次。`flush_started`、`flush_succeeded` 和 `flush_failed` 诊断事件会携带实际的 `transport` 名称，方便区分多个端点。完整示例见 `examples/routing.ts`。
+
 ## 接入 Protobuf
 
 Core 不依赖具体 Protobuf Runtime。使用 `protobufjs`、`ts-proto` 或 Buf 生成编码器后，通过 `ProtobufCodec` 注入：
@@ -184,7 +216,6 @@ const analytics = createAnalytics({
 
 - 默认队列仍是内存存储；浏览器生产环境应显式使用 `IndexedDbEventStorage`。
 - gzip 使用浏览器原生 `CompressionStream`，不支持时不会自动降级。
-- 尚未实现多 Transport 路由。
 - 自动采集暂不包含点击、输入和 DOM 内容采集；这是有意的隐私与稳定性边界。
 - `properties` 和 `context` 在示例 Protobuf 中以 JSON bytes 保存，优先保持通用性；稳定后可以逐步强类型化。
 
@@ -217,6 +248,7 @@ http://127.0.0.1:4318/v1/stats
 | 方法 | 路径 | 用途 |
 |---|---|---|
 | `POST` | `/v1/batch` | 接收 SDK 批量事件 |
+| `POST` | `/v1/batch/:channel` | 验证多个 Transport 的条件路由 |
 | `GET` | `/v1/events?limit=100` | 查询最近事件 |
 | `DELETE` | `/v1/events` | 清空事件和统计 |
 | `GET` | `/v1/stats` | 查询批次、失败、事件名和请求日志 |
@@ -293,7 +325,6 @@ npm publish
 
 ## Roadmap
 
-- 多 Transport 路由与条件投递
 - 存储配额估算与 IndexedDB 配额诊断
 - 文档搜索和框架适配示例
 

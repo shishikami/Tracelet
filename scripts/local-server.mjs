@@ -98,7 +98,10 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (request.method === "POST" && url.pathname === "/v1/batch") {
+  if (
+    request.method === "POST"
+    && (url.pathname === "/v1/batch" || url.pathname.startsWith("/v1/batch/"))
+  ) {
     metrics.batchRequests += 1;
     try {
       if (failureControl.delayMs > 0) await wait(failureControl.delayMs);

@@ -36,6 +36,19 @@ export interface Transport {
   send(batch: EncodedBatch, context: TransportContext): Promise<TransportResult>;
 }
 
+/**
+ * Selects one delivery transport for an event before the event is encoded.
+ *
+ * Resolving before encoding lets the SDK keep events for different backends in
+ * separate batches. Implementations should return stable Transport instances;
+ * the SDK compares them by identity while collecting a batch.
+ */
+export interface TransportResolver {
+  readonly kind: "transport-resolver";
+  readonly name: string;
+  resolve(event: AnalyticsEvent): Transport;
+}
+
 export interface EventStorage {
   push(event: AnalyticsEvent): Promise<void>;
   peek(limit: number): Promise<AnalyticsEvent[]>;
@@ -84,9 +97,14 @@ export type DiagnosticEvent =
         | "event-too-large"
         | "batch-byte-limit";
     }
-  | { type: "flush_started"; eventCount: number; reason: TransportContext["reason"] }
-  | { type: "flush_succeeded"; eventCount: number; status?: number }
-  | { type: "flush_failed"; eventCount: number; retryable: boolean; status?: number }
+  | {
+      type: "flush_started";
+      eventCount: number;
+      reason: TransportContext["reason"];
+      transport: string;
+    }
+  | { type: "flush_succeeded"; eventCount: number; transport: string; status?: number }
+  | { type: "flush_failed"; eventCount: number; retryable: boolean; transport?: string; status?: number }
   | { type: "flush_retry_scheduled"; attempt: number; delayMs: number }
   | { type: "sdk_shutdown" };
 

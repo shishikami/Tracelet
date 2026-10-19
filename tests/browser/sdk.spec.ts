@@ -189,6 +189,60 @@ test("recovers automatically after a retryable collector failure", async ({ page
   });
 });
 
+test("routes event batches to different HTTP collectors", async ({ page, request }) => {
+  await page.goto("/");
+
+  const result = await page.evaluate(async () => {
+    const {
+      createAnalytics,
+      EventRouter,
+      HttpTransport,
+      MemoryEventStorage,
+    } = await import("/dist/index.js");
+    const storage = new MemoryEventStorage();
+    const analytics = createAnalytics({
+      appId: "routing-e2e",
+      pageLifecycle: false,
+      eventStorage: storage,
+      transport: new EventRouter({
+        routes: [{
+          name: "errors",
+          match: (event) => event.name === "$error",
+          transport: new HttpTransport({
+            endpoint: "/v1/batch/alerts",
+            name: "alerts",
+          }),
+        }],
+        fallback: new HttpTransport({
+          endpoint: "/v1/batch/analytics",
+          name: "analytics",
+        }),
+      }),
+    });
+
+    await analytics.track("product_viewed", { productId: "p_1" });
+    await analytics.track("$error", { message: "Example" });
+    await analytics.flush();
+    await analytics.flush();
+    const remaining = await storage.size();
+    await analytics.shutdown();
+    return { remaining };
+  });
+
+  expect(result.remaining).toBe(0);
+  const stats = await (await request.get("/v1/stats")).json();
+  expect(stats).toMatchObject({ batchRequests: 2, acceptedEvents: 2, failedRequests: 0 });
+  expect(stats.requestLog.map((entry: { path: string }) => entry.path)).toEqual([
+    "/v1/batch/alerts",
+    "/v1/batch/analytics",
+  ]);
+  const body = await (await request.get("/v1/events")).json();
+  expect(body.events.map((event: { name: string }) => event.name)).toEqual([
+    "$error",
+    "product_viewed",
+  ]);
+});
+
 test("does not create or deliver events before consent", async ({ page, request }) => {
   await page.goto("/");
 

@@ -2,11 +2,60 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  EventRouter,
   MemoryEventStorage,
   SDK_NAME,
   SDK_VERSION,
   createAnalytics,
 } from "../dist/index.js";
+
+test("routes contiguous events to one transport without reordering the queue", async () => {
+  const storage = new MemoryEventStorage();
+  const deliveries = [];
+  const diagnostics = [];
+  const transport = (name) => ({
+    name,
+    async send(batch) {
+      deliveries.push({
+        transport: name,
+        events: JSON.parse(batch.body).events.map((event) => event.name),
+      });
+      return { success: true, status: 202 };
+    },
+  });
+  const productTransport = transport("product-collector");
+  const alertTransport = transport("alert-collector");
+  const sdk = createAnalytics({
+    appId: "test",
+    eventStorage: storage,
+    pageLifecycle: false,
+    onDiagnostic(event) {
+      if (event.type === "flush_started") diagnostics.push(event.transport);
+    },
+    transport: new EventRouter({
+      routes: [{
+        name: "errors",
+        match: (event) => event.name.startsWith("$"),
+        transport: alertTransport,
+      }],
+      fallback: productTransport,
+    }),
+  });
+
+  await sdk.track("product_viewed", { productId: "p_1" });
+  await sdk.track("cart_opened", {});
+  await sdk.track("$error", { message: "Example" });
+  await sdk.flush();
+  await sdk.flush();
+
+  assert.deepEqual(deliveries, [
+    { transport: "product-collector", events: ["product_viewed", "cart_opened"] },
+    { transport: "alert-collector", events: ["$error"] },
+  ]);
+  assert.deepEqual(diagnostics, ["product-collector", "alert-collector"]);
+  assert.equal(await storage.size(), 0);
+  await sdk.shutdown();
+});
 
 test("flushes a typed event and removes it from storage", async () => {
   const storage = new MemoryEventStorage();

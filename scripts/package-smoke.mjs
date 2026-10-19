@@ -44,6 +44,7 @@ try {
   // Runtime smoke test catches broken package exports and missing build files.
   await writeFile(join(temporaryProject, "runtime.mjs"), `
     import {
+      EventRouter,
       MemoryEventStorage,
       SDK_NAME,
       SDK_VERSION,
@@ -54,13 +55,17 @@ try {
     if (SDK_NAME !== "tracelet-browser") throw new Error("Unexpected SDK name");
     if (SDK_VERSION !== ${JSON.stringify(packageJson.version)}) throw new Error("Unexpected SDK version");
     if (typeof createAutoCapturePlugin !== "function") throw new Error("Missing autocapture export");
+    if (typeof EventRouter !== "function") throw new Error("Missing event router export");
 
     const storage = new MemoryEventStorage();
     const analytics = createAnalytics({
       appId: "package-smoke",
       eventStorage: storage,
       pageLifecycle: false,
-      transport: { name: "test", async send() { return { success: true }; } },
+      transport: new EventRouter({
+        routes: [],
+        fallback: { name: "test", async send() { return { success: true }; } },
+      }),
     });
     await analytics.track("package_loaded", { source: "tarball" });
     if (await storage.size() !== 1) throw new Error("Installed package did not enqueue an event");

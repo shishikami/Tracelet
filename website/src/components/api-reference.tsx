@@ -16,6 +16,7 @@ const methods = [
 const adapters = [
   ["HttpTransport", "Transport", "通过 fetch 向 Collector POST 批次；支持超时、Retry-After 和 keepalive。"],
   ["ConsoleTransport", "Transport", "把编码批次输出到控制台，适合本地调试。"],
+  ["EventRouter", "TransportResolver", "按事件条件选择 Transport；首条匹配规则优先，未匹配事件进入 fallback。"],
   ["IndexedDbEventStorage", "EventStorage", "浏览器持久化 FIFO 队列，生产环境推荐。"],
   ["MemoryEventStorage", "EventStorage", "刷新即丢失的内存队列，适合测试。"],
   ["BrowserLocalStorage", "KeyValueStorage", "持久化身份；不可用时自动退回内存。"],
@@ -57,6 +58,7 @@ const englishMethods = [
 const englishAdapters = [
   ["HttpTransport", "Transport", "POSTs encoded batches with timeout, Retry-After and keepalive support."],
   ["ConsoleTransport", "Transport", "Writes encoded batches to the console for local development."],
+  ["EventRouter", "TransportResolver", "Selects a Transport per event; first match wins and unmatched events use the fallback."],
   ["IndexedDbEventStorage", "EventStorage", "Persistent browser FIFO queue recommended for production."],
   ["MemoryEventStorage", "EventStorage", "Non-persistent queue suitable for tests."],
   ["BrowserLocalStorage", "KeyValueStorage", "Persists identity and falls back to memory when unavailable."],
@@ -138,7 +140,7 @@ export function ApiReference() {
 
             <article id="api-diagnostics">
               <div className="manual-heading"><Network className="size-5" /><h3>DiagnosticEvent</h3></div>
-              <p className="manual-copy">{en ? <>Received through <code>onDiagnostic</code>; never creates another product event.</> : <>通过 <code>onDiagnostic</code> 接收，不会产生新的业务埋点。</>}</p>
+              <p className="manual-copy">{en ? <>Received through <code>onDiagnostic</code>; never creates another product event. Flush events include the selected transport name.</> : <>通过 <code>onDiagnostic</code> 接收，不会产生新的业务埋点；Flush 事件会包含实际选中的 Transport 名称。</>}</p>
               <ul className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {diagnostics.map((event) => (
                   <li key={event} className="rounded-lg border border-white/8 bg-black/15 px-4 py-3 font-mono text-xs text-slate-300">{event}</li>

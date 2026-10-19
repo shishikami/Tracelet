@@ -16,6 +16,8 @@ Tracelet 的生产队列治理与可发现性增强版本。
 - Google Search Console 所有权验证标记。
 - Chromium、Firefox 和 WebKit 浏览器测试覆盖 pagehide Flush、gzip 投递和可重试服务端故障恢复。
 - 本地 Collector 请求日志记录 Content-Type、Content-Encoding 和声明的事件数量，方便验证真实传输行为。
+- `EventRouter` 按事件条件选择多个 Transport，并在编码前隔离不同目标的批次。
+- `HttpTransport` 支持自定义诊断名称，Flush 诊断事件会报告实际 Transport。
 
 ## 0.1.2 - 2026-10-19
 

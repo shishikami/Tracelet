@@ -8,6 +8,7 @@ import type {
   KeyValueStorage,
   Transport,
   TransportContext,
+  TransportResolver,
 } from "./contracts.js";
 import { JsonCodec } from "./codecs.js";
 import { NoCompression } from "./compression.js";
@@ -31,7 +32,8 @@ export interface AnalyticsOptions {
   environment?: string;
   schemaVersion?: string;
   protocolVersion?: string;
-  transport: Transport;
+  /** A single delivery adapter or an event-aware resolver for multiple adapters. */
+  transport: Transport | TransportResolver;
   codec?: Codec;
   compression?: Compression;
   eventStorage?: EventStorage;
@@ -257,16 +259,23 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
   private async performFlushUnlocked(reason: TransportContext["reason"]): Promise<void> {
     let nextDelayMs: number | undefined;
     let eventCount = 0;
+    let transportName: string | undefined;
     try {
       const selected = await this.selectEncodedBatch();
       if (!selected) return;
-      const { events, encoded } = selected;
+      const { events, encoded, transport } = selected;
       eventCount = events.length;
-      this.emit({ type: "flush_started", eventCount: events.length, reason });
+      transportName = transport.name;
+      this.emit({
+        type: "flush_started",
+        eventCount: events.length,
+        reason,
+        transport: transport.name,
+      });
       const body = await this.compression.compress(encoded);
       const eventIds = events.map((event) => event.eventId);
 
-      const result = await this.options.transport.send(
+      const result = await transport.send(
         {
           body,
           contentType: this.codec.contentType,
@@ -287,6 +296,7 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
         this.emit({
           type: "flush_succeeded",
           eventCount: events.length,
+          transport: transport.name,
           ...(result.status === undefined ? {} : { status: result.status }),
         });
       } else {
@@ -295,6 +305,7 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
           type: "flush_failed",
           eventCount: events.length,
           retryable,
+          transport: transport.name,
           ...(result.status === undefined ? {} : { status: result.status }),
         });
         if (retryable) {
@@ -308,7 +319,12 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
       }
     } catch {
       nextDelayMs = this.nextRetryDelay();
-      this.emit({ type: "flush_failed", eventCount, retryable: true });
+      this.emit({
+        type: "flush_failed",
+        eventCount,
+        retryable: true,
+        ...(transportName === undefined ? {} : { transport: transportName }),
+      });
       this.emit({ type: "flush_retry_scheduled", attempt: this.retryAttempt, delayMs: nextDelayMs });
     } finally {
       if (this.initialized) this.scheduleFlush(nextDelayMs);
@@ -318,20 +334,33 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
   private async selectEncodedBatch(): Promise<{
     events: AnalyticsEvent[];
     encoded: string | Uint8Array;
+    transport: Transport;
   } | undefined> {
     let candidates = await this.eventStorage.peek(this.options.maxBatchSize ?? 30);
     const byteLimit = this.options.maxBatchBytes ?? 256 * 1_024;
 
     while (candidates.length > 0) {
-      for (let count = candidates.length; count >= 1; count -= 1) {
-        const events = candidates.slice(0, count);
+      const first = candidates[0];
+      if (!first) return undefined;
+      const transport = this.resolveTransport(first);
+      const routedCandidates: AnalyticsEvent[] = [first];
+
+      // Preserve FIFO ordering: a batch stops at the first event for another
+      // destination instead of skipping past it and reordering the queue.
+      for (const event of candidates.slice(1)) {
+        if (this.resolveTransport(event) !== transport) break;
+        routedCandidates.push(event);
+      }
+
+      for (let count = routedCandidates.length; count >= 1; count -= 1) {
+        const events = routedCandidates.slice(0, count);
         const encoded = await this.encodeBatch(events);
         if (byteLength(encoded) <= byteLimit) {
-          return { events, encoded };
+          return { events, encoded, transport };
         }
       }
 
-      const oversized = candidates[0];
+      const oversized = routedCandidates[0];
       if (!oversized) return undefined;
       await this.eventStorage.remove([oversized.eventId]);
       this.emit({ type: "event_dropped", eventName: oversized.name, reason: "batch-byte-limit" });
@@ -339,6 +368,13 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     }
 
     return undefined;
+  }
+
+  private resolveTransport(event: AnalyticsEvent): Transport {
+    const configured = this.options.transport;
+    return isTransportResolver(configured)
+      ? configured.resolve(event)
+      : configured;
   }
 
   private encodeBatch(events: AnalyticsEvent[]): Promise<string | Uint8Array> {
@@ -428,6 +464,12 @@ function sanitizeUrl(value: string): string {
   } catch {
     return value.split(/[?#]/, 1)[0] ?? value;
   }
+}
+
+function isTransportResolver(
+  value: Transport | TransportResolver,
+): value is TransportResolver {
+  return "kind" in value && value.kind === "transport-resolver";
 }
 
 function byteLength(value: string | Uint8Array): number {
