@@ -17,5 +17,5 @@ export function useLocale(): Locale {
 }
 
 export function localizedPath(locale: Locale): string {
-  return locale === "en" ? "/en/" : "/";
+  return locale === "en" ? "/en" : "/";
 }

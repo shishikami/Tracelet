@@ -7,7 +7,7 @@ Keep the documentation site on React and Vite for now. The site is a small, stat
 Internationalization uses two static HTML entry points:
 
 - `/` for Simplified Chinese (`zh-CN`)
-- `/en/` for English (`en`)
+- `/en` for English (`en`)
 
 Both entries share the same React components, but have independent metadata, canonical URLs and reciprocal `hreflang` links. Locale selection therefore remains addressable, bookmarkable and crawler-friendly without a runtime i18n dependency.
 
@@ -29,4 +29,4 @@ Next.js is appropriate only if Tracelet later needs server-side application beha
 
 ## Migration boundary
 
-Keep locale-independent content and UI primitives separate from routing. A future Astro migration should preserve `/` and `/en/`, canonical URLs, heading anchors and the public files in `website/public/` so existing search and documentation links remain valid.
+Keep locale-independent content and UI primitives separate from routing. A future Astro migration should preserve `/` and `/en`, canonical URLs, heading anchors and the public files in `website/public/` so existing search and documentation links remain valid.

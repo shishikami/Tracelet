@@ -67,7 +67,7 @@ The default JSON codec sends an `EventBatch` with `protocolVersion`, `sentAt`, a
 
 ## Canonical sources
 
-- English documentation: https://tracelet-opal.vercel.app/en/
+- English documentation: https://tracelet-opal.vercel.app/en
 - Simplified Chinese documentation: https://tracelet-opal.vercel.app/
 - npm: https://www.npmjs.com/package/tracelet-browser
 - Source: https://github.com/shishikami/Tracelet
