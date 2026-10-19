@@ -14,6 +14,7 @@ const [html, englishHtml, robots, sitemap, llms, llmsFull] = await Promise.all([
 ]);
 
 assert.match(html, new RegExp(`<link rel="canonical" href="${siteUrl}"`));
+assert.match(html, /<meta name="google-site-verification" content="[A-Za-z0-9_-]+"/);
 assert.match(html, /hreflang="en" href="https:\/\/tracelet-opal\.vercel\.app\/en"/);
 assert.match(html, /<meta property="og:title"/);
 assert.match(html, /<meta name="twitter:card"/);
