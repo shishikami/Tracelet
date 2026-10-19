@@ -2,7 +2,7 @@
 
 本项目的所有重要变更都会记录在此文件中。
 
-## 0.2.0 - Unreleased
+## 0.2.0 - 2026-10-20
 
 Tracelet 的生产队列治理与可发现性增强版本。
 
@@ -80,6 +80,7 @@ Tracelet 首个公开版本。
 - 指数退避、随机抖动和可重试状态判断。
 - 本地 Collector、浏览器验证台和 React 文档官网。
 
+[0.2.0]: https://github.com/shishikami/Tracelet/releases/tag/v0.2.0
 [0.1.2]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.2
 [0.1.1]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.1
 [0.1.0]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.0
