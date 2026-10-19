@@ -243,6 +243,31 @@ test("routes event batches to different HTTP collectors", async ({ page, request
   ]);
 });
 
+test("reports browser storage quota estimates through IndexedDB storage", async ({ page, browserName }) => {
+  await page.goto("/");
+
+  const result = await page.evaluate(async (name) => {
+    const {
+      IndexedDbEventStorage,
+      estimateBrowserStorage,
+    } = await import("/dist/index.js");
+    const storage = new IndexedDbEventStorage({ databaseName: `tracelet-quota-${name}` });
+    const direct = await estimateBrowserStorage();
+    const throughStorage = await storage.estimate();
+    await storage.close();
+    return { direct, throughStorage };
+  }, browserName);
+
+  for (const estimate of [result.direct, result.throughStorage]) {
+    expect(estimate).toBeTruthy();
+    expect(estimate.quotaBytes).toBeGreaterThan(0);
+    expect(estimate.usageBytes).toBeGreaterThanOrEqual(0);
+    expect(estimate.availableBytes).toBeGreaterThanOrEqual(0);
+    expect(estimate.usageRatio).toBeGreaterThanOrEqual(0);
+    expect(estimate.usageRatio).toBeLessThanOrEqual(1);
+  }
+});
+
 test("does not create or deliver events before consent", async ({ page, request }) => {
   await page.goto("/");
 

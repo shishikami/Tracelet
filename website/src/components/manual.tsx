@@ -166,6 +166,20 @@ const analytics = createAnalytics({
   }),
 });`;
 
+const storageEstimateCode = `const estimate = await analytics.getStorageEstimate();
+
+if (!estimate) {
+  console.info("Storage estimation is not supported by this browser");
+} else {
+  const percent = Math.round((estimate.usageRatio ?? 0) * 100);
+  console.info(\`Origin storage: \${percent}% used\`, estimate);
+
+  if (percent >= 80) {
+    // 这里只提示风险；不要由 SDK 自动删除其他应用数据。
+    console.warn("Origin storage usage is high");
+  }
+}`;
+
 const collectorCode = `POST /v1/batch
 Content-Type: application/json
 X-Analytics-Event-Count: 2
@@ -206,6 +220,7 @@ const options = [
 const troubleshooting = [
   ["浏览器出现 CORS 错误", "在 Collector 允许站点 Origin、POST、Content-Type 和 X-Analytics-Event-Count 请求头。"],
   ["刷新页面后队列消失", "显式使用 IndexedDbEventStorage；默认 MemoryEventStorage 不持久化。"],
+  ["出现 storage_quota_exceeded", "这是整个 Origin 的存储配额，不只属于 Tracelet。检查 estimate，并由应用决定清理策略。"],
   ["事件被重复接收", "Tracelet 使用至少一次投递；服务端必须按照 eventId 幂等去重。"],
   ["自动页面事件没有出现", "确认已调用 init()，并启用了 createAutoCapturePlugin({ pageViews: true })。"],
   ["错误事件没有堆栈", "includeStack 默认为 false；确认隐私风险后才能显式开启。"],
@@ -231,6 +246,7 @@ const manualNavigation = [
   ["生命周期", "manual-lifecycle"],
   ["多 Collector 路由", "manual-routing"],
   ["配置参考", "manual-options"],
+  ["存储配额", "manual-storage"],
   ["服务端契约", "manual-collector"],
   ["诊断与上线", "manual-production"],
   ["故障排查", "manual-troubleshooting"],
@@ -257,6 +273,7 @@ const englishOptions = [
 const englishTroubleshooting = [
   ["The browser reports a CORS error", "Allow the site's origin, POST, Content-Type and X-Analytics-Event-Count in the collector's CORS policy."],
   ["The queue disappears after reload", "Use IndexedDbEventStorage explicitly; the default MemoryEventStorage is not persistent."],
+  ["storage_quota_exceeded appears", "The quota belongs to the whole origin, not only Tracelet. Inspect the estimate and let the application decide what to clean."],
   ["The collector receives duplicate events", "Tracelet delivers at least once, so the collector must deduplicate idempotently by eventId."],
   ["Automatic page events are missing", "Confirm init() was called and createAutoCapturePlugin({ pageViews: true }) is enabled."],
   ["Error events do not include a stack", "includeStack defaults to false; enable it only after reviewing the privacy implications."],
@@ -277,7 +294,7 @@ const englishChecklist = [
 const englishNavigation = [
   ["Install and initialize", "manual-setup"], ["Core API", "manual-api"], ["Autocapture", "manual-autocapture"],
   ["Consent", "manual-consent"], ["Lifecycle", "manual-lifecycle"], ["Multi-collector routing", "manual-routing"], ["Options", "manual-options"],
-  ["Collector contract", "manual-collector"], ["Production checklist", "manual-production"], ["Troubleshooting", "manual-troubleshooting"],
+  ["Storage quota", "manual-storage"], ["Collector contract", "manual-collector"], ["Production checklist", "manual-production"], ["Troubleshooting", "manual-troubleshooting"],
 ] as const;
 
 const englishCodeComments: ReadonlyArray<readonly [string, string]> = [
@@ -297,6 +314,7 @@ const englishCodeComments: ReadonlyArray<readonly [string, string]> = [
   ["这里不会创建新的埋点，可安全接入自己的日志系统。", "This does not create another analytics event and can feed your logger."],
   ["规则按声明顺序匹配；每个事件只会进入一个 Transport。", "Rules are evaluated in declaration order; each event enters exactly one Transport."],
   ["未匹配事件必须有明确去向，避免队列永久阻塞。", "Give unmatched events an explicit destination so the queue cannot remain blocked."],
+  ["这里只提示风险；不要由 SDK 自动删除其他应用数据。", "Only report the risk here; do not let the SDK delete other application data automatically."],
 ];
 
 function codeForLocale(code: string, english: boolean): string {
@@ -392,15 +410,21 @@ export function Manual() {
               </div>
             </article>
 
+            <article id="manual-storage">
+              <div className="manual-heading"><Gauge className="size-5" /><h3>{en ? "8. Inspect browser storage quota" : "8. 检查浏览器存储配额"}</h3></div>
+              <p className="manual-copy">{en ? <><code>getStorageEstimate()</code> returns advisory values for the whole origin, including data outside Tracelet. Browsers can round or omit fields. If IndexedDB actually runs out of space, the current event is dropped safely and <code>storage_quota_exceeded</code> is emitted; Tracelet never deletes unrelated application data.</> : <><code>getStorageEstimate()</code> 返回整个 Origin 的近似值，其中可能包含 Tracelet 之外的数据；浏览器也可能舍入或省略字段。IndexedDB 真正耗尽空间时，当前事件会被安全丢弃并触发 <code>storage_quota_exceeded</code>；Tracelet 不会删除其他应用数据。</>}</p>
+              <div className="mt-6"><CodeBlock code={codeForLocale(storageEstimateCode, en)} filename="storage-health.ts" /></div>
+            </article>
+
             <article id="manual-collector">
-              <div className="manual-heading"><Server className="size-5" /><h3>{en ? "8. Collector contract" : "8. 服务端接收契约"}</h3></div>
+              <div className="manual-heading"><Server className="size-5" /><h3>{en ? "9. Collector contract" : "9. 服务端接收契约"}</h3></div>
               <p className="manual-copy">{en ? <>The default JSON codec sends an EventBatch. Any 2xx succeeds; 408, 429 and 5xx responses keep the queue for retry. The collector should authenticate, validate size and deduplicate by <code>eventId</code>.</> : <>默认 JSON Codec 提交一个 EventBatch。任意 2xx 表示成功；408、429 和 5xx 会保留队列并重试。服务端应鉴权、校验大小，并按 <code>eventId</code> 幂等去重。</>}</p>
               <div className="mt-6"><CodeBlock code={collectorCode} language="http" filename="collector.http" /></div>
               <div className="mt-5 flex gap-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.04] p-4 text-sm leading-6 text-amber-100/80"><AlertTriangle className="mt-0.5 size-5 shrink-0" /><p>{en ? "Tracelet delivers at least once. A timeout may occur after the collector accepted a request, so deduplication is a correctness requirement—not an optional optimization." : "Tracelet 是至少一次投递。超时边界可能造成服务端已经接收、客户端仍然重试，因此去重不是可选优化。"}</p></div>
             </article>
 
             <article id="manual-production">
-              <div className="manual-heading"><CheckCircle2 className="size-5" /><h3>{en ? "9. Diagnostics and production checklist" : "9. 诊断与上线清单"}</h3></div>
+              <div className="manual-heading"><CheckCircle2 className="size-5" /><h3>{en ? "10. Diagnostics and production checklist" : "10. 诊断与上线清单"}</h3></div>
               <p className="manual-copy">{en ? <><code>onDiagnostic</code> observes SDK state without creating product events. Exercise network failures and 429 responses before production.</> : <><code>onDiagnostic</code> 观察 SDK 状态，但不会创建业务事件。建议先在测试环境模拟网络失败和 429，再投入生产。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(diagnosticCode, en)} filename="diagnostics.ts" /></div>
               <ul className="mt-6 grid gap-3 sm:grid-cols-2">

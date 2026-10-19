@@ -18,6 +18,8 @@ Tracelet 的生产队列治理与可发现性增强版本。
 - 本地 Collector 请求日志记录 Content-Type、Content-Encoding 和声明的事件数量，方便验证真实传输行为。
 - `EventRouter` 按事件条件选择多个 Transport，并在编码前隔离不同目标的批次。
 - `HttpTransport` 支持自定义诊断名称，Flush 诊断事件会报告实际 Transport。
+- `getStorageEstimate()` 和 `estimateBrowserStorage()` 提供原点级浏览器存储容量估算。
+- IndexedDB 配额耗尽时安全丢弃当前事件，并报告 `storage_quota_exceeded` 与 `storage-quota` 诊断。
 
 ## 0.1.2 - 2026-10-19
 

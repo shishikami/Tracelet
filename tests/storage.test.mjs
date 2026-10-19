@@ -1,7 +1,52 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { BrowserLocalStorage } from "../dist/index.js";
+import {
+  BrowserLocalStorage,
+  StorageQuotaExceededError,
+  estimateBrowserStorage,
+  isStorageQuotaExceededError,
+} from "../dist/index.js";
+
+test("normalizes an origin-wide browser storage estimate", async () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: {
+      storage: {
+        async estimate() {
+          return {
+            usage: 200,
+            quota: 1_000,
+            usageDetails: { indexedDB: 150, caches: Number.NaN },
+          };
+        },
+        async persisted() { return true; },
+      },
+    },
+  });
+
+  try {
+    assert.deepEqual(await estimateBrowserStorage(), {
+      usageBytes: 200,
+      quotaBytes: 1_000,
+      availableBytes: 800,
+      usageRatio: 0.2,
+      persisted: true,
+      usageDetails: { indexedDB: 150 },
+    });
+  } finally {
+    if (original) Object.defineProperty(globalThis, "navigator", original);
+    else delete globalThis.navigator;
+  }
+});
+
+test("recognizes cross-realm browser quota errors", () => {
+  assert.equal(isStorageQuotaExceededError(new DOMException("full", "QuotaExceededError")), true);
+  assert.equal(isStorageQuotaExceededError({ name: "NS_ERROR_DOM_QUOTA_REACHED" }), true);
+  assert.equal(isStorageQuotaExceededError(new StorageQuotaExceededError()), true);
+  assert.equal(isStorageQuotaExceededError(new Error("network")), false);
+});
 
 test("falls back to memory when localStorage is unavailable", () => {
   const storage = new BrowserLocalStorage("test_");

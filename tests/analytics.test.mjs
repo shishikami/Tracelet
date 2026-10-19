@@ -6,8 +6,47 @@ import {
   MemoryEventStorage,
   SDK_NAME,
   SDK_VERSION,
+  StorageQuotaExceededError,
   createAnalytics,
 } from "../dist/index.js";
+
+test("reports IndexedDB quota exhaustion without rejecting track", async () => {
+  const estimate = {
+    usageBytes: 900,
+    quotaBytes: 1_000,
+    availableBytes: 100,
+    usageRatio: 0.9,
+    persisted: false,
+  };
+  const diagnostics = [];
+  const storage = {
+    async push() { throw new StorageQuotaExceededError(estimate); },
+    async peek() { return []; },
+    async remove() {},
+    async size() { return 0; },
+    async clear() {},
+    async estimate() { return estimate; },
+  };
+  const sdk = createAnalytics({
+    appId: "quota-test",
+    pageLifecycle: false,
+    eventStorage: storage,
+    onDiagnostic(event) { diagnostics.push(event); },
+    transport: { name: "test", async send() { return { success: true }; } },
+  });
+
+  await sdk.track("cannot_persist", {});
+
+  assert.deepEqual(await sdk.getStorageEstimate(), estimate);
+  assert.deepEqual(
+    diagnostics.filter((event) => event.type === "event_dropped" || event.type === "storage_quota_exceeded"),
+    [
+      { type: "event_dropped", eventName: "cannot_persist", reason: "storage-quota" },
+      { type: "storage_quota_exceeded", eventName: "cannot_persist", estimate },
+    ],
+  );
+  await sdk.shutdown();
+});
 
 test("routes contiguous events to one transport without reordering the queue", async () => {
   const storage = new MemoryEventStorage();

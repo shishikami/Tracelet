@@ -158,6 +158,20 @@ const analytics = createAnalytics({
 });
 ```
 
+### 浏览器存储配额
+
+使用 `IndexedDbEventStorage` 时，可以读取浏览器提供的近似容量信息：
+
+```ts
+const estimate = await analytics.getStorageEstimate();
+
+if (estimate && (estimate.usageRatio ?? 0) >= 0.8) {
+  console.warn("Origin storage usage is high", estimate);
+}
+```
+
+`usageBytes`、`quotaBytes`、`availableBytes` 和 `usageRatio` 都是整个 Origin 的估算值，可能包含应用自己的 IndexedDB、Cache Storage 等数据，并非 Tracelet 独占空间；浏览器也可能为了隐私而舍入或省略字段。当 IndexedDB 写入实际触发配额错误时，SDK 不会让 `track()` 影响业务流程，而是丢弃当前事件并发出 `event_dropped: storage-quota` 与 `storage_quota_exceeded` 诊断。SDK 不会擅自删除其他应用数据。
+
 完整示例见 `examples/browser.ts`；官网 Quickstart 来自 `examples/quickstart.ts`，并在 CI 中执行 TypeScript 类型检查。
 
 ## 多 Collector 条件路由
@@ -325,7 +339,6 @@ npm publish
 
 ## Roadmap
 
-- 存储配额估算与 IndexedDB 配额诊断
 - 文档搜索和框架适配示例
 
 版本变化见 [CHANGELOG.md](./CHANGELOG.md)。

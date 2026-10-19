@@ -1,4 +1,4 @@
-import type { EventStorage, KeyValueStorage } from "./contracts.js";
+import type { EventStorage, KeyValueStorage, StorageEstimate } from "./contracts.js";
 import type { AnalyticsEvent } from "./types.js";
 
 export class MemoryEventStorage implements EventStorage {
@@ -89,6 +89,71 @@ export interface IndexedDbEventStorageOptions {
   version?: number;
 }
 
+/** Error emitted when IndexedDB rejects a write because the origin is full. */
+export class StorageQuotaExceededError extends Error {
+  readonly name = "StorageQuotaExceededError";
+
+  constructor(
+    readonly estimate?: StorageEstimate,
+    options?: ErrorOptions,
+  ) {
+    super("Browser storage quota was exceeded while persisting an analytics event", options);
+  }
+}
+
+/**
+ * Read the browser's origin-wide storage estimate.
+ *
+ * The values include all storage used by the current origin, not only Tracelet's
+ * IndexedDB database, and browsers may round or omit fields for privacy.
+ */
+export async function estimateBrowserStorage(): Promise<StorageEstimate | undefined> {
+  const manager = globalThis.navigator?.storage;
+  if (!manager?.estimate) return undefined;
+
+  try {
+    const raw = await manager.estimate();
+    const usageBytes = finiteNumber(raw.usage);
+    const quotaBytes = finiteNumber(raw.quota);
+    const availableBytes = usageBytes === undefined || quotaBytes === undefined
+      ? undefined
+      : Math.max(0, quotaBytes - usageBytes);
+    const usageRatio = usageBytes === undefined || quotaBytes === undefined || quotaBytes <= 0
+      ? undefined
+      : Math.min(1, Math.max(0, usageBytes / quotaBytes));
+    const persisted = manager.persisted
+      ? await manager.persisted().catch(() => undefined)
+      : undefined;
+    const rawDetails = (raw as StorageEstimate & { usageDetails?: Record<string, number> }).usageDetails;
+    const usageDetails = rawDetails
+      ? Object.fromEntries(
+          Object.entries(rawDetails).filter((entry): entry is [string, number] => Number.isFinite(entry[1])),
+        )
+      : undefined;
+
+    return {
+      ...(usageBytes === undefined ? {} : { usageBytes }),
+      ...(quotaBytes === undefined ? {} : { quotaBytes }),
+      ...(availableBytes === undefined ? {} : { availableBytes }),
+      ...(usageRatio === undefined ? {} : { usageRatio }),
+      ...(persisted === undefined ? {} : { persisted }),
+      ...(usageDetails === undefined ? {} : { usageDetails }),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+export function isStorageQuotaExceededError(error: unknown): boolean {
+  if (error instanceof StorageQuotaExceededError) return true;
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { name?: unknown; code?: unknown };
+  return candidate.name === "QuotaExceededError"
+    || candidate.name === "NS_ERROR_DOM_QUOTA_REACHED"
+    || candidate.code === 22
+    || candidate.code === 1014;
+}
+
 /** Persistent FIFO queue for browser delivery retries and page reloads. */
 export class IndexedDbEventStorage implements EventStorage {
   private readonly databaseName: string;
@@ -104,8 +169,18 @@ export class IndexedDbEventStorage implements EventStorage {
 
   async push(event: AnalyticsEvent): Promise<void> {
     const { store, done } = await this.store("readwrite");
-    await this.request(store.add({ eventId: event.eventId, event } satisfies IndexedDbRecord));
-    await done;
+    try {
+      await this.request(store.add({ eventId: event.eventId, event } satisfies IndexedDbRecord));
+      await done;
+    } catch (error) {
+      // Observe the transaction rejection so a failed request cannot create an
+      // unrelated unhandled-rejection warning in the host application.
+      await done.catch(() => undefined);
+      if (isStorageQuotaExceededError(error)) {
+        throw new StorageQuotaExceededError(await this.estimate(), { cause: error });
+      }
+      throw error;
+    }
   }
 
   async peek(limit: number): Promise<AnalyticsEvent[]> {
@@ -138,6 +213,11 @@ export class IndexedDbEventStorage implements EventStorage {
     const { store, done } = await this.store("readwrite");
     await this.request(store.clear());
     await done;
+  }
+
+  /** Return an origin-wide estimate supplied by the browser Storage API. */
+  estimate(): Promise<StorageEstimate | undefined> {
+    return estimateBrowserStorage();
   }
 
   async close(): Promise<void> {
@@ -208,4 +288,8 @@ export class IndexedDbEventStorage implements EventStorage {
       transaction.onabort = () => reject(transaction.error ?? new Error("IndexedDB transaction aborted"));
     });
   }
+}
+
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined;
 }

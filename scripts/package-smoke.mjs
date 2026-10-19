@@ -50,12 +50,14 @@ try {
       SDK_VERSION,
       createAnalytics,
       createAutoCapturePlugin,
+      estimateBrowserStorage,
     } from "tracelet-browser";
 
     if (SDK_NAME !== "tracelet-browser") throw new Error("Unexpected SDK name");
     if (SDK_VERSION !== ${JSON.stringify(packageJson.version)}) throw new Error("Unexpected SDK version");
     if (typeof createAutoCapturePlugin !== "function") throw new Error("Missing autocapture export");
     if (typeof EventRouter !== "function") throw new Error("Missing event router export");
+    if (typeof estimateBrowserStorage !== "function") throw new Error("Missing storage estimate export");
 
     const storage = new MemoryEventStorage();
     const analytics = createAnalytics({

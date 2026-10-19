@@ -36,6 +36,16 @@ export interface Transport {
   send(batch: EncodedBatch, context: TransportContext): Promise<TransportResult>;
 }
 
+/** Origin-wide browser storage estimate; values are advisory, not guarantees. */
+export interface StorageEstimate {
+  usageBytes?: number;
+  quotaBytes?: number;
+  availableBytes?: number;
+  usageRatio?: number;
+  persisted?: boolean;
+  usageDetails?: Readonly<Record<string, number>>;
+}
+
 /**
  * Selects one delivery transport for an event before the event is encoded.
  *
@@ -55,6 +65,8 @@ export interface EventStorage {
   remove(eventIds: readonly string[]): Promise<void>;
   size(): Promise<number>;
   clear(): Promise<void>;
+  /** Optional origin-wide quota estimate for persistent browser storage. */
+  estimate?(): Promise<StorageEstimate | undefined>;
 }
 
 export interface KeyValueStorage {
@@ -95,8 +107,10 @@ export type DiagnosticEvent =
         | "queue-limit"
         | "serialization"
         | "event-too-large"
-        | "batch-byte-limit";
+        | "batch-byte-limit"
+        | "storage-quota";
     }
+  | { type: "storage_quota_exceeded"; eventName: string; estimate?: StorageEstimate }
   | {
       type: "flush_started";
       eventCount: number;

@@ -6,6 +6,7 @@ import type {
   DiagnosticHandler,
   EventStorage,
   KeyValueStorage,
+  StorageEstimate,
   Transport,
   TransportContext,
   TransportResolver,
@@ -14,7 +15,12 @@ import { JsonCodec } from "./codecs.js";
 import { NoCompression } from "./compression.js";
 import { ConsentManager, type ConsentState } from "./consent.js";
 import { IdentityManager, createId } from "./identity.js";
-import { MemoryEventStorage, MemoryKeyValueStorage } from "./storage.js";
+import {
+  MemoryEventStorage,
+  MemoryKeyValueStorage,
+  StorageQuotaExceededError,
+  isStorageQuotaExceededError,
+} from "./storage.js";
 import { SDK_NAME, SDK_VERSION } from "./version.js";
 import { BrowserDeliveryLock, type DeliveryLock } from "./locking.js";
 import type {
@@ -167,6 +173,11 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     this.identity.reset();
   }
 
+  /** Read an advisory, origin-wide browser storage estimate when supported. */
+  getStorageEstimate(): Promise<StorageEstimate | undefined> {
+    return this.eventStorage.estimate?.() ?? Promise.resolve(undefined);
+  }
+
   /** Attempt to deliver one batch immediately. Concurrent calls are coalesced. */
   async flush(reason: TransportContext["reason"] = "manual"): Promise<void> {
     if (this.flushPromise) return this.flushPromise;
@@ -241,7 +252,21 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
       }
     }
 
-    await this.eventStorage.push(event);
+    try {
+      await this.eventStorage.push(event);
+    } catch (error) {
+      if (!isStorageQuotaExceededError(error)) throw error;
+      const estimate = error instanceof StorageQuotaExceededError
+        ? error.estimate
+        : await this.getStorageEstimate();
+      this.emit({ type: "event_dropped", eventName: event.name, reason: "storage-quota" });
+      this.emit({
+        type: "storage_quota_exceeded",
+        eventName: event.name,
+        ...(estimate === undefined ? {} : { estimate }),
+      });
+      return;
+    }
     const queueSize = await this.eventStorage.size();
     this.emit({ type: "event_enqueued", eventId: event.eventId, eventName: event.name, queueSize });
     for (const plugin of this.plugins) await plugin.afterTrack?.(event);
