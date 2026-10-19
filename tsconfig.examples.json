@@ -10,5 +10,5 @@
       "tracelet-browser": ["./src/index.ts"]
     }
   },
-  "include": ["examples/**/*.ts", "src/**/*.ts"]
+  "include": ["examples/*.ts", "src/**/*.ts"]
 }
