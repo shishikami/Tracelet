@@ -18,6 +18,7 @@
 - [x] React、Vue StackBlitz 链接可直接打开并解析到对应 Starter 目录。
 - [x] GitHub description、topics、social preview 和 Discussions 已配置。
 - [x] GitHub Private Vulnerability Reporting 已启用，安全报告入口可访问。
+- [x] GitHub Community Standards 所需的 Code of Conduct 与行为问题私密报告路径已补齐。
 - [x] `pnpm audit` 在 2026-10-20 报告 116 个依赖、0 个已知漏洞；许可证清单无未识别或禁止分发的条目。
 - [x] 对外发布文案中指向官网的链接附带对应的 UTM 参数。
 - [ ] 发布当天预留时间回答问题并记录真实反馈。

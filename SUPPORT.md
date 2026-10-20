@@ -15,6 +15,7 @@ Tracelet is maintained as an open-source project without a guaranteed response-t
 - **Ideas and API design proposals:** use the Ideas category in GitHub Discussions so the trade-offs can be discussed before implementation.
 - **Reproducible defects:** open a [Bug report](https://github.com/shishikami/Tracelet/issues/new?template=bug.yml) with a minimal reproduction and diagnostics.
 - **Security vulnerabilities:** do not create a public issue or discussion. Follow [SECURITY.md](./SECURITY.md) and use GitHub Private Vulnerability Reporting.
+- **Conduct concerns:** follow the [Code of Conduct](./CODE_OF_CONDUCT.md) and contact the repository owner privately through the email published on the owner's GitHub profile.
 
 Never include access tokens, production payloads, personal data or customer identifiers in a public report. Replace them with a minimal synthetic example.
 

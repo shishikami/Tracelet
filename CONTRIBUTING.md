@@ -7,6 +7,7 @@
 - Bug 与兼容性问题请使用 Bug Report 模板。
 - 新能力请先创建 Feature Request，说明真实接入场景、预期 API 和兼容性影响。
 - 安全问题不要创建公开 Issue，请按照 [SECURITY.md](./SECURITY.md) 私下报告。
+- 参与 Issue、Discussion、PR 与 Review 时请遵守 [Code of Conduct](./CODE_OF_CONDUCT.md)。
 
 ## 本地开发
 
