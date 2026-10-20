@@ -13,8 +13,17 @@
       "tracelet-browser": ["./src/index.ts"],
       "react": ["./website/node_modules/@types/react/index.d.ts"],
       "react/jsx-runtime": ["./website/node_modules/@types/react/jsx-runtime.d.ts"],
+      "react-dom/client": ["./website/node_modules/@types/react-dom/client.d.ts"],
       "vue": ["./website/node_modules/vue/dist/vue.d.mts"]
     }
   },
-  "include": ["examples/frameworks/**/*.ts", "examples/frameworks/**/*.tsx", "src/**/*.ts"]
+  "include": [
+    "examples/frameworks/**/*.ts",
+    "examples/frameworks/**/*.tsx",
+    "examples/starters/react-vite/src/**/*.ts",
+    "examples/starters/react-vite/src/**/*.tsx",
+    "examples/starters/vue-vite/src/**/*.ts",
+    "examples/starters/vue-vite/src/**/*.d.ts",
+    "src/**/*.ts"
+  ]
 }

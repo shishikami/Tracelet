@@ -1,0 +1,11 @@
+:root { font-family: Inter, system-ui, sans-serif; color: #e2e8f0; background: #070b0d; }
+body { margin: 0; min-width: 320px; }
+main { max-width: 760px; margin: 0 auto; padding: 12vh 24px; }
+.eyebrow { color: #6ee7b7; font: 700 12px ui-monospace, monospace; letter-spacing: .16em; }
+h1 { max-width: 680px; font-size: clamp(42px, 8vw, 72px); line-height: 1; letter-spacing: -.05em; }
+p { color: #94a3b8; line-height: 1.8; }
+.actions { display: flex; gap: 12px; margin: 36px 0; }
+button { border: 0; border-radius: 10px; background: #6ee7b7; padding: 12px 18px; color: #052e24; font-weight: 700; cursor: pointer; }
+button.secondary { border: 1px solid #334155; background: transparent; color: #e2e8f0; }
+section { display: grid; gap: 8px; border: 1px solid #1e293b; border-radius: 16px; background: #0b1114; padding: 20px; }
+section span { color: #94a3b8; font: 12px ui-monospace, monospace; }

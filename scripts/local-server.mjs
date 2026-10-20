@@ -215,10 +215,14 @@ const server = createServer(async (request, response) => {
   const staticPages = new Map([
     ["/", "out/index.html"],
     ["/en", "out/en/index.html"],
+    ["/guides/backend-agnostic-analytics-sdk", "out/guides/backend-agnostic-analytics-sdk/index.html"],
+    ["/playground", "out/playground/index.html"],
     ["/quickstart", "out/quickstart/index.html"],
     ["/examples", "out/examples/index.html"],
     ["/reference", "out/reference/index.html"],
     ["/en/quickstart", "out/en/quickstart/index.html"],
+    ["/en/guides/backend-agnostic-analytics-sdk", "out/en/guides/backend-agnostic-analytics-sdk/index.html"],
+    ["/en/playground", "out/en/playground/index.html"],
     ["/en/examples", "out/en/examples/index.html"],
     ["/en/reference", "out/en/reference/index.html"],
   ]);

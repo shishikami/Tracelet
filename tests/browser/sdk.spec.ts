@@ -32,8 +32,11 @@ test("searches localized documentation with keyboard navigation", async ({ page 
   const englishDialog = page.getByRole("dialog", { name: "Search documentation" });
   await expect(englishDialog).toBeVisible();
   const searchbox = englishDialog.getByRole("searchbox", { name: "Search query" });
-  await searchbox.fill("React");
+  await searchbox.fill("React Next.js");
+  const frameworkResult = englishDialog.getByRole("link", { name: /React, Vue and Next\.js/ });
+  await expect(frameworkResult).toBeVisible();
   await searchbox.press("ArrowDown");
+  await expect(frameworkResult).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/en\/quickstart#manual-frameworks$/);
   await expect(englishDialog).not.toBeVisible();
@@ -77,6 +80,45 @@ test("serves focused documentation pages with shared navigation", async ({ page 
   await page.goto("/en/quickstart");
   await expect(page.getByRole("heading", { name: "From first install to production delivery" })).toBeVisible();
   await expect(page.getByRole("link", { name: "中文" })).toHaveAttribute("href", "/quickstart");
+});
+
+test("runs the real SDK in the browser playground and demonstrates retry", async ({ page }) => {
+  await page.goto("/playground");
+
+  await expect(page.getByRole("heading", { name: "亲手观察从 track() 到投递的每一步。" })).toBeVisible();
+  await page.getByRole("button", { name: "track()" }).click();
+  await expect(page.getByText("已入队 product_viewed")).toBeVisible();
+  await expect(page.getByText("队列", { exact: true }).locator("..")).toContainText("1");
+
+  await page.getByRole("button", { name: "模拟下次失败" }).click();
+  await page.getByRole("button", { name: "发送队列" }).click();
+  await expect(page.getByText("模拟 Collector 返回 503")).toBeVisible();
+  await expect(page.getByText("队列", { exact: true }).locator("..")).toContainText("1");
+  await expect(page.locator("pre").first()).toContainText("product_viewed");
+
+  await page.getByRole("button", { name: "发送队列" }).click();
+  await expect(page.getByText("模拟 Collector 返回 202")).toBeVisible();
+  await expect(page.getByText("队列", { exact: true }).locator("..")).toContainText("0");
+  await expect(page.getByText("已投递", { exact: true }).locator("..")).toContainText("1");
+
+  await page.goto("/en/playground");
+  await expect(page.getByRole("heading", { name: "See every step from track() to delivery." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "中文" })).toHaveAttribute("href", "/playground");
+});
+
+test("publishes runnable starters and the bilingual architecture guide", async ({ page }) => {
+  await page.goto("/examples#starters");
+  await expect(page.getByRole("heading", { name: "一键运行模板" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /React \+ Vite/ })).toHaveAttribute("href", /stackblitz\.com\/fork\/github\/shishikami\/Tracelet/);
+  await expect(page.getByRole("link", { name: /Vercel Collector/ })).toHaveAttribute("href", /vercel\.com\/new\/clone/);
+
+  await page.goto("/guides/backend-agnostic-analytics-sdk");
+  await expect(page.getByRole("heading", { name: "如何设计一个与后端解耦的浏览器埋点 SDK" })).toBeVisible();
+  await expect(page.locator("#guide-contracts")).toContainText("Transport");
+
+  await page.goto("/en/guides/backend-agnostic-analytics-sdk");
+  await expect(page.getByRole("heading", { name: "Designing a backend-agnostic browser analytics SDK" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "中文" })).toHaveAttribute("href", "/guides/backend-agnostic-analytics-sdk");
 });
 
 test("sends a browser event through the real collector", async ({ page, request, browserName }) => {

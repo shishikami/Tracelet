@@ -10,6 +10,8 @@ npm install tracelet-browser
 
 Documentation routes:
 
+- Interactive playground: https://tracelet-opal.vercel.app/playground
+- Architecture guide: https://tracelet-opal.vercel.app/guides/backend-agnostic-analytics-sdk
 - Quickstart: https://tracelet-opal.vercel.app/quickstart
 - Examples: https://tracelet-opal.vercel.app/examples
 - API reference: https://tracelet-opal.vercel.app/reference

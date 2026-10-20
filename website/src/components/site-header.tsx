@@ -22,6 +22,7 @@ export function SiteHeader({ page, onMenuClick }: SiteHeaderProps) {
           <span className="font-semibold tracking-tight">Tracelet</span>
         </a>
         <nav className="hidden items-center gap-2 md:flex" aria-label={en ? "Main navigation" : "主导航"}>
+          <Button asChild variant="ghost"><a href={sitePath("playground", locale)} aria-current={page === "playground" ? "page" : undefined}>Playground</a></Button>
           <Button asChild variant="ghost"><a href={sitePath("quickstart", locale)} aria-current={page === "quickstart" ? "page" : undefined}>Quickstart</a></Button>
           <Button asChild variant="ghost"><a href={sitePath("examples", locale)} aria-current={page === "examples" ? "page" : undefined}>{en ? "Examples" : "示例"}</a></Button>
           <Button asChild variant="ghost"><a href={sitePath("reference", locale)} aria-current={page === "reference" ? "page" : undefined}>API</a></Button>

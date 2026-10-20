@@ -1,14 +1,71 @@
 # Tracelet
 
 [![npm version](https://img.shields.io/npm/v/tracelet-browser?color=34d399)](https://www.npmjs.com/package/tracelet-browser)
+[![npm downloads](https://img.shields.io/npm/dm/tracelet-browser?color=38bdf8)](https://www.npmjs.com/package/tracelet-browser)
+[![CI](https://github.com/shishikami/Tracelet/actions/workflows/ci.yml/badge.svg)](https://github.com/shishikami/Tracelet/actions/workflows/ci.yml)
 [![license](https://img.shields.io/github/license/shishikami/Tracelet)](./LICENSE)
-[![website](https://img.shields.io/badge/docs-tracelet--opal.vercel.app-0f172a)](https://tracelet-opal.vercel.app)
+[![TypeScript](https://img.shields.io/badge/TypeScript-ready-3178c6)](https://tracelet-opal.vercel.app/reference)
 
-Backend-agnostic、隐私优先的浏览器埋点 SDK。SDK 核心保持框架无关，React 官网作为独立 workspace 维护。
+A backend-agnostic, privacy-first analytics SDK for modern browsers. Tracelet gives product code one typed API while keeping queues, codecs, compression and delivery behind replaceable contracts.
 
-## 安装
+[Live playground](https://tracelet-opal.vercel.app/playground) · [Quickstart](https://tracelet-opal.vercel.app/quickstart) · [Examples](https://tracelet-opal.vercel.app/examples) · [API reference](https://tracelet-opal.vercel.app/reference) · [简体中文](#简体中文)
 
-npm 包：[tracelet-browser](https://www.npmjs.com/package/tracelet-browser)
+## Why Tracelet?
+
+- **Backend-agnostic:** send the same event model to your own HTTP collector or any custom `Transport`.
+- **Reliable in the browser:** persist pending events in IndexedDB and coordinate shared queues across tabs.
+- **Privacy-aware:** check consent before identities or events are created; autocapture never reads DOM text or form values.
+- **Type-safe:** model event names and properties with a TypeScript event map.
+- **Replaceable by design:** swap storage, routing, codecs, compression and plugins without changing product instrumentation.
+
+## Install
+
+```bash
+npm install tracelet-browser
+```
+
+## Quick example
+
+```ts
+import {
+  HttpTransport,
+  IndexedDbEventStorage,
+  createAnalytics,
+} from "tracelet-browser";
+
+interface Events {
+  order_submitted: { orderId: string; amount: number };
+}
+
+const analytics = createAnalytics<Events>({
+  appId: "storefront",
+  eventStorage: new IndexedDbEventStorage(),
+  transport: new HttpTransport({
+    endpoint: "https://events.example.com/v1/batch",
+  }),
+});
+
+await analytics.track("order_submitted", {
+  orderId: "o_123",
+  amount: 199,
+});
+```
+
+Try this lifecycle without creating a backend in the [interactive playground](https://tracelet-opal.vercel.app/playground). Tracelet is framework-independent and tested in Chromium, Firefox and WebKit on every change.
+
+Runnable starters:
+
+- [React + Vite](./examples/starters/react-vite)
+- [Vue + Vite](./examples/starters/vue-vite)
+- [Vercel Collector](./examples/starters/collector-vercel)
+
+> The project is currently suitable for evaluation, prototypes and early production integrations with an explicit delivery validation plan. See the [changelog](./CHANGELOG.md) before upgrading.
+
+## 简体中文
+
+Tracelet 是一个后端无关、隐私优先的浏览器埋点 SDK。SDK 核心保持框架无关，React 官网作为独立 workspace 维护。
+
+安装：
 
 ```bash
 npm install tracelet-browser
@@ -18,9 +75,8 @@ yarn add tracelet-browser
 
 > `tracelet` 已在 npm 被其他项目占用，因此本项目使用 `tracelet-browser` 作为 npm 包名。
 
-一个后端无关的浏览器埋点 SDK 初始实现。核心只依赖抽象协议，JSON、Protobuf、压缩算法和网络传输都可以替换。
-
 - 官网：[tracelet-opal.vercel.app](https://tracelet-opal.vercel.app)
+- 在线体验：[Playground](https://tracelet-opal.vercel.app/playground)
 - 快速开始：[Quickstart](https://tracelet-opal.vercel.app/quickstart)
 - 场景示例：[Examples](https://tracelet-opal.vercel.app/examples)
 - API 查询：[Reference](https://tracelet-opal.vercel.app/reference)

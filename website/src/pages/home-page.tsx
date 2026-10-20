@@ -4,11 +4,11 @@ import {
   Boxes,
   Braces,
   Database,
-  Code2,
   FlaskConical,
   LockKeyhole,
   Network,
   PackageCheck,
+  Play,
   Plug,
   Radio,
   RotateCcw,
@@ -39,6 +39,7 @@ const deliverySteps = [
 ];
 
 const docs: Array<{ page: Exclude<SitePage, "home">; icon: typeof BookOpen; zh: string; en: string; zhCopy: string; enCopy: string }> = [
+  { page: "playground", icon: Play, zh: "在线体验", en: "Playground", zhCopy: "无需后端即可创建事件、观察队列、模拟失败并检查真实批次负载。", enCopy: "Create events, inspect the queue, simulate failure and view a real batch without a backend." },
   { page: "quickstart", icon: BookOpen, zh: "快速开始", en: "Quickstart", zhCopy: "从安装、初始化、类型安全事件到 Collector，在一条主路径里完成首次接入。", enCopy: "Go from installation and typed events to a working collector in one guided path." },
   { page: "examples", icon: FlaskConical, zh: "场景示例", en: "Examples", zhCopy: "查找 Transport、Storage、Protobuf、插件、框架与自定义 Adapter 的可复制代码。", enCopy: "Copy recipes for transports, storage, Protobuf, plugins, frameworks and custom adapters." },
   { page: "reference", icon: Braces, zh: "API 参考", en: "API Reference", zhCopy: "按对象查询配置项、实例方法、内置 Adapter、插件和诊断事件。", enCopy: "Look up options, instance methods, built-in adapters, plugins and diagnostics." },
@@ -61,8 +62,8 @@ export function HomePage() {
             {en ? "Tracelet decouples product instrumentation from your backend through a stable, replaceable pipeline for collection, persistence, encoding and delivery." : "Tracelet 将业务埋点与后端实现解耦，以稳定、可替换的管线完成采集、持久化、编码和投递。"}
           </p>
           <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-            <Button asChild size="lg"><a href={sitePath("quickstart", locale)}>{en ? "Start in five minutes" : "五分钟接入"} <ArrowRight className="size-4" /></a></Button>
-            <Button asChild size="lg" variant="outline"><a href="https://github.com/shishikami/Tracelet" target="_blank" rel="noreferrer"><Code2 className="size-4" />{en ? "View source" : "查看源码"}</a></Button>
+            <Button asChild size="lg"><a href={sitePath("playground", locale)}><Play className="size-4" />{en ? "Try it live" : "在线体验"}</a></Button>
+            <Button asChild size="lg" variant="outline"><a href={sitePath("quickstart", locale)}>{en ? "Start in five minutes" : "五分钟接入"}<ArrowRight className="size-4" /></a></Button>
           </div>
           <div className="mx-auto mt-14 flex max-w-xl items-center justify-between gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/25 p-3 text-xs text-slate-400 shadow-2xl shadow-emerald-950/20 sm:text-sm">
             {[["track()", Zap], ["plugins", Plug], ["queue", Database], ["codec", Braces], ["transport", Network]].map(([label, Icon], index) => {
@@ -126,13 +127,17 @@ export function HomePage() {
       <section className="border-t border-white/8 bg-white/[0.018]">
         <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
           <div className="max-w-2xl"><span className="section-kicker">04 / Documentation</span><h2>{en ? "Choose the shortest path to an answer" : "用最短路径找到答案"}</h2><p className="section-copy">{en ? "Learn in order, copy a recipe, or look up one exact contract." : "按顺序学习、复制场景方案，或直接查询某个契约。"}</p></div>
-          <div className="mt-12 grid gap-5 lg:grid-cols-3">
+          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {docs.map(({ page, icon: Icon, zh, en: englishTitle, zhCopy, enCopy }) => (
               <a key={page} href={sitePath(page, locale)} className="group rounded-2xl border border-white/10 bg-black/15 p-6 transition hover:-translate-y-0.5 hover:border-emerald-300/30 hover:bg-emerald-300/[0.035]">
                 <Icon className="size-6 text-emerald-300" /><h3 className="mt-6 text-xl">{en ? englishTitle : zh}</h3><p className="mt-3 text-sm leading-7 text-slate-400">{en ? enCopy : zhCopy}</p><span className="mt-6 flex items-center gap-2 text-sm text-emerald-300">{en ? "Open" : "打开"}<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></span>
               </a>
             ))}
           </div>
+          <a href={sitePath("guide", locale)} className="group mt-5 flex flex-col justify-between gap-5 rounded-2xl border border-white/10 bg-gradient-to-r from-emerald-300/[0.06] to-transparent p-6 transition hover:border-emerald-300/30 sm:flex-row sm:items-center">
+            <span><span className="font-mono text-[11px] uppercase tracking-[0.13em] text-emerald-300">{en ? "Architecture guide" : "架构文章"}</span><strong className="mt-2 block text-lg text-slate-100">{en ? "Designing a backend-agnostic browser analytics SDK" : "如何设计一个与后端解耦的浏览器埋点 SDK"}</strong><span className="mt-2 block text-sm text-slate-400">{en ? "Contracts, durable queues, consent and the correct boundary for Protobuf." : "稳定契约、可靠队列、Consent，以及 Protobuf 应该放在哪里。"}</span></span>
+            <span className="flex shrink-0 items-center gap-2 text-sm text-emerald-300">{en ? "Read guide" : "阅读文章"}<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></span>
+          </a>
         </div>
       </section>
     </>

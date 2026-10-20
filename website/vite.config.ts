@@ -8,6 +8,22 @@ import { dirname, join } from "node:path";
 const productionOrigin = "https://tracelet-opal.vercel.app";
 const generatedPages = [
   {
+    output: "guides/backend-agnostic-analytics-sdk/index.html",
+    source: "index.html",
+    title: "如何设计后端无关的浏览器埋点 SDK · Tracelet",
+    description: "从稳定契约、可靠队列、Consent、Codec、Compression 与 Transport 边界出发，设计一个可维护的前端埋点 SDK。",
+    canonical: `${productionOrigin}/guides/backend-agnostic-analytics-sdk`,
+    alternate: `${productionOrigin}/en/guides/backend-agnostic-analytics-sdk`,
+  },
+  {
+    output: "playground/index.html",
+    source: "index.html",
+    title: "Tracelet Playground · 在线体验浏览器埋点 SDK",
+    description: "无需后端即可运行真实 Tracelet SDK：创建事件、查看队列、模拟投递失败并检查 EventBatch。",
+    canonical: `${productionOrigin}/playground`,
+    alternate: `${productionOrigin}/en/playground`,
+  },
+  {
     output: "quickstart/index.html",
     source: "index.html",
     title: "Tracelet Quickstart · 从安装到第一个埋点",
@@ -30,6 +46,22 @@ const generatedPages = [
     description: "查询 Tracelet Analytics 方法、配置项、内置 Adapter、插件、高级对象和诊断事件。",
     canonical: `${productionOrigin}/reference`,
     alternate: `${productionOrigin}/en/reference`,
+  },
+  {
+    output: "en/guides/backend-agnostic-analytics-sdk/index.html",
+    source: "en/index.html",
+    title: "Designing a backend-agnostic browser analytics SDK · Tracelet",
+    description: "A practical architecture guide to stable contracts, durable queues, consent, codecs, compression and transport boundaries in a browser analytics SDK.",
+    canonical: `${productionOrigin}/en/guides/backend-agnostic-analytics-sdk`,
+    alternate: `${productionOrigin}/guides/backend-agnostic-analytics-sdk`,
+  },
+  {
+    output: "en/playground/index.html",
+    source: "en/index.html",
+    title: "Tracelet Playground · Try the browser analytics SDK",
+    description: "Run the real Tracelet SDK without a backend: create events, inspect the queue, simulate delivery failures and view EventBatch payloads.",
+    canonical: `${productionOrigin}/en/playground`,
+    alternate: `${productionOrigin}/playground`,
   },
   {
     output: "en/quickstart/index.html",

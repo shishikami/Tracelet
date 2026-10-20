@@ -1,9 +1,11 @@
 import { DocsLayout, type DocsNavigationItem } from "@/components/docs-layout";
 import { ObjectGuide } from "@/components/object-guide";
+import { StarterGallery } from "@/components/starter-gallery";
 import { useLocale } from "@/i18n";
 
 const navigation: Record<"zh-CN" | "en", readonly DocsNavigationItem[]> = {
   "zh-CN": [
+    { id: "starters", label: "一键运行模板" },
     { id: "manual-objects", label: "对象选型" },
     { id: "manual-object-transports", label: "Transport 与路由" },
     { id: "manual-object-storage", label: "浏览器存储" },
@@ -13,6 +15,7 @@ const navigation: Record<"zh-CN" | "en", readonly DocsNavigationItem[]> = {
     { id: "manual-object-custom", label: "自定义扩展" },
   ],
   en: [
+    { id: "starters", label: "Runnable starters" },
     { id: "manual-objects", label: "Choose objects" },
     { id: "manual-object-transports", label: "Transport and routing" },
     { id: "manual-object-storage", label: "Browser storage" },
@@ -34,6 +37,7 @@ export default function ExamplesPage() {
       description={en ? "Start with the complete setup, then copy only the transport, storage, encoding, plugin or extension recipe your application needs." : "先从完整生产配置理解对象关系，再按需复制 Transport、存储、编码、插件或自定义扩展示例。"}
       items={navigation[locale]}
     >
+      <StarterGallery />
       <ObjectGuide />
     </DocsLayout>
   );

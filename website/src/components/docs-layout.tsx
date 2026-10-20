@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ArrowRight, BookOpen, Braces, FlaskConical } from "lucide-react";
+import { ArrowRight, BookOpen, Braces, FlaskConical, Play } from "lucide-react";
 import { useLocale } from "@/i18n";
 import { sitePath, type SitePage } from "@/routing";
 
@@ -9,6 +9,7 @@ export interface DocsNavigationItem {
 }
 
 const docPages: Array<{ page: Exclude<SitePage, "home">; icon: typeof BookOpen; zh: string; en: string }> = [
+  { page: "playground", icon: Play, zh: "在线体验", en: "Playground" },
   { page: "quickstart", icon: BookOpen, zh: "快速开始", en: "Quickstart" },
   { page: "examples", icon: FlaskConical, zh: "示例", en: "Examples" },
   { page: "reference", icon: Braces, zh: "API 参考", en: "API Reference" },

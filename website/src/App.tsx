@@ -9,6 +9,8 @@ import { pageFromPath, sitePath, type SitePage } from "@/routing";
 const QuickstartPage = lazy(() => import("@/pages/quickstart-page"));
 const ExamplesPage = lazy(() => import("@/pages/examples-page"));
 const ReferencePage = lazy(() => import("@/pages/reference-page"));
+const PlaygroundPage = lazy(() => import("@/pages/playground-page"));
+const ArchitectureGuidePage = lazy(() => import("@/pages/architecture-guide-page"));
 
 function MobileMenu({ page, onClose }: { page: SitePage; onClose: () => void }) {
   const locale = useLocale();
@@ -29,6 +31,7 @@ function MobileMenu({ page, onClose }: { page: SitePage; onClose: () => void }) 
 
   const links: Array<[SitePage, string]> = [
     ["home", en ? "Home" : "首页"],
+    ["playground", "Playground"],
     ["quickstart", "Quickstart"],
     ["examples", en ? "Examples" : "示例"],
     ["reference", "API Reference"],
@@ -52,6 +55,8 @@ function MobileMenu({ page, onClose }: { page: SitePage; onClose: () => void }) 
 }
 
 function CurrentPage({ page }: { page: SitePage }) {
+  if (page === "playground") return <PlaygroundPage />;
+  if (page === "guide") return <ArchitectureGuidePage />;
   if (page === "quickstart") return <QuickstartPage />;
   if (page === "examples") return <ExamplesPage />;
   if (page === "reference") return <ReferencePage />;
@@ -84,8 +89,10 @@ export function App() {
           <div className="flex flex-wrap gap-5">
             <a className="hover:text-white" href="https://www.npmjs.com/package/tracelet-browser" target="_blank" rel="noreferrer">npm</a>
             <a className="hover:text-white" href="https://github.com/shishikami/Tracelet" target="_blank" rel="noreferrer"><Code2 className="mr-1 inline size-3.5" />GitHub</a>
+            <a className="hover:text-white" href={sitePath("playground", locale)}>Playground</a>
             <a className="hover:text-white" href={sitePath("quickstart", locale)}>Quickstart</a>
             <a className="hover:text-white" href={sitePath("reference", locale)}>API</a>
+            <a className="hover:text-white" href={sitePath("guide", locale)}>{en ? "Architecture guide" : "架构文章"}</a>
           </div>
         </div>
       </footer>

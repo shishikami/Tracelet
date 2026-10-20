@@ -1,0 +1,9 @@
+{
+  "name": "tracelet-vercel-collector-starter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": { "dev": "vercel dev" },
+  "devDependencies": { "typescript": "^5.7.0", "vercel": "^50.0.0" }
+}

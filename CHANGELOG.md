@@ -6,6 +6,9 @@
 
 ### Added
 
+- 可直接运行真实 SDK 的中英文 Playground，支持事件入队、EventBatch 检查、模拟 503 与手动重试，无需准备后端。
+- 可由 StackBlitz 直接运行的 React/Vite、Vue/Vite 模板，以及可独立部署的 Vercel Collector 模板。
+- 《如何设计一个与后端解耦的浏览器埋点 SDK》中英文架构文章，覆盖契约、可靠投递、隐私与 Protobuf 边界。
 - Vercel Web Analytics 官网访问统计，并增加无 Cookie 注入的跨浏览器验证。
 - npm 包体积、发布文件边界和公开运行时导出的 CI 防回归检查。
 - 官网首屏与总 JavaScript gzip 体积预算。
@@ -13,6 +16,7 @@
 
 ### Changed
 
+- npm 与 GitHub README 调整为英文优先的双语入口，并补充下载量、CI、TypeScript 标识和更完整的 npm 检索关键词。
 - 官网重构为独立的首页、Quickstart、Examples 和 API Reference 路由，文档页增加桌面粘性侧栏与移动端折叠目录。
 - 文档搜索改为跨页面跳转，并为六个新增中英文文档 URL 补齐 canonical、`hreflang` 和 sitemap。
 - 长篇文档按路由懒加载，降低首页首屏 JavaScript 体积。
