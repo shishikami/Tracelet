@@ -54,12 +54,13 @@ export function HomePage() {
         <div className="hero-glow" aria-hidden="true" />
         <div className="grid-pattern" aria-hidden="true" />
         <div className="relative mx-auto max-w-5xl text-center">
-          <Badge><span className="mr-2 size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />Open source · Browser SDK</Badge>
+          <Badge><span className="mr-2 size-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />Tracelet Browser · tracelet-browser</Badge>
           <h1 className="mt-8 text-balance text-5xl font-semibold tracking-[-0.045em] sm:text-7xl lg:text-8xl">
+            <span className="mb-4 block font-mono text-sm font-medium uppercase tracking-[0.14em] text-emerald-300 sm:text-base">{en ? "TypeScript browser analytics SDK" : "TypeScript 前端埋点 SDK"}</span>
             {en ? "Every event, clearly accounted for." : "每一个事件，都有迹可循。"}
           </h1>
           <p className="mx-auto mt-7 max-w-2xl text-pretty text-lg leading-8 text-slate-400 sm:text-xl">
-            {en ? "Tracelet decouples product instrumentation from your backend through a stable, replaceable pipeline for collection, persistence, encoding and delivery." : "Tracelet 将业务埋点与后端实现解耦，以稳定、可替换的管线完成采集、持久化、编码和投递。"}
+            {en ? "Tracelet is an open-source TypeScript browser analytics SDK that decouples product instrumentation from your backend through a stable, replaceable delivery pipeline." : "Tracelet 是开源 TypeScript 前端埋点 SDK，将业务埋点与后端实现解耦，以稳定、可替换的管线完成采集、持久化、编码和投递。"}
           </p>
           <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
             <Button asChild size="lg"><a href={sitePath("playground", locale)}><Play className="size-4" />{en ? "Try it live" : "在线体验"}</a></Button>
@@ -137,6 +138,10 @@ export function HomePage() {
           <a href={sitePath("guide", locale)} className="group mt-5 flex flex-col justify-between gap-5 rounded-2xl border border-white/10 bg-gradient-to-r from-emerald-300/[0.06] to-transparent p-6 transition hover:border-emerald-300/30 sm:flex-row sm:items-center">
             <span><span className="font-mono text-[11px] uppercase tracking-[0.13em] text-emerald-300">{en ? "Architecture guide" : "架构文章"}</span><strong className="mt-2 block text-lg text-slate-100">{en ? "Designing a backend-agnostic browser analytics SDK" : "如何设计一个与后端解耦的浏览器埋点 SDK"}</strong><span className="mt-2 block text-sm text-slate-400">{en ? "Contracts, durable queues, consent and the correct boundary for Protobuf." : "稳定契约、可靠队列、Consent，以及 Protobuf 应该放在哪里。"}</span></span>
             <span className="flex shrink-0 items-center gap-2 text-sm text-emerald-300">{en ? "Read guide" : "阅读文章"}<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></span>
+          </a>
+          <a href={sitePath("sdkGuide", locale)} className="group mt-5 flex flex-col justify-between gap-5 rounded-2xl border border-white/10 bg-gradient-to-r from-cyan-300/[0.05] to-transparent p-6 transition hover:border-cyan-300/30 sm:flex-row sm:items-center">
+            <span><span className="font-mono text-[11px] uppercase tracking-[0.13em] text-cyan-300">{en ? "Evaluation guide" : "选型与接入指南"}</span><strong className="mt-2 block text-lg text-slate-100">{en ? "Choose a TypeScript browser analytics SDK" : "TypeScript 前端埋点 SDK：从选型到上线"}</strong><span className="mt-2 block text-sm text-slate-400">{en ? "A practical checklist for typed events, privacy, offline queues and backend ownership." : "用类型安全、隐私边界、离线队列与后端自主权判断一个 SDK 是否适合真实项目。"}</span></span>
+            <span className="flex shrink-0 items-center gap-2 text-sm text-cyan-300">{en ? "Read guide" : "阅读指南"}<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></span>
           </a>
         </div>
       </section>

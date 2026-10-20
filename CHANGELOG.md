@@ -2,7 +2,7 @@
 
 本项目的所有重要变更都会记录在此文件中。
 
-## 0.3.0 - Unreleased
+## 0.3.0-beta.1 - Unreleased
 
 ### Added
 
@@ -24,10 +24,12 @@
 - npm 与 GitHub README 调整为英文优先的双语入口，并补充下载量、CI、TypeScript 标识和更完整的 npm 检索关键词。
 - 官网重构为独立的首页、Quickstart、Examples 和 API Reference 路由，文档页增加桌面粘性侧栏与移动端折叠目录。
 - 文档搜索改为跨页面跳转，并为六个新增中英文文档 URL 补齐 canonical、`hreflang` 和 sitemap。
+- 新增 TypeScript 前端埋点 SDK 中英文选型指南、可直接抓取的首屏 HTML 摘要和文章结构化数据，强化 `Tracelet Browser` / `tracelet-browser` 品牌消歧。
 - 长篇文档按路由懒加载，降低首页首屏 JavaScript 体积。
 - 语法高亮运行时改为接近视口时按需加载，降低官网首屏 JavaScript。
 - 发布文档不再建议绕过 staged publishing 直接发布。
 - 用户手册新增 SDK 对象选型表、生产配置模板，以及 Transport、Storage、Codec、Compression、Plugin 和高级工具的逐对象示例。
+- 发布工作流支持预发布版本，并强制预发布版本使用 npm `beta` dist-tag 后进入 staged approval。
 
 ## 0.2.0 - 2026-10-20
 
@@ -107,7 +109,7 @@ Tracelet 首个公开版本。
 - 指数退避、随机抖动和可重试状态判断。
 - 本地 Collector、浏览器验证台和 React 文档官网。
 
-[0.3.0]: https://github.com/shishikami/Tracelet/compare/v0.2.0...HEAD
+[0.3.0-beta.1]: https://github.com/shishikami/Tracelet/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/shishikami/Tracelet/releases/tag/v0.2.0
 [0.1.2]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.2
 [0.1.1]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.1

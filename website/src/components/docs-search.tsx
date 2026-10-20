@@ -17,6 +17,7 @@ const searchEntries: Record<Locale, readonly SearchEntry[]> = {
     { id: "playground", category: "在线体验", title: "交互式 Playground", description: "运行真实 SDK，观察队列、诊断、失败重试与 EventBatch。", keywords: "playground demo 在线体验 queue retry EventBatch mock collector" },
     { id: "starters", category: "示例", title: "一键运行模板", description: "React、Vue 与 Vercel Collector 完整项目。", keywords: "starter StackBlitz React Vue Vercel Collector 模板" },
     { id: "guide-architecture", category: "架构文章", title: "设计后端无关的浏览器埋点 SDK", description: "稳定契约、可靠队列、Consent 与可替换投递边界。", keywords: "architecture sdk design backend agnostic 架构 后端解耦" },
+    { id: "seo-guide-evaluation", category: "选型指南", title: "TypeScript 前端埋点 SDK：从选型到上线", description: "评估类型安全、隐私、离线队列、后端自主权与生产可观测性。", keywords: "typescript 前端埋点 sdk 浏览器埋点 离线队列 隐私 选型 analytics" },
     { id: "architecture", category: "概览", title: "SDK 架构", description: "核心契约、Adapter 与后端解耦边界。", keywords: "architecture 架构 pipeline 管线 adapter" },
     { id: "manual-setup", category: "快速开始", title: "安装与 Quickstart", description: "从 npm 安装并创建第一个 SDK 实例。", keywords: "install npm pnpm yarn quickstart 安装" },
     { id: "delivery", category: "可靠性", title: "可靠投递", description: "本地队列、批次、重试和 eventId 去重。", keywords: "delivery retry queue eventId 重试 队列" },
@@ -46,6 +47,7 @@ const searchEntries: Record<Locale, readonly SearchEntry[]> = {
     { id: "playground", category: "Try it", title: "Interactive Playground", description: "Run the real SDK and inspect its queue, diagnostics, retries and EventBatch.", keywords: "playground demo live queue retry EventBatch mock collector" },
     { id: "starters", category: "Examples", title: "Runnable starters", description: "Complete React, Vue and Vercel Collector projects.", keywords: "starter StackBlitz React Vue Vercel Collector template" },
     { id: "guide-architecture", category: "Architecture", title: "Designing a backend-agnostic browser analytics SDK", description: "Stable contracts, durable queues, consent and replaceable delivery boundaries.", keywords: "architecture sdk design backend agnostic decoupling" },
+    { id: "seo-guide-evaluation", category: "Evaluation", title: "Choose a TypeScript browser analytics SDK", description: "Evaluate typed events, privacy, offline queues, backend ownership and production observability.", keywords: "typescript browser analytics sdk frontend tracking offline queue privacy evaluation" },
     { id: "architecture", category: "Overview", title: "SDK architecture", description: "Core contracts, adapters and backend decoupling boundaries.", keywords: "architecture pipeline adapter core" },
     { id: "manual-setup", category: "Quickstart", title: "Install and quickstart", description: "Install from npm and create the first SDK instance.", keywords: "install npm pnpm yarn quickstart" },
     { id: "delivery", category: "Reliability", title: "Reliable delivery", description: "Local queues, batching, retries and eventId deduplication.", keywords: "delivery retry queue eventId" },
@@ -203,6 +205,7 @@ function pageForEntry(id: string): SitePage {
   if (id === "playground") return "playground";
   if (id === "starters") return "examples";
   if (id === "guide-architecture") return "guide";
+  if (id.startsWith("seo-guide-")) return "sdkGuide";
   if (id.startsWith("api-")) return "reference";
   if (id === "manual-objects" || id.startsWith("manual-object-")) return "examples";
   if (id.startsWith("manual-")) return "quickstart";

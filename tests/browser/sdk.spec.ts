@@ -180,6 +180,19 @@ test("publishes runnable starters and the bilingual architecture guide", async (
   await expect(page.getByRole("link", { name: "中文" })).toHaveAttribute("href", "/guides/backend-agnostic-analytics-sdk");
 });
 
+test("publishes a bilingual TypeScript analytics SDK evaluation guide", async ({ page }) => {
+  await page.goto("/guides/typescript-browser-analytics-sdk");
+  await expect(page.getByRole("heading", { name: "TypeScript 前端埋点 SDK：从选型到上线" })).toBeVisible();
+  await expect(page.locator("#seo-guide-checklist")).toContainText("离线可靠性");
+  await expect(page.locator("#seo-guide-faq")).toContainText("Tracelet 官方后端");
+  await expect(page.getByRole("link", { name: "EN" })).toHaveAttribute("href", "/en/guides/typescript-browser-analytics-sdk");
+
+  await page.goto("/en/guides/typescript-browser-analytics-sdk");
+  await expect(page.getByRole("heading", { name: "Choose a TypeScript browser analytics SDK" })).toBeVisible();
+  await expect(page.locator("#seo-guide-checklist")).toContainText("Offline reliability");
+  await expect(page.getByRole("link", { name: "中文" })).toHaveAttribute("href", "/guides/typescript-browser-analytics-sdk");
+});
+
 test("sends a browser event through the real collector", async ({ page, request, browserName }) => {
   await page.goto("/");
 

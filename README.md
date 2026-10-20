@@ -8,7 +8,7 @@
 
 A backend-agnostic, privacy-first analytics SDK for modern browsers. Tracelet gives product code one typed API while keeping queues, codecs, compression and delivery behind replaceable contracts.
 
-[Live playground](https://tracelet-opal.vercel.app/playground) · [Quickstart](https://tracelet-opal.vercel.app/quickstart) · [Examples](https://tracelet-opal.vercel.app/examples) · [API reference](https://tracelet-opal.vercel.app/reference) · [简体中文](#简体中文)
+[Live playground](https://tracelet-opal.vercel.app/playground) · [Quickstart](https://tracelet-opal.vercel.app/quickstart) · [SDK evaluation guide](https://tracelet-opal.vercel.app/en/guides/typescript-browser-analytics-sdk) · [Examples](https://tracelet-opal.vercel.app/examples) · [API reference](https://tracelet-opal.vercel.app/reference) · [简体中文](#简体中文)
 
 ## Why Tracelet?
 
@@ -82,6 +82,7 @@ yarn add tracelet-browser
 - 官网：[tracelet-opal.vercel.app](https://tracelet-opal.vercel.app)
 - 在线体验：[Playground](https://tracelet-opal.vercel.app/playground)
 - 快速开始：[Quickstart](https://tracelet-opal.vercel.app/quickstart)
+- SDK 选型指南：[TypeScript 前端埋点 SDK：从选型到上线](https://tracelet-opal.vercel.app/guides/typescript-browser-analytics-sdk)
 - 场景示例：[Examples](https://tracelet-opal.vercel.app/examples)
 - API 查询：[Reference](https://tracelet-opal.vercel.app/reference)
 - npm：[tracelet-browser](https://www.npmjs.com/package/tracelet-browser)
@@ -365,7 +366,7 @@ pnpm dev:docs
 pnpm build:docs
 ```
 
-官网源码位于 `website/`，构建产物位于 `out/`。精简首页、Quickstart、Examples 和 API Reference 分别使用独立 URL，中文为 `/`、`/quickstart`、`/examples`、`/reference`，英文页面统一增加 `/en` 前缀。所有页面共享组件与中英文搜索，文档页提供粘性侧边目录，并具有各自的 canonical、`hreflang` 和搜索元数据。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。框架演进判断见 [docs/website-framework.md](./docs/website-framework.md)。
+官网源码位于 `website/`，构建产物位于 `out/`。精简首页、Quickstart、Examples、API Reference 与两篇指南分别使用独立 URL，英文页面统一增加 `/en` 前缀。所有页面共享组件与中英文搜索，文档页提供粘性侧边目录，并具有各自的 canonical、`hreflang`、首个 HTML 响应摘要和搜索元数据。仓库附带 `vercel.json`，导入 Vercel 后会自动安装 workspace 依赖、运行构建并发布 `out/`。其他静态托管平台只需把构建命令设为 `pnpm build:docs`、输出目录设为 `out`。框架演进判断见 [docs/website-framework.md](./docs/website-framework.md)。
 
 ## 仓库结构
 
@@ -384,7 +385,7 @@ proto/     可选的 Protobuf 协议示例
 - Pull Request 和 `main` 分支推送会在 Node.js 20、24 上运行类型检查、测试、官网构建和 npm 包内容检查。
 - CI 会把 `npm pack` 生成的 tarball 安装进空白项目，验证 JavaScript 导入、TypeScript 声明和 Vite 构建，避免“源码能用但发布包不可用”。
 - Node.js 检查通过后，会在 Chromium、Firefox 和 WebKit 上运行浏览器端到端测试。
-- 发布正式 GitHub Release 后，工作流会校验 Git tag 与 `package.json` 版本一致，再通过 npm Trusted Publishing 提交待审核版本。
+- 发布 GitHub Release 后，工作流会校验 Git tag 与 `package.json` 版本一致，再通过 npm Trusted Publishing 提交待审核版本；SemVer 预发布版本固定使用 `beta` dist-tag，正式版本使用 `latest`。
 - Vercel 保持 Git 集成：Pull Request 生成 Preview，`main` 更新生产站点，不在 Actions 中重复部署。
 
 首次启用自动发布时，需要在 npm 包的 **Settings → Trusted Publisher** 中添加 GitHub Actions：

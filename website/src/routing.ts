@@ -1,6 +1,6 @@
 import type { Locale } from "@/i18n";
 
-export type SitePage = "home" | "playground" | "quickstart" | "examples" | "reference" | "guide";
+export type SitePage = "home" | "playground" | "quickstart" | "examples" | "reference" | "guide" | "sdkGuide";
 
 const pageSegments: Record<SitePage, string> = {
   home: "",
@@ -9,12 +9,14 @@ const pageSegments: Record<SitePage, string> = {
   examples: "examples",
   reference: "reference",
   guide: "guides/backend-agnostic-analytics-sdk",
+  sdkGuide: "guides/typescript-browser-analytics-sdk",
 };
 
 /** Resolve the documentation page from a public URL without coupling the site to a router package. */
 export function pageFromPath(pathname = window.location.pathname): SitePage {
   const normalized = pathname.replace(/^\/en(?:\/|$)/, "/").replace(/^\/+|\/+$/g, "");
   if (normalized === "guides/backend-agnostic-analytics-sdk") return "guide";
+  if (normalized === "guides/typescript-browser-analytics-sdk") return "sdkGuide";
   if (normalized === "playground" || normalized === "quickstart" || normalized === "examples" || normalized === "reference") return normalized;
   return "home";
 }

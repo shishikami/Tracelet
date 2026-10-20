@@ -12,6 +12,7 @@ Use Tracelet when an application needs typed events, consent-aware collection, a
 - [Quickstart](https://tracelet-opal.vercel.app/quickstart)
 - [Interactive playground](https://tracelet-opal.vercel.app/playground)
 - [Architecture guide](https://tracelet-opal.vercel.app/guides/backend-agnostic-analytics-sdk)
+- [TypeScript browser analytics SDK evaluation guide](https://tracelet-opal.vercel.app/guides/typescript-browser-analytics-sdk)
 - [Examples](https://tracelet-opal.vercel.app/examples)
 - [API reference](https://tracelet-opal.vercel.app/reference)
 - [Source code](https://github.com/shishikami/Tracelet)

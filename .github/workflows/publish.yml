@@ -16,7 +16,6 @@ concurrency:
 jobs:
   publish:
     name: Stage package on npm
-    if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
 
     steps:
@@ -55,4 +54,11 @@ jobs:
         run: pnpm pack:check
 
       - name: Stage package for maintainer approval
-        run: npm stage publish
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            npm stage publish --tag beta
+          else
+            npm stage publish --tag latest
+          fi

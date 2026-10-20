@@ -12,6 +12,7 @@ const ExamplesPage = lazy(() => import("@/pages/examples-page"));
 const ReferencePage = lazy(() => import("@/pages/reference-page"));
 const PlaygroundPage = lazy(() => import("@/pages/playground-page"));
 const ArchitectureGuidePage = lazy(() => import("@/pages/architecture-guide-page"));
+const SdkGuidePage = lazy(() => import("@/pages/sdk-guide-page"));
 
 function MobileMenu({ page, onClose }: { page: SitePage; onClose: () => void }) {
   const locale = useLocale();
@@ -58,6 +59,7 @@ function MobileMenu({ page, onClose }: { page: SitePage; onClose: () => void }) 
 function CurrentPage({ page }: { page: SitePage }) {
   if (page === "playground") return <PlaygroundPage />;
   if (page === "guide") return <ArchitectureGuidePage />;
+  if (page === "sdkGuide") return <SdkGuidePage />;
   if (page === "quickstart") return <QuickstartPage />;
   if (page === "examples") return <ExamplesPage />;
   if (page === "reference") return <ReferencePage />;
@@ -97,6 +99,7 @@ export function App() {
             <a className="hover:text-white" href={sitePath("quickstart", locale)}>Quickstart</a>
             <a className="hover:text-white" href={sitePath("reference", locale)}>API</a>
             <a className="hover:text-white" href={sitePath("guide", locale)}>{en ? "Architecture guide" : "架构文章"}</a>
+            <a className="hover:text-white" href={sitePath("sdkGuide", locale)}>{en ? "SDK guide" : "选型指南"}</a>
           </div>
         </div>
       </footer>

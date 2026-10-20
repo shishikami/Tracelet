@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ArrowRight, BookOpen, Braces, FlaskConical, Play } from "lucide-react";
+import { ArrowRight, BookOpen, Braces, FlaskConical, Network, Play, SearchCheck } from "lucide-react";
 import { useLocale } from "@/i18n";
 import { sitePath, type SitePage } from "@/routing";
 
@@ -13,6 +13,8 @@ const docPages: Array<{ page: Exclude<SitePage, "home">; icon: typeof BookOpen; 
   { page: "quickstart", icon: BookOpen, zh: "快速开始", en: "Quickstart" },
   { page: "examples", icon: FlaskConical, zh: "示例", en: "Examples" },
   { page: "reference", icon: Braces, zh: "API 参考", en: "API Reference" },
+  { page: "sdkGuide", icon: SearchCheck, zh: "SDK 选型指南", en: "SDK evaluation guide" },
+  { page: "guide", icon: Network, zh: "架构文章", en: "Architecture guide" },
 ];
 
 function Sidebar({ page, items, mobile = false }: { page: Exclude<SitePage, "home">; items: readonly DocsNavigationItem[]; mobile?: boolean }) {

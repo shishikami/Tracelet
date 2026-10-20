@@ -2,7 +2,9 @@
 
 ## Current decision
 
-Keep the documentation site on React and Vite for now. The site is a small, static product page with no server data, authentication, content collection, or page-level routing. Introducing a metaframework today would increase build and maintenance surface without unlocking a required product capability.
+Keep the documentation site on React and Vite through the `0.3.0` beta. The site now has multiple addressable documentation routes, but still has no server data, authentication or content collection. Migrating frameworks in the same release as the observability API would add more regression surface than product value.
+
+The Vite build now generates route-specific HTML files with canonical metadata, reciprocal `hreflang`, structured data and an equivalent static summary in the first response. React replaces that summary after loading. This closes the immediate crawlability gap without serving bot-specific content, while keeping the interactive Playground and documentation search unchanged.
 
 Internationalization uses two static HTML entry points:
 
@@ -15,15 +17,15 @@ Both entries share the same React components, but have independent metadata, can
 
 Re-evaluate the framework when at least one of these becomes true:
 
-- Documentation grows into multiple independently addressable pages.
+- Documentation grows beyond the current hand-maintained pages or adds versioned API documentation.
 - Markdown or MDX becomes the primary authoring format.
 - Navigation, search, versioned documentation or automatic table-of-contents generation is required.
-- Important content must be available in the initial HTML without JavaScript execution.
+- Complete article content—not only the current descriptive summary—must be available in the initial HTML without JavaScript execution.
 - Contributors need a content-oriented workflow rather than editing TSX components.
 
 ## Preferred migration target
 
-Astro is the preferred next step for a documentation-first site. It can statically render localized content, keep React islands for interactive components such as package-manager tabs and copy buttons, and avoid shipping React for non-interactive documentation.
+Astro remains the preferred next step for a documentation-first site. Re-evaluate it after the `0.3.0` stable release using Search Console rendering evidence, content volume and contributor friction. It can statically render localized content, keep React islands for the Playground, search and copy buttons, and avoid shipping React for non-interactive documentation.
 
 Next.js is appropriate only if Tracelet later needs server-side application behavior, authenticated dashboards, API routes or tight integration with a larger React application. Those requirements do not exist today.
 
