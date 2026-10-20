@@ -12,7 +12,7 @@
 
 ## 发布前检查
 
-- [x] `pnpm check` 与 `pnpm test:browser` 通过（GitHub Actions CI #27）。
+- [x] `pnpm check` 与 `pnpm test:browser` 通过（GitHub Actions CI [#34](https://github.com/shishikami/Tracelet/actions/runs/39386002350)）。
 - [x] npm `latest` 为 `0.2.0`，与当前公开文档和示例一致。
 - [x] Playground、Quickstart、Examples、Reference 的中英文 URL 均返回 HTTP 200。
 - [x] React、Vue StackBlitz 链接可直接打开并解析到对应 Starter 目录。
