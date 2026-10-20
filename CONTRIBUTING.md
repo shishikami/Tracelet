@@ -53,3 +53,5 @@ pnpm dev:docs
 - [曝光漏斗与每周指标](./docs/growth-metrics.md)
 - [支持渠道与问题边界](./SUPPORT.md)
 - [无障碍承诺与反馈方式](./ACCESSIBILITY.md)
+- [0.3 可观测 API 设计稿](./docs/rfcs/0001-observability-api.md)
+- [兼容性与韧性测试矩阵](./docs/compatibility-matrix.md)

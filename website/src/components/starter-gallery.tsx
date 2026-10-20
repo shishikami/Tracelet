@@ -26,8 +26,8 @@ const starters = [
   {
     icon: Cloud,
     title: "Vercel Collector",
-    zh: "无状态 Node.js Function，包含 CORS、批次边界、字段校验与请求内去重。",
-    en: "A stateless Node.js Function with CORS, batch limits, validation and request-level deduplication.",
+    zh: "可测试的无状态 Node.js Function，包含 Origin 白名单、gzip、双层大小边界、鉴权扩展与持久化 Sink 契约。",
+    en: "A tested stateless Node.js Function with origin allowlisting, gzip, dual body limits, optional auth and a durable sink contract.",
     href: "https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fshishikami%2FTracelet&root-directory=examples%2Fstarters%2Fcollector-vercel&project-name=tracelet-collector",
     actionZh: "部署到 Vercel",
     actionEn: "Deploy to Vercel",

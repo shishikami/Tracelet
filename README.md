@@ -59,6 +59,8 @@ Runnable starters:
 - [Vue + Vite](./examples/starters/vue-vite)
 - [Vercel Collector](./examples/starters/collector-vercel)
 
+Planning: [0.3 observability RFC](./docs/rfcs/0001-observability-api.md) · [Compatibility matrix](./docs/compatibility-matrix.md)
+
 Community: [Support](./SUPPORT.md) · [Contributing](./CONTRIBUTING.md) · [Code of Conduct](./CODE_OF_CONDUCT.md) · [Accessibility](./ACCESSIBILITY.md) · [Security](./SECURITY.md) · [Issues](https://github.com/shishikami/Tracelet/issues)
 
 > The project is currently suitable for evaluation, prototypes and early production integrations with an explicit delivery validation plan. See the [changelog](./CHANGELOG.md) before upgrading.
@@ -411,13 +413,15 @@ pnpm pack:check
 - [x] 存储配额估算与 IndexedDB 配额诊断
 - [x] 文档搜索和框架适配示例
 
-0.3.0 候选方向：
+0.3.0 规划状态：
 
-- CDN / IIFE 构建，支持无需打包器的 `<script>` 接入。
-- 队列、投递失败与重试状态的公开可观测 API。
-- CSP、广告拦截器、离线环境和更多打包器兼容性验证。
-- 根据真实接入反馈完善插件和框架适配层。
+- [x] [可观测 API 设计稿](./docs/rfcs/0001-observability-api.md)：队列快照、投递状态和多订阅者语义。
+- [x] [兼容性与韧性测试矩阵](./docs/compatibility-matrix.md)：明确自动化、部分覆盖、手工验证和待验证边界。
+- [x] [Vercel Collector starter](./examples/starters/collector-vercel)：CORS、安全大小边界、gzip、鉴权扩展和持久化 Sink 契约。
+- [ ] 实现并验证可观测 API，先发布 `0.3.0-beta.1`。
+- [ ] 增加 CSP、离线恢复、跨标签页锁与更多打包器的真实夹具。
+- [ ] 评估 CDN / IIFE 构建，支持无需打包器的 `<script>` 接入。
 
-候选功能会先通过 Issue 收集使用场景，再决定是否进入正式里程碑。
+RFC 中仍有命名与状态保留范围等开放问题；公开 API 实现前应先通过 Issue 或 Discussion 收集真实使用场景。
 
 版本变化见 [CHANGELOG.md](./CHANGELOG.md)。

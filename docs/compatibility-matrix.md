@@ -1,0 +1,102 @@
+# Tracelet compatibility and resilience matrix
+
+Last reviewed: 2026-10-20
+
+This matrix distinguishes what CI proves today from documented manual checks and planned coverage. “Supported” means the named path has automated evidence in this repository; it does not imply support for every historical browser or third-party extension.
+
+## Status legend
+
+| Status | Meaning |
+| --- | --- |
+| ✅ Automated | Runs in CI and blocks merging on failure. |
+| 🧪 Manual | A repeatable check is documented but not yet a CI gate. |
+| ⚠️ Partial | A related path is automated, but an important variant is missing. |
+| 🗓️ Planned | Targeted for 0.3.x; not currently claimed as verified. |
+
+## Browser and lifecycle
+
+| Capability | Chromium | Firefox | WebKit | Evidence | Status |
+| --- | --- | --- | --- | --- | --- |
+| Package import and real HTTP delivery | Yes | Yes | Yes | `tests/browser/sdk.spec.ts`: real collector | ✅ Automated |
+| IndexedDB persistent queue | Yes | Yes | Yes | Real collector test uses `IndexedDbEventStorage` | ✅ Automated |
+| `pagehide` flush | Yes | Yes | Yes | Browser lifecycle test | ✅ Automated |
+| Hidden-page `visibilitychange` flush | Indirect | Indirect | Indirect | Listener exists; no isolated browser assertion | ⚠️ Partial |
+| gzip through `CompressionStream` | Yes | Yes | Yes | Browser gzip delivery test | ✅ Automated |
+| Retry after transient `503` | Yes | Yes | Yes | Browser recovery test | ✅ Automated |
+| Multiple collector routing | Yes | Yes | Yes | Browser routing test | ✅ Automated |
+| Cross-tab delivery lock | Unit only | Unit only | Unit only | `tests/analytics.test.mjs`; no multi-page browser case | ⚠️ Partial |
+| Storage quota diagnostics | Unit only | Unit only | Unit only | Synthetic quota rejection test | ⚠️ Partial |
+| Private/ephemeral browsing modes | — | — | — | Browser policies vary by version | 🗓️ Planned |
+
+## Network and collector behavior
+
+| Scenario | Expected behavior | Evidence | Status |
+| --- | --- | --- | --- |
+| Any `2xx` response | Remove committed events | Unit and browser delivery tests | ✅ Automated |
+| `408`, `429`, `5xx` | Keep events and retry | Transport/analytics tests; browser `503` test | ✅ Automated |
+| `Retry-After` seconds or HTTP date | Schedule the requested delay | `tests/transport.test.mjs` | ✅ Automated |
+| Request timeout | Keep events and retry | `tests/transport.test.mjs` | ✅ Automated |
+| Explicit caller abort | Do not retry that send | `tests/transport.test.mjs` | ✅ Automated |
+| JSON + gzip ingestion | Decode and validate the same EventBatch | `tests/collector.test.mjs` | ✅ Automated |
+| CORS preflight and origin allowlist | Allow configured origins; deny others | `tests/collector.test.mjs` | ✅ Automated |
+| Compressed/decoded body limits | Reject with `413` before the sink | `tests/collector.test.mjs` | ✅ Automated |
+| Within-batch duplicate IDs | Reject with `400` | `tests/collector.test.mjs` | ✅ Automated |
+| Cross-request idempotency | Durable sink enforces unique `eventId` | Sink contract and starter documentation; no database chosen | 🧪 Manual |
+| Offline → online browser transition | Queued events eventually retry | Retry primitive exists; online/offline transition not isolated | 🗓️ Planned |
+| Captive portal / DNS / TLS failure | Keep events and retry | Fetch failure is covered generically, not browser-network variants | ⚠️ Partial |
+
+## Privacy, policy and constrained environments
+
+| Scenario | Current behavior | Evidence | Status |
+| --- | --- | --- | --- |
+| Consent denied | Drop before identity/event persistence | Unit tests and public contract | ✅ Automated |
+| URL query/fragment sanitization | Omit query and fragment from default context | Browser context sanitization test | ✅ Automated |
+| `localStorage` unavailable/throws | Fall back to in-memory identity storage | Unit tests | ✅ Automated |
+| IndexedDB unavailable | Adapter rejects; application must select/fallback storage | Documented limitation; no automatic fallback | 🧪 Manual |
+| Storage quota exceeded | Drop current event safely and emit diagnostics | Unit test | ✅ Automated |
+| CSP `connect-src` blocks collector | Fetch fails and queue is retained | Generic fetch failure covered; CSP fixture missing | 🗓️ Planned |
+| Strict CSP blocks inline/eval | SDK uses ESM without eval; website policy fixture missing | Source inspection only | 🗓️ Planned |
+| Common privacy/ad blockers | Endpoint-dependent; custom first-party paths recommended | No maintained extension corpus | 🗓️ Planned |
+| Third-party cookies disabled | Default transport uses `credentials: "omit"`; no dedicated browser-policy fixture | Source contract and manual inspection | ⚠️ Partial |
+
+## Package, runtime and framework integration
+
+| Target | What is checked | Evidence | Status |
+| --- | --- | --- | --- |
+| Node.js 20 | Types, unit tests, package install/import, Vite build, docs build | CI quality matrix | ✅ Automated |
+| Node.js 24 | Same as Node 20 | CI quality matrix | ✅ Automated |
+| Native ESM consumer | Root export resolves from packed tarball | `scripts/package-smoke.mjs` | ✅ Automated |
+| TypeScript declarations | Typed consumer compiles from packed tarball | `scripts/package-smoke.mjs` | ✅ Automated |
+| Vite application | Installed tarball bundles in a minimal app | `scripts/package-smoke.mjs` | ✅ Automated |
+| React + Vite starter | Integration source type-checks | `tsconfig.frameworks.json` | ⚠️ Partial |
+| Vue + Vite starter | Integration source type-checks | `tsconfig.frameworks.json` | ⚠️ Partial |
+| Next.js client boundary | Example source type-checks; no Next production build | `examples/frameworks/nextjs-client.tsx` | ⚠️ Partial |
+| Webpack/Rollup direct consumers | ESM should resolve; dedicated fixtures absent | None yet | 🗓️ Planned |
+| CDN/IIFE `<script>` usage | No global build exists | 0.3 candidate | 🗓️ Planned |
+| Vercel Function collector | Handler compiles and protocol tests run on Node 20/24 | `tests/collector.test.mjs` | ✅ Automated |
+
+## 0.3 implementation order
+
+### P0 — make current claims explicit
+
+- Keep this matrix linked from README and contribution guidance.
+- Run collector contract tests in the existing Node 20/24 CI matrix.
+- Treat partial/planned rows as limitations, not implicit support claims.
+
+### P1 — resilience fixtures
+
+1. Add a browser test that starts offline, enqueues, returns online and succeeds.
+2. Serve a CSP-constrained fixture and verify `connect-src` failure retains the queue.
+3. Add a real multi-page test for the shared IndexedDB delivery lock.
+4. Add an isolated `visibilitychange` lifecycle assertion.
+
+### P2 — ecosystem builds
+
+1. Build the React and Vue starters in CI, not only type-check shared adapters.
+2. Add minimal Rollup and Webpack consumers that install the packed tarball.
+3. Add a Next.js production-build fixture around the documented client boundary.
+4. Introduce CDN/IIFE coverage only if that artifact is accepted into the 0.3 scope.
+
+## How to update this matrix
+
+A row can move to ✅ only when the linked test executes the exact target and behavior in CI. A unit test may justify “Unit only” but must not be promoted to three-browser support. When support changes, update the matrix, public documentation and changelog together.

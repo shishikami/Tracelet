@@ -158,7 +158,16 @@ test("publishes runnable starters and the bilingual architecture guide", async (
   await page.goto("/examples#starters");
   await expect(page.getByRole("heading", { name: "一键运行模板" })).toBeVisible();
   await expect(page.getByRole("link", { name: /React \+ Vite/ })).toHaveAttribute("href", /stackblitz\.com\/fork\/github\/shishikami\/Tracelet/);
-  await expect(page.getByRole("link", { name: /Vercel Collector/ })).toHaveAttribute("href", /vercel\.com\/new\/clone/);
+  const collectorStarter = page.getByRole("link", { name: /Vercel Collector/ });
+  await expect(collectorStarter).toHaveAttribute("href", /vercel\.com\/new\/clone/);
+  await expect(collectorStarter).toContainText("Origin 白名单");
+  await expect(collectorStarter).toContainText("双层大小边界");
+
+  await page.goto("/quickstart#manual-collector");
+  await expect(page.getByRole("link", { name: /Vercel Collector starter/ })).toHaveAttribute(
+    "href",
+    /github\.com\/shishikami\/Tracelet\/tree\/main\/examples\/starters\/collector-vercel/,
+  );
 
   await page.goto("/guides/backend-agnostic-analytics-sdk");
   await expect(page.getByRole("heading", { name: "如何设计一个与后端解耦的浏览器埋点 SDK" })).toBeVisible();
