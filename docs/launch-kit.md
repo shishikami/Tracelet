@@ -17,6 +17,7 @@
 - [x] Playground、Quickstart、Examples、Reference 的中英文 URL 均返回 HTTP 200。
 - [x] React、Vue StackBlitz 链接可直接打开并解析到对应 Starter 目录。
 - [x] GitHub description、topics、social preview 和 Discussions 已配置。
+- [x] GitHub Private Vulnerability Reporting 已启用，安全报告入口可访问。
 - [x] 对外发布文案中指向官网的链接附带对应的 UTM 参数。
 - [ ] 发布当天预留时间回答问题并记录真实反馈。
 
