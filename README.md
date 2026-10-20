@@ -59,6 +59,8 @@ Runnable starters:
 - [Vue + Vite](./examples/starters/vue-vite)
 - [Vercel Collector](./examples/starters/collector-vercel)
 
+Community: [Support](./SUPPORT.md) · [Contributing](./CONTRIBUTING.md) · [Security](./SECURITY.md) · [Issues](https://github.com/shishikami/Tracelet/issues)
+
 > The project is currently suitable for evaluation, prototypes and early production integrations with an explicit delivery validation plan. See the [changelog](./CHANGELOG.md) before upgrading.
 
 ## 简体中文

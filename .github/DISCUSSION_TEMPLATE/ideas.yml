@@ -1,0 +1,48 @@
+title: "[Idea] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tracelet keeps the core small and backend-agnostic. Explain the real integration problem first so the community can decide whether the solution belongs in Core, an adapter, a plugin, an example or documentation.
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What application or analytics workflow is currently difficult to implement?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API or behavior
+      description: Include an ideal usage example when the proposal changes a public contract.
+      render: typescript
+    validations:
+      required: true
+  - type: dropdown
+    id: boundary
+    attributes:
+      label: Where should this live?
+      options:
+        - Core SDK
+        - Transport adapter
+        - Storage adapter
+        - Codec or compression plugin
+        - Autocapture plugin
+        - Framework example
+        - Documentation
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Alternatives and trade-offs
+      description: Consider compatibility, bundle size, privacy, reliability and whether application code can solve it today.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before posting
+      options:
+        - label: I searched existing discussions, issues and the roadmap.
+          required: true

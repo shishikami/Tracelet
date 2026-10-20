@@ -118,4 +118,23 @@ utm_content=<帖子或素材变体>
 4. 根据反馈修正文档与 API，再发布 Product Hunt。
 5. 每周整理问题，转成 Discussions、Issues、FAQ 或下一篇文章。
 
+## Discussions 首条欢迎帖
+
+### Title
+
+Welcome to Tracelet Discussions — what are you building?
+
+### Body
+
+Welcome! Tracelet Discussions is the place for integration questions, architecture trade-offs and ideas that are not yet actionable bug reports.
+
+When asking for help, please include the Tracelet version, the boundary involved (`Transport`, `Storage`, `Codec`, plugin or framework lifecycle), a minimal synthetic example and sanitized diagnostics. Never post credentials, production payloads or personal data.
+
+- Use **Q&A** for integration and API questions.
+- Use **Ideas** for proposals and design trade-offs.
+- Use **Issues** only for reproducible defects or accepted implementation work.
+- Use **Private Vulnerability Reporting** for security problems.
+
+To get started, try the [Playground](https://tracelet-opal.vercel.app/en/playground) or follow the [Quickstart](https://tracelet-opal.vercel.app/en/quickstart). If you are evaluating Tracelet, I would love to hear which backend, framework and privacy requirements you need to support.
+
 公开发布是代表项目发言的动作。执行前应由维护者复核文案、选择账号并明确确认。

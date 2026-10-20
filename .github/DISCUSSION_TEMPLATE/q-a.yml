@@ -1,0 +1,55 @@
+title: "[Q&A] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for using Tracelet. Share a minimal synthetic example and remove tokens, production payloads, personal data and customer identifiers.
+        Reproducible defects belong in the Bug report template; security vulnerabilities must use Private Vulnerability Reporting.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which Tracelet boundary is closest to your question?
+      options:
+        - Core API and event typing
+        - Consent and privacy
+        - Storage and delivery reliability
+        - Transport and collector integration
+        - Codec, Protobuf and compression
+        - Autocapture and browser lifecycle
+        - React, Vue or another framework
+        - Documentation or examples
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Tracelet version
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to achieve?
+      description: Describe the intended event lifecycle and the result you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Minimal example and diagnostics
+      description: Include the relevant initialization or event code and sanitized onDiagnostic output.
+      render: typescript
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before posting
+      options:
+        - label: I searched the documentation, existing discussions and issues.
+          required: true
+        - label: I removed credentials, production payloads and personal data.
+          required: true

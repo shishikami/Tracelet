@@ -50,3 +50,4 @@ pnpm dev:docs
 
 - [公开发布素材](./docs/launch-kit.md)
 - [曝光漏斗与每周指标](./docs/growth-metrics.md)
+- [支持渠道与问题边界](./SUPPORT.md)
