@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Analytics } from "@vercel/analytics/react";
 import { App } from "./App";
 import { LocaleProvider } from "./i18n";
+import { filterSiteAnalyticsEvent } from "./site-analytics";
 import "./styles.css";
 
 createRoot(document.getElementById("root")!).render(
@@ -10,6 +11,6 @@ createRoot(document.getElementById("root")!).render(
     <LocaleProvider>
       <App />
     </LocaleProvider>
-    <Analytics />
+    <Analytics beforeSend={filterSiteAnalyticsEvent} />
   </StrictMode>,
 );

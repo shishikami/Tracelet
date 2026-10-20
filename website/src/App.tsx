@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Code2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SiteAnalyticsControl } from "@/components/site-analytics-control";
 import { SiteHeader } from "@/components/site-header";
 import { HomePage } from "@/pages/home-page";
 import { useLocale } from "@/i18n";
@@ -83,8 +84,11 @@ export function App() {
           <div>
             <p>Tracelet · Backend-agnostic browser analytics</p>
             <p className="mt-1 text-xs text-slate-600">
-              {en ? "Cookie-free page traffic is measured with Vercel Web Analytics." : "本站使用不依赖 Cookie 的 Vercel Web Analytics 统计页面访问。"}
+              {en
+                ? "Cookie-free page paths are measured with Vercel Web Analytics. Playground inputs, event properties and identities are never collected."
+                : "本站使用不依赖 Cookie 的 Vercel Web Analytics 统计匿名页面路径，不采集 Playground 输入、事件属性或用户身份。"}
             </p>
+            <div className="mt-2"><SiteAnalyticsControl /></div>
           </div>
           <div className="flex flex-wrap gap-5">
             <a className="hover:text-white" href="https://www.npmjs.com/package/tracelet-browser" target="_blank" rel="noreferrer">npm</a>

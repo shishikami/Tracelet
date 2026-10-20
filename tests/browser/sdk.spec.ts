@@ -14,7 +14,52 @@ test("injects the Vercel Web Analytics client without cookies", async ({ page })
 
   await expect(page.locator('script[src="/_vercel/insights/script.js"]')).toHaveCount(1);
   await expect(page.locator("footer")).toContainText("Vercel Web Analytics");
+  await expect(page.locator("footer")).toContainText("不采集 Playground 输入、事件属性或用户身份");
   expect(await page.context().cookies()).toEqual([]);
+
+  const filterResultBeforeOptOut = await page.evaluate(() => {
+    const queued = window.vaq?.findLast(([name]) => name === "beforeSend");
+    const beforeSend = queued?.[1] as ((event: { type: string; url: string }) => unknown) | undefined;
+    return beforeSend?.({ type: "pageview", url: window.location.href }) ?? null;
+  });
+  expect(filterResultBeforeOptOut).not.toBeNull();
+
+  await page.getByRole("button", { name: "关闭匿名统计" }).click();
+  await expect(page.getByRole("button", { name: "启用匿名统计" })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem("tracelet.site-analytics.v1"))).toBe("disabled");
+
+  const filterResultAfterOptOut = await page.evaluate(() => {
+    const queued = window.vaq?.findLast(([name]) => name === "beforeSend");
+    const beforeSend = queued?.[1] as ((event: { type: string; url: string }) => unknown) | undefined;
+    return beforeSend?.({ type: "pageview", url: window.location.href }) ?? null;
+  });
+  expect(filterResultAfterOptOut).toBeNull();
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "启用匿名统计" })).toBeVisible();
+});
+
+test("respects the browser Global Privacy Control signal", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "globalPrivacyControl", {
+      configurable: true,
+      value: true,
+    });
+  });
+  await page.route("**/_vercel/insights/script.js", (route) =>
+    route.fulfill({ contentType: "application/javascript", body: "" }),
+  );
+
+  await page.goto("/en");
+
+  await expect(page.getByText("Analytics disabled by your browser privacy signal.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /anonymous analytics/i })).toHaveCount(0);
+  const filterResult = await page.evaluate(() => {
+    const queued = window.vaq?.findLast(([name]) => name === "beforeSend");
+    const beforeSend = queued?.[1] as ((event: { type: string; url: string }) => unknown) | undefined;
+    return beforeSend?.({ type: "pageview", url: window.location.href }) ?? null;
+  });
+  expect(filterResult).toBeNull();
 });
 
 test("searches localized documentation with keyboard navigation", async ({ page }) => {

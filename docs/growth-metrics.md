@@ -50,6 +50,8 @@ One experiment for next week:
 
 上线前应在隐私说明中声明统计目的，并提供关闭方式。Playground 中用户输入的事件名和 JSON 始终留在浏览器本地。
 
+当前站点只启用了 Vercel Web Analytics 的匿名页面访问统计。页脚提供持久化关闭入口，并自动尊重浏览器的 Do Not Track 与 Global Privacy Control；Playground 输入、事件属性和用户身份不会进入站点统计。自定义事件查询需要 Vercel Pro 或 Enterprise，现阶段不为此升级套餐，也不发送无法审阅的自定义事件。
+
 ## 30 天实验
 
 ### 第 1 周：让价值可验证
