@@ -4,10 +4,10 @@ Tracelet is maintained as an open-source project without a guaranteed response-t
 
 ## Learn and troubleshoot
 
-1. Start with the [Quickstart](https://tracelet-opal.vercel.app/quickstart).
-2. Reproduce the event lifecycle in the [Playground](https://tracelet-opal.vercel.app/playground).
-3. Check the [Examples](https://tracelet-opal.vercel.app/examples) and [API Reference](https://tracelet-opal.vercel.app/reference).
-4. Search existing [Issues](https://github.com/shishikami/Tracelet/issues) and, once enabled, [Discussions](https://github.com/shishikami/Tracelet/discussions).
+1. Start with the [Quickstart](https://tracelet-opal.vercel.app/en/quickstart).
+2. Reproduce the event lifecycle in the [Playground](https://tracelet-opal.vercel.app/en/playground).
+3. Check the [Examples](https://tracelet-opal.vercel.app/en/examples) and [API Reference](https://tracelet-opal.vercel.app/en/reference).
+4. Search existing [Issues](https://github.com/shishikami/Tracelet/issues) and [Discussions](https://github.com/shishikami/Tracelet/discussions).
 
 ## Where to ask
 
