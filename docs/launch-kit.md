@@ -20,6 +20,7 @@
 - [x] GitHub Private Vulnerability Reporting 已启用，安全报告入口可访问。
 - [x] GitHub Community Standards 所需的 Code of Conduct 与行为问题私密报告路径已补齐。
 - [x] Accessibility Statement 已记录目标、当前措施、已知限制与反馈路径。
+- [x] GitHub [欢迎 Discussion #1](https://github.com/shishikami/Tracelet/discussions/1) 已发布，并同时置顶到仓库 Discussions 首页和 Announcements 分类。
 - [x] `pnpm audit` 在 2026-10-20 报告 116 个依赖、0 个已知漏洞；许可证清单无未识别或禁止分发的条目。
 - [x] 对外发布文案中指向官网的链接附带对应的 UTM 参数。
 - [ ] 发布当天预留时间回答问题并记录真实反馈。
@@ -137,7 +138,7 @@ utm_content=<帖子或素材变体>
 
 ## Discussions 首条欢迎帖
 
-建议发布到 **Announcements** 分类，并在发布后置顶。公开发布前仍需维护者对最终文案进行确认。
+已于 2026-10-20 发布到 **Announcements** 分类，并置顶到仓库 Discussions 首页和该分类：<https://github.com/shishikami/Tracelet/discussions/1>。
 
 ### Title
 
@@ -165,4 +166,4 @@ When asking for help, please include the Tracelet version, the boundary involved
 
 If you are evaluating Tracelet, I would love to hear which backend, framework, delivery guarantees and privacy requirements you need to support. What are you building?
 
-公开发布是代表项目发言的动作。执行前应由维护者复核文案、选择账号并明确确认。
+该文案已由维护者明确确认，并使用 `shishikami` 账号公开发布。
