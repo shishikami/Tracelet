@@ -10,6 +10,8 @@ const methods = [
   ["setConsent(state)", "Promise<void>", "更新 Consent；denied 默认清空队列和身份。"],
   ["reset()", "void", "清除用户关联并轮换匿名 ID 与 Session ID。"],
   ["getStorageEstimate()", "Promise<StorageEstimate | undefined>", "读取浏览器提供的原点级存储使用量与配额估算。"],
+  ["getQueueSnapshot()", "Promise<QueueSnapshot>", "读取不可变的队列数量、最早事件时间与当前投递状态快照。"],
+  ["subscribeDiagnostics(listener)", "() => void", "运行时订阅诊断事件；返回可重复调用的取消订阅函数。"],
   ["flush(reason?)", "Promise<void>", "立即尝试发送一个批次；同实例并发调用会合并。"],
   ["shutdown()", "Promise<void>", "最后 Flush，移除监听器并按逆序销毁插件。"],
 ] as const;
@@ -66,6 +68,8 @@ const englishMethods = [
   ["setConsent(state)", "Promise<void>", "Updates consent; denied clears the queue and identity by default."],
   ["reset()", "void", "Clears the user association and rotates anonymous and session IDs."],
   ["getStorageEstimate()", "Promise<StorageEstimate | undefined>", "Reads the browser's origin-wide storage usage and quota estimate."],
+  ["getQueueSnapshot()", "Promise<QueueSnapshot>", "Reads an immutable snapshot of queue depth, the oldest event timestamp and current delivery state."],
+  ["subscribeDiagnostics(listener)", "() => void", "Subscribes at runtime and returns an idempotent unsubscribe function."],
   ["flush(reason?)", "Promise<void>", "Immediately attempts one batch; concurrent calls on one instance are coalesced."],
   ["shutdown()", "Promise<void>", "Performs a final flush, removes listeners and tears down plugins in reverse order."],
 ] as const;
@@ -173,7 +177,7 @@ export function ApiReference({ embedded = false }: { embedded?: boolean }) {
 
             <article id="api-diagnostics">
               <div className="manual-heading"><Network className="size-5" /><h3>DiagnosticEvent</h3></div>
-              <p className="manual-copy">{en ? <>Received through <code>onDiagnostic</code>; never creates another product event. Flush events include the selected transport name.</> : <>通过 <code>onDiagnostic</code> 接收，不会产生新的业务埋点；Flush 事件会包含实际选中的 Transport 名称。</>}</p>
+              <p className="manual-copy">{en ? <>Receive events through <code>onDiagnostic</code> or <code>subscribeDiagnostics()</code>; neither creates a product event. Delivery events include an <code>attemptId</code> for correlation, while <code>getQueueSnapshot()</code> exposes the current phase.</> : <>可通过 <code>onDiagnostic</code> 或 <code>subscribeDiagnostics()</code> 接收，均不会产生业务埋点。投递事件包含可关联的 <code>attemptId</code>，<code>getQueueSnapshot()</code> 则提供当前阶段。</>}</p>
               <ul className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {diagnostics.map((event) => (
                   <li key={event} className="rounded-lg border border-white/8 bg-black/15 px-4 py-3 font-mono text-xs text-slate-300">{event}</li>

@@ -69,15 +69,25 @@ try {
         fallback: { name: "test", async send() { return { success: true }; } },
       }),
     });
+    const diagnosticTypes = [];
+    const unsubscribe = analytics.subscribeDiagnostics((event) => diagnosticTypes.push(event.type));
     await analytics.track("package_loaded", { source: "tarball" });
-    if (await storage.size() !== 1) throw new Error("Installed package did not enqueue an event");
+    const snapshot = await analytics.getQueueSnapshot();
+    if (snapshot.pendingEvents !== 1) throw new Error("Installed package did not expose its queued event");
+    if (!diagnosticTypes.includes("event_enqueued")) throw new Error("Installed package did not publish diagnostics");
+    unsubscribe();
     await analytics.shutdown();
   `);
   run(process.execPath, [join(temporaryProject, "runtime.mjs")]);
 
   // Compile against the declarations resolved from the installed package.
   await writeFile(join(temporaryProject, "typed.ts"), `
-    import { createAnalytics, type AnalyticsPlugin } from "tracelet-browser";
+    import {
+      createAnalytics,
+      type AnalyticsPlugin,
+      type DiagnosticListener,
+      type QueueSnapshot,
+    } from "tracelet-browser";
 
     interface Events {
       checkout_completed: { orderId: string; amount: number };
@@ -89,7 +99,12 @@ try {
       plugins: [plugin],
       transport: { name: "test", async send() { return { success: true }; } },
     });
+    const listener: DiagnosticListener = (event) => console.info(event.type);
+    const unsubscribe = analytics.subscribeDiagnostics(listener);
     await analytics.track("checkout_completed", { orderId: "o_1", amount: 99 });
+    const snapshot: QueueSnapshot = await analytics.getQueueSnapshot();
+    console.info(snapshot.pendingEvents, snapshot.delivery.phase);
+    unsubscribe();
   `);
   await writeFile(join(temporaryProject, "tsconfig.json"), JSON.stringify({
     compilerOptions: {

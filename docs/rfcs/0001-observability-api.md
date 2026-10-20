@@ -1,15 +1,15 @@
 # RFC 0001: Tracelet 0.3 observability API
 
-- Status: Proposed
+- Status: Implemented on `main` (unreleased)
 - Target: `0.3.0`
 - Last updated: 2026-10-20
 - Scope: browser SDK public API; no collector-specific dependency
 
 ## Summary
 
-Tracelet already emits diagnostic events through the constructor-only `onDiagnostic` callback, but an application cannot query the current queue/delivery state or add observers after creating the client. Version 0.3 should add a read-only snapshot API and lifecycle subscriptions while keeping storage, codecs, transports and collectors replaceable.
+Tracelet already emitted diagnostic events through the constructor-only `onDiagnostic` callback, but an application could not query the current queue/delivery state or add observers after creating the client. Version 0.3 adds a read-only snapshot API and lifecycle subscriptions while keeping storage, codecs, transports and collectors replaceable.
 
-This RFC is a design proposal, not a promise that every field will ship unchanged. The API should be implemented only after the acceptance tests below are agreed upon.
+The API described here is now implemented and verified on `main`. It remains unreleased until the planned `0.3.0-beta.1` package is published, so consumers of `0.2.x` cannot use it yet.
 
 ## Problem
 
@@ -40,7 +40,7 @@ The current callback reports individual transitions, but consumers must install 
 - Mutation methods that reorder, edit or manually delete individual queued events.
 - Delivery exactly once. Collector idempotency by `eventId` remains required.
 
-## Proposed API
+## Implemented API
 
 ```ts
 export type DeliveryPhase = "idle" | "sending" | "waiting-retry";
@@ -125,7 +125,7 @@ type DeliveryDiagnosticEvent =
     };
 ```
 
-`attemptId` identifies one call to `Transport.send`; it is not a server acknowledgement ID and is not stable across retries. Event IDs remain stable and are the collector's idempotency keys.
+`attemptId` identifies one internal delivery attempt. It normally correlates one `Transport.send` call, but an encode, compression or storage error can fail the attempt before the transport is reached. It is not a server acknowledgement ID and is not stable across retries. Event IDs remain stable and are the collector's idempotency keys.
 
 ## Semantics
 
@@ -175,9 +175,9 @@ Exact queue bytes and persistence time remain absent until a storage-neutral con
 - Custom storage and transport implementations require no new method.
 - The public export snapshot and npm package smoke test must be updated when the API is implemented.
 
-## Acceptance tests
+## Acceptance evidence
 
-Implementation is complete only when automated tests prove:
+Automated tests now prove:
 
 1. A fresh client reports zero pending events and `idle`.
 2. Enqueueing changes the snapshot without emitting a product event.
@@ -189,20 +189,21 @@ Implementation is complete only when automated tests prove:
 8. Multiple listeners receive events in order; one throwing listener cannot break delivery.
 9. Unsubscribe is idempotent and stops future events.
 10. Snapshot reads work with built-in memory/IndexedDB storage and a minimal custom storage.
-11. Diagnostics never expose properties, identities, encoded bodies or headers.
-12. Chromium, Firefox and WebKit pass the snapshot/subscription lifecycle tests.
+11. Diagnostics and snapshots never expose properties, identities, encoded bodies or headers.
+12. Chromium, Firefox and WebKit pass the snapshot/subscription lifecycle test.
 
-## Open questions before implementation
+Items 1–11 are covered by `tests/analytics.test.mjs`; the real IndexedDB and three-browser lifecycle case is covered by `tests/browser/sdk.spec.ts`. The packed-package smoke test also compiles and runs both public methods through the installed tarball.
 
-1. Should `pendingEvents` be named `queuedEvents` for consistency with documentation?
-2. Should the last success/failure be retained in the snapshot, or remain event-only?
-3. Is an `AsyncIterable<DiagnosticEvent>` worth adding later, or would it duplicate subscriptions?
-4. Should a future storage contract expose exact queue bytes and persisted enqueue timestamps?
+## Resolved design decisions
+
+1. The field remains `pendingEvents` because it describes work not yet committed, not merely physical queue membership.
+2. Last success/failure remains event-only; the snapshot contains current state rather than unbounded history.
+3. An `AsyncIterable<DiagnosticEvent>` is deferred until a real streaming consumer requires it.
+4. Exact queue bytes and persisted enqueue timestamps remain deferred because they require a storage-contract change or migration.
 
 ## Rollout
 
-1. Resolve the naming questions in a public design Issue or Discussion.
-2. Implement state tracking without changing delivery behavior.
-3. Add unit and three-browser tests before updating the API reference.
-4. Publish `0.3.0-beta.1` and validate the API in the Playground/debug panel.
-5. Stabilize names for `0.3.0`; breaking adjustments after that wait for a major version.
+1. Implement state tracking without changing the replaceable storage or transport contracts. — Done
+2. Add unit, packed-package and three-browser tests before updating the API reference. — Done
+3. Publish `0.3.0-beta.1` and validate the API in the Playground/debug panel. — Next
+4. Stabilize names for `0.3.0`; breaking adjustments after that wait for a major version.

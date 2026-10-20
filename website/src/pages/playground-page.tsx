@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -17,6 +17,7 @@ import {
   createAnalytics,
   type Analytics,
   type DiagnosticEvent,
+  type DeliveryPhase,
   type EncodedBatch,
   type EventBatch,
   type EventProperties,
@@ -127,7 +128,6 @@ function logFromDiagnostic(event: DiagnosticEvent, en: boolean): Omit<Playground
 export default function PlaygroundPage() {
   const locale = useLocale();
   const en = locale === "en";
-  const storageRef = useRef<MemoryEventStorage | undefined>(undefined);
   const transportRef = useRef<PlaygroundTransport | undefined>(undefined);
   const analyticsRef = useRef<Analytics<Record<string, EventProperties>> | undefined>(undefined);
   const sequenceRef = useRef(0);
@@ -136,16 +136,17 @@ export default function PlaygroundPage() {
   const [logs, setLogs] = useState<PlaygroundLog[]>([]);
   const [payload, setPayload] = useState<EventBatch | undefined>();
   const [queueSize, setQueueSize] = useState(0);
+  const [deliveryPhase, setDeliveryPhase] = useState<DeliveryPhase>("idle");
   const [delivered, setDelivered] = useState(0);
   const [failArmed, setFailArmed] = useState(false);
   const [collectorStatus, setCollectorStatus] = useState<number | "armed" | undefined>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const addLog = (log: Omit<PlaygroundLog, "id" | "at">) => {
+  const addLog = useCallback((log: Omit<PlaygroundLog, "id" | "at">) => {
     sequenceRef.current += 1;
     setLogs((current) => [{ ...log, id: sequenceRef.current, at: new Date().toLocaleTimeString() }, ...current].slice(0, 12));
-  };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -174,22 +175,28 @@ export default function PlaygroundPage() {
       flushIntervalMs: 60 * 60 * 1_000,
       retry: { baseDelayMs: 60_000, maxDelayMs: 60_000, jitterRatio: 0 },
       pageLifecycle: false,
-      onDiagnostic: (event) => {
-        if (active && event.type !== "sdk_initialized" && event.type !== "sdk_shutdown") {
-          addLog(logFromDiagnostic(event, en));
-        }
-      },
     });
-    storageRef.current = storage;
+    const unsubscribe = analytics.subscribeDiagnostics((event) => {
+      if (active && event.type !== "sdk_initialized" && event.type !== "sdk_shutdown") {
+        addLog(logFromDiagnostic(event, en));
+      }
+    });
     transportRef.current = transport;
     analyticsRef.current = analytics;
-    void analytics.init();
+    void analytics.init().then(async () => {
+      const snapshot = await analytics.getQueueSnapshot();
+      if (active) {
+        setQueueSize(snapshot.pendingEvents);
+        setDeliveryPhase(snapshot.delivery.phase);
+      }
+    });
     return () => {
       active = false;
+      unsubscribe();
       void analytics.shutdown();
       analyticsRef.current = undefined;
     };
-  }, [en]);
+  }, [addLog, en]);
 
   const payloadText = useMemo(
     () => payload ? JSON.stringify(payload, null, 2) : (en ? "// Flush the queue to inspect the EventBatch." : "// 点击发送队列后，在这里检查 EventBatch。"),
@@ -208,13 +215,17 @@ export default function PlaygroundPage() {
     }
   };
 
-  const refreshQueueSize = async () => setQueueSize(await storageRef.current?.size() ?? 0);
+  const refreshSnapshot = async () => {
+    const snapshot = await analyticsRef.current?.getQueueSnapshot();
+    setQueueSize(snapshot?.pendingEvents ?? 0);
+    setDeliveryPhase(snapshot?.delivery.phase ?? "idle");
+  };
 
   const run = async (action: () => Promise<void>) => {
     setBusy(true);
     try {
       await action();
-      await refreshQueueSize();
+      await refreshSnapshot();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : (en ? "The action failed." : "操作失败。"));
     } finally {
@@ -252,7 +263,8 @@ export default function PlaygroundPage() {
   };
 
   const clear = () => void run(async () => {
-    await storageRef.current?.clear();
+    await analyticsRef.current?.setConsent("denied");
+    await analyticsRef.current?.setConsent("granted");
     setLogs([]);
     setPayload(undefined);
     setDelivered(0);
@@ -300,14 +312,14 @@ export default function PlaygroundPage() {
               <Button type="button" variant="outline" onClick={identify} disabled={busy}><UserRound className="size-4" />identify()</Button>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Metric icon={Database} label={en ? "Queued" : "队列"} value={queueSize} />
               <Metric icon={CheckCircle2} label={en ? "Delivered" : "已投递"} value={delivered} />
+              <Metric icon={Activity} label={en ? "Delivery phase" : "投递阶段"} value={deliveryPhase} />
               <Metric
                 icon={AlertTriangle}
                 label={en ? "Collector" : "Collector 状态"}
                 value={collectorStatus === "armed" ? "Next: 503" : collectorStatus ? `HTTP ${collectorStatus}` : "—"}
-                wide
               />
             </div>
 
@@ -346,8 +358,8 @@ export default function PlaygroundPage() {
   );
 }
 
-function Metric({ icon: Icon, label, value, wide = false }: { icon: typeof Database; label: string; value: number | string; wide?: boolean }) {
-  return <div className={`rounded-xl border border-white/8 bg-black/20 p-4 ${wide ? "col-span-2 sm:col-span-1" : ""}`}><Icon className="size-4 text-emerald-300" /><span className="mt-3 block text-xs text-slate-500">{label}</span><strong className="mt-1 block text-lg font-semibold">{value}</strong></div>;
+function Metric({ icon: Icon, label, value }: { icon: typeof Database; label: string; value: number | string }) {
+  return <div className="rounded-xl border border-white/8 bg-black/20 p-4"><Icon className="size-4 text-emerald-300" /><span className="mt-3 block text-xs text-slate-500">{label}</span><strong className="mt-1 block text-lg font-semibold">{value}</strong></div>;
 }
 
 function TimelineItem({ log }: { log: PlaygroundLog }) {

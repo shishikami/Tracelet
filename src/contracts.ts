@@ -46,6 +46,30 @@ export interface StorageEstimate {
   usageDetails?: Readonly<Record<string, number>>;
 }
 
+/** Current delivery lifecycle exposed by QueueSnapshot. */
+export type DeliveryPhase = "idle" | "sending" | "waiting-retry";
+
+/**
+ * Best-effort view of the local queue and current delivery attempt.
+ *
+ * Queue reads are observational rather than transactional: storage may change
+ * while the snapshot is assembled. The object is frozen before it is returned.
+ */
+export interface QueueSnapshot {
+  readonly pendingEvents: number;
+  /** Event timestamp of the oldest queued item, not its persistence time. */
+  readonly oldestEventTimestamp?: string;
+  /** Origin-wide advisory values when the configured storage exposes them. */
+  readonly storageEstimate?: Readonly<StorageEstimate>;
+  readonly delivery: Readonly<{
+    phase: DeliveryPhase;
+    retryAttempt: number;
+    nextRetryAt?: string;
+    activeAttemptId?: string;
+    transport?: string;
+  }>;
+}
+
 /**
  * Selects one delivery transport for an event before the event is encoded.
  *
@@ -113,13 +137,16 @@ export type DiagnosticEvent =
   | { type: "storage_quota_exceeded"; eventName: string; estimate?: StorageEstimate }
   | {
       type: "flush_started";
+      attemptId: string;
       eventCount: number;
       reason: TransportContext["reason"];
       transport: string;
     }
-  | { type: "flush_succeeded"; eventCount: number; transport: string; status?: number }
-  | { type: "flush_failed"; eventCount: number; retryable: boolean; transport?: string; status?: number }
-  | { type: "flush_retry_scheduled"; attempt: number; delayMs: number }
+  | { type: "flush_succeeded"; attemptId: string; eventCount: number; transport: string; status?: number }
+  | { type: "flush_failed"; attemptId: string; eventCount: number; retryable: boolean; transport?: string; status?: number }
+  | { type: "flush_retry_scheduled"; attemptId: string; attempt: number; delayMs: number; nextRetryAt: string }
   | { type: "sdk_shutdown" };
 
-export type DiagnosticHandler = (event: DiagnosticEvent) => void;
+export type DiagnosticListener = (event: DiagnosticEvent) => void;
+/** Backward-compatible name for the constructor-level diagnostic listener. */
+export type DiagnosticHandler = DiagnosticListener;

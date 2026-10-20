@@ -26,6 +26,7 @@ This matrix distinguishes what CI proves today from documented manual checks and
 | Multiple collector routing | Yes | Yes | Yes | Browser routing test | ✅ Automated |
 | Cross-tab delivery lock | Unit only | Unit only | Unit only | `tests/analytics.test.mjs`; no multi-page browser case | ⚠️ Partial |
 | Storage quota diagnostics | Unit only | Unit only | Unit only | Synthetic quota rejection test | ⚠️ Partial |
+| Queue snapshots and runtime diagnostic subscriptions | Yes | Yes | Yes | Real IndexedDB observability lifecycle test | ✅ Automated |
 | Private/ephemeral browsing modes | — | — | — | Browser policies vary by version | 🗓️ Planned |
 
 ## Network and collector behavior
@@ -41,6 +42,7 @@ This matrix distinguishes what CI proves today from documented manual checks and
 | CORS preflight and origin allowlist | Allow configured origins; deny others | `tests/collector.test.mjs` | ✅ Automated |
 | Compressed/decoded body limits | Reject with `413` before the sink | `tests/collector.test.mjs` | ✅ Automated |
 | Within-batch duplicate IDs | Reject with `400` | `tests/collector.test.mjs` | ✅ Automated |
+| Delivery attempt correlation | Start, result and retry schedule share `attemptId` | Unit and three-browser observability tests | ✅ Automated |
 | Cross-request idempotency | Durable sink enforces unique `eventId` | Sink contract and starter documentation; no database chosen | 🧪 Manual |
 | Offline → online browser transition | Queued events eventually retry | Retry primitive exists; online/offline transition not isolated | 🗓️ Planned |
 | Captive portal / DNS / TLS failure | Keep events and retry | Fetch failure is covered generically, not browser-network variants | ⚠️ Partial |

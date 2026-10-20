@@ -133,13 +133,24 @@ await analytics.shutdown();`;
 const diagnosticCode = `const analytics = createAnalytics({
   appId: "commerce-web",
   transport,
-  onDiagnostic(event) {
-    // 这里不会创建新的埋点，可安全接入自己的日志系统。
-    if (event.type === "flush_failed") {
-      console.warn("Tracelet delivery failed", event);
-    }
-  },
-});`;
+});
+
+// 运行时可添加多个观察者；监听器异常不会影响事件投递。
+const unsubscribe = analytics.subscribeDiagnostics((event) => {
+  if (event.type === "flush_failed") {
+    console.warn("Tracelet delivery failed", {
+      attemptId: event.attemptId,
+      status: event.status,
+      retryable: event.retryable,
+    });
+  }
+});
+
+const snapshot = await analytics.getQueueSnapshot();
+console.info(snapshot.pendingEvents, snapshot.delivery.phase);
+
+// 组件或调试面板卸载时取消订阅；重复调用也是安全的。
+unsubscribe();`;
 
 const routingCode = `import {
   EventRouter,
@@ -283,6 +294,8 @@ const englishCodeComments: ReadonlyArray<readonly [string, string]> = [
   ["测试或关键跳转前可以主动发送队列。", "Flush explicitly in tests or before a critical navigation."],
   ["微前端卸载、测试结束或 HMR dispose 时释放监听器。", "Release listeners on micro-frontend unmount, test teardown or HMR dispose."],
   ["这里不会创建新的埋点，可安全接入自己的日志系统。", "This does not create another analytics event and can feed your logger."],
+  ["运行时可添加多个观察者；监听器异常不会影响事件投递。", "Add multiple observers at runtime; listener failures cannot affect delivery."],
+  ["组件或调试面板卸载时取消订阅；重复调用也是安全的。", "Unsubscribe when the component or debug panel unmounts; repeated calls are safe."],
   ["规则按声明顺序匹配；每个事件只会进入一个 Transport。", "Rules are evaluated in declaration order; each event enters exactly one Transport."],
   ["未匹配事件必须有明确去向，避免队列永久阻塞。", "Give unmatched events an explicit destination so the queue cannot remain blocked."],
   ["这里只提示风险；不要由 SDK 自动删除其他应用数据。", "Only report the risk here; do not let the SDK delete other application data automatically."],
@@ -411,7 +424,7 @@ export function Manual() {
 
             <article id="manual-production">
               <div className="manual-heading"><CheckCircle2 className="size-5" /><h3>{en ? "10. Diagnostics and production checklist" : "10. 诊断与上线清单"}</h3></div>
-              <p className="manual-copy">{en ? <><code>onDiagnostic</code> observes SDK state without creating product events. Exercise network failures and 429 responses before production.</> : <><code>onDiagnostic</code> 观察 SDK 状态，但不会创建业务事件。建议先在测试环境模拟网络失败和 429，再投入生产。</>}</p>
+              <p className="manual-copy">{en ? <><code>subscribeDiagnostics()</code> can attach observers after creation, while <code>getQueueSnapshot()</code> reads queue depth and the current delivery phase. Neither creates product events or exposes event properties. Exercise network failures and 429 responses before production.</> : <><code>subscribeDiagnostics()</code> 可在实例创建后添加观察者，<code>getQueueSnapshot()</code> 可读取队列数量与当前投递阶段。两者都不会创建业务事件或暴露事件属性。建议先在测试环境模拟网络失败和 429，再投入生产。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(diagnosticCode, en)} filename="diagnostics.ts" /></div>
               <ul className="mt-6 grid gap-3 sm:grid-cols-2">
                 {localizedChecklist.map((item) => <li key={item} className="flex gap-3 rounded-xl border border-white/8 bg-black/15 p-4 text-sm leading-6 text-slate-300"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-300" />{item}</li>)}

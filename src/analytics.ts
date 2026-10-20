@@ -4,8 +4,10 @@ import type {
   Compression,
   DiagnosticEvent,
   DiagnosticHandler,
+  DiagnosticListener,
   EventStorage,
   KeyValueStorage,
+  QueueSnapshot,
   StorageEstimate,
   Transport,
   TransportContext,
@@ -86,6 +88,8 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
   private flushPromise: Promise<void> | undefined;
   private initialized = false;
   private retryAttempt = 0;
+  private readonly diagnosticListeners = new Set<DiagnosticListener>();
+  private deliveryState: QueueSnapshot["delivery"] = idleDeliveryState();
   private readonly pageHideHandler = () => void this.flush("page-hide");
   private readonly visibilityHandler = () => {
     if (globalThis.document?.visibilityState === "hidden") void this.flush("page-hide");
@@ -102,6 +106,12 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     this.consent = new ConsentManager(options.consent?.initialState ?? "granted");
     this.plugins = options.plugins ?? [];
     this.deliveryLock = options.deliveryLock ?? new BrowserDeliveryLock(`tracelet:${options.appId}:delivery`);
+    if (options.onDiagnostic) {
+      // Keep the constructor callback permanent even if the same function is
+      // also added and later removed through subscribeDiagnostics().
+      const constructorListener = options.onDiagnostic;
+      this.diagnosticListeners.add((event) => constructorListener(event));
+    }
   }
 
   /** Initialize plugins and lifecycle listeners. Safe to call more than once. */
@@ -165,6 +175,12 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     if (state === "denied" && (this.options.consent?.clearQueueOnDenied ?? true)) {
       await this.eventStorage.clear();
       this.identity.clear();
+      if (this.deliveryState.phase === "waiting-retry") {
+        if (this.flushTimer !== undefined) globalThis.clearTimeout(this.flushTimer);
+        this.retryAttempt = 0;
+        this.deliveryState = idleDeliveryState();
+        if (this.initialized) this.scheduleFlush();
+      }
     }
   }
 
@@ -176,6 +192,44 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
   /** Read an advisory, origin-wide browser storage estimate when supported. */
   getStorageEstimate(): Promise<StorageEstimate | undefined> {
     return this.eventStorage.estimate?.() ?? Promise.resolve(undefined);
+  }
+
+  /**
+   * Read an immutable, best-effort snapshot of the queue and delivery state.
+   * Storage reads are not transactional and may observe slightly different moments.
+   */
+  async getQueueSnapshot(): Promise<QueueSnapshot> {
+    const [pendingEvents, oldestEvents, storageEstimate] = await Promise.all([
+      this.eventStorage.size(),
+      this.eventStorage.peek(1),
+      this.getStorageEstimate(),
+    ]);
+    const oldest = oldestEvents[0];
+    const delivery = Object.freeze({ ...this.deliveryState });
+    const estimate = freezeStorageEstimate(storageEstimate);
+    return Object.freeze({
+      pendingEvents,
+      ...(oldest === undefined ? {} : { oldestEventTimestamp: oldest.timestamp }),
+      ...(estimate === undefined ? {} : { storageEstimate: estimate }),
+      delivery,
+    });
+  }
+
+  /**
+   * Observe diagnostic events after client creation.
+   *
+   * Listeners run synchronously in registration order. A listener failure is
+   * isolated from event collection and delivery. The returned unsubscribe
+   * function is safe to call more than once.
+   */
+  subscribeDiagnostics(listener: DiagnosticListener): () => void {
+    this.diagnosticListeners.add(listener);
+    let active = true;
+    return () => {
+      if (!active) return;
+      active = false;
+      this.diagnosticListeners.delete(listener);
+    };
   }
 
   /** Attempt to deliver one batch immediately. Concurrent calls are coalesced. */
@@ -278,21 +332,33 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
 
   private async performFlush(reason: TransportContext["reason"]): Promise<void> {
     const acquired = await this.deliveryLock.runExclusive(() => this.performFlushUnlocked(reason));
-    if (!acquired && this.initialized) this.scheduleFlush();
+    if (!acquired) {
+      // Another tab owns delivery. This instance has no active request or
+      // retry deadline, so its observable state must not remain stale.
+      this.retryAttempt = 0;
+      this.deliveryState = idleDeliveryState();
+      if (this.initialized) this.scheduleFlush();
+    }
   }
 
   private async performFlushUnlocked(reason: TransportContext["reason"]): Promise<void> {
+    const attemptId = createId();
     let nextDelayMs: number | undefined;
     let eventCount = 0;
     let transportName: string | undefined;
     try {
       const selected = await this.selectEncodedBatch();
-      if (!selected) return;
+      if (!selected) {
+        this.retryAttempt = 0;
+        this.deliveryState = idleDeliveryState();
+        return;
+      }
       const { events, encoded, transport } = selected;
       eventCount = events.length;
       transportName = transport.name;
       this.emit({
         type: "flush_started",
+        attemptId,
         eventCount: events.length,
         reason,
         transport: transport.name,
@@ -320,6 +386,7 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
       if (result.success) {
         this.emit({
           type: "flush_succeeded",
+          attemptId,
           eventCount: events.length,
           transport: transport.name,
           ...(result.status === undefined ? {} : { status: result.status }),
@@ -328,6 +395,7 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
         const retryable = result.retryable !== false;
         this.emit({
           type: "flush_failed",
+          attemptId,
           eventCount: events.length,
           retryable,
           transport: transport.name,
@@ -335,10 +403,13 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
         });
         if (retryable) {
           nextDelayMs = result.retryAfterMs ?? this.nextRetryDelay();
+          const nextRetryAt = new Date(Date.now() + nextDelayMs).toISOString();
           this.emit({
             type: "flush_retry_scheduled",
+            attemptId,
             attempt: this.retryAttempt,
             delayMs: nextDelayMs,
+            nextRetryAt,
           });
         }
       }
@@ -346,11 +417,18 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
       nextDelayMs = this.nextRetryDelay();
       this.emit({
         type: "flush_failed",
+        attemptId,
         eventCount,
         retryable: true,
         ...(transportName === undefined ? {} : { transport: transportName }),
       });
-      this.emit({ type: "flush_retry_scheduled", attempt: this.retryAttempt, delayMs: nextDelayMs });
+      this.emit({
+        type: "flush_retry_scheduled",
+        attemptId,
+        attempt: this.retryAttempt,
+        delayMs: nextDelayMs,
+        nextRetryAt: new Date(Date.now() + nextDelayMs).toISOString(),
+      });
     } finally {
       if (this.initialized) this.scheduleFlush(nextDelayMs);
     }
@@ -440,10 +518,43 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
   }
 
   private emit(event: DiagnosticEvent): void {
-    try {
-      this.options.onDiagnostic?.(event);
-    } catch {
-      // Diagnostics must never affect event delivery.
+    this.updateDeliveryState(event);
+    for (const listener of [...this.diagnosticListeners]) {
+      try {
+        listener(event);
+      } catch {
+        // Diagnostics must never affect event delivery.
+      }
+    }
+  }
+
+  private updateDeliveryState(event: DiagnosticEvent): void {
+    if (event.type === "flush_started") {
+      this.deliveryState = Object.freeze({
+        phase: "sending",
+        retryAttempt: this.retryAttempt,
+        activeAttemptId: event.attemptId,
+        transport: event.transport,
+      });
+      return;
+    }
+    if (event.type === "flush_retry_scheduled") {
+      this.deliveryState = Object.freeze({
+        phase: "waiting-retry",
+        retryAttempt: event.attempt,
+        nextRetryAt: event.nextRetryAt,
+        ...(this.deliveryState.transport === undefined
+          ? {}
+          : { transport: this.deliveryState.transport }),
+      });
+      return;
+    }
+    if (
+      event.type === "flush_succeeded"
+      || (event.type === "flush_failed" && !event.retryable)
+      || event.type === "sdk_shutdown"
+    ) {
+      this.deliveryState = idleDeliveryState();
     }
   }
 
@@ -499,6 +610,20 @@ function isTransportResolver(
 
 function byteLength(value: string | Uint8Array): number {
   return typeof value === "string" ? new TextEncoder().encode(value).byteLength : value.byteLength;
+}
+
+function idleDeliveryState(): QueueSnapshot["delivery"] {
+  return Object.freeze({ phase: "idle", retryAttempt: 0 });
+}
+
+function freezeStorageEstimate(value: StorageEstimate | undefined): Readonly<StorageEstimate> | undefined {
+  if (value === undefined) return undefined;
+  return Object.freeze({
+    ...value,
+    ...(value.usageDetails === undefined
+      ? {}
+      : { usageDetails: Object.freeze({ ...value.usageDetails }) }),
+  });
 }
 
 /** Create a typed Analytics client without coupling it to a UI framework. */

@@ -40,7 +40,7 @@ const searchEntries: Record<Locale, readonly SearchEntry[]> = {
     { id: "api-options", category: "API Reference", title: "createAnalytics 配置项", description: "查询必填项、默认值、限制与可替换边界。", keywords: "options config createAnalytics 配置 默认值" },
     { id: "api-adapters", category: "API Reference", title: "内置 Adapter", description: "Transport、Storage、Codec 与 Compression。", keywords: "adapter transport storage codec compression" },
     { id: "api-advanced", category: "API Reference", title: "高级对象与工具", description: "底层 Manager、DeliveryLock、配额错误和 SDK 常量。", keywords: "ConsentManager IdentityManager DeliveryLock createId StorageQuota SDK_VERSION" },
-    { id: "api-diagnostics", category: "API Reference", title: "DiagnosticEvent", description: "SDK 生命周期与异常诊断事件。", keywords: "DiagnosticEvent event_dropped flush_failed 诊断" },
+    { id: "api-diagnostics", category: "API Reference", title: "DiagnosticEvent", description: "SDK 生命周期、队列快照与异常诊断事件。", keywords: "DiagnosticEvent event_dropped flush_failed subscribeDiagnostics getQueueSnapshot 诊断 队列快照" },
   ],
   en: [
     { id: "playground", category: "Try it", title: "Interactive Playground", description: "Run the real SDK and inspect its queue, diagnostics, retries and EventBatch.", keywords: "playground demo live queue retry EventBatch mock collector" },
@@ -69,7 +69,7 @@ const searchEntries: Record<Locale, readonly SearchEntry[]> = {
     { id: "api-options", category: "API Reference", title: "createAnalytics options", description: "Look up required values, defaults, limits and replaceable boundaries.", keywords: "options config createAnalytics defaults" },
     { id: "api-adapters", category: "API Reference", title: "Built-in adapters", description: "Transport, Storage, Codec and Compression exports.", keywords: "adapter transport storage codec compression" },
     { id: "api-advanced", category: "API Reference", title: "Advanced objects and utilities", description: "Low-level managers, DeliveryLock, quota errors and SDK constants.", keywords: "ConsentManager IdentityManager DeliveryLock createId StorageQuota SDK_VERSION" },
-    { id: "api-diagnostics", category: "API Reference", title: "DiagnosticEvent", description: "SDK lifecycle and failure diagnostics.", keywords: "DiagnosticEvent event_dropped flush_failed" },
+    { id: "api-diagnostics", category: "API Reference", title: "DiagnosticEvent", description: "SDK lifecycle, queue snapshots and failure diagnostics.", keywords: "DiagnosticEvent event_dropped flush_failed subscribeDiagnostics getQueueSnapshot queue snapshot" },
   ],
 };
 

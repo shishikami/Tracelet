@@ -209,7 +209,7 @@ await analytics.setConsent("denied");
 - HTTP 4xx 等不可重试错误会从队列移除，防止永久阻塞。
 - 每个事件拥有稳定 `eventId`，服务端应按该字段幂等去重。
 
-可通过 `onDiagnostic` 观察 SDK 自身状态，不会生成新的业务埋点：
+可通过构造参数 `onDiagnostic` 或运行时 `subscribeDiagnostics()` 观察 SDK 自身状态，不会生成新的业务埋点。投递事件使用 `attemptId` 关联同一次发送：
 
 ```ts
 const analytics = createAnalytics({
@@ -219,7 +219,20 @@ const analytics = createAnalytics({
     console.debug("[analytics]", event);
   },
 });
+
+const unsubscribe = analytics.subscribeDiagnostics((event) => {
+  if (event.type === "flush_failed") {
+    console.warn(event.attemptId, event.status, event.retryable);
+  }
+});
+
+const snapshot = await analytics.getQueueSnapshot();
+console.info(snapshot.pendingEvents, snapshot.delivery.phase);
+
+unsubscribe();
 ```
+
+`getQueueSnapshot()` 返回只读的近似快照。`pendingEvents` 来自当前 EventStorage，`oldestEventTimestamp` 是事件时间而不是精确入队时间；`delivery.phase` 为 `idle`、`sending` 或 `waiting-retry`。诊断与快照都不会包含事件 Properties、用户 ID、请求体或鉴权头。
 
 ### 浏览器存储配额
 
@@ -418,7 +431,8 @@ pnpm pack:check
 - [x] [可观测 API 设计稿](./docs/rfcs/0001-observability-api.md)：队列快照、投递状态和多订阅者语义。
 - [x] [兼容性与韧性测试矩阵](./docs/compatibility-matrix.md)：明确自动化、部分覆盖、手工验证和待验证边界。
 - [x] [Vercel Collector starter](./examples/starters/collector-vercel)：CORS、安全大小边界、gzip、鉴权扩展和持久化 Sink 契约。
-- [ ] 实现并验证可观测 API，先发布 `0.3.0-beta.1`。
+- [x] 实现并验证可观测 API：队列快照、运行时订阅、Attempt 关联与三浏览器覆盖。
+- [ ] 发布 `0.3.0-beta.1` 并通过 Playground 收集 API 使用反馈。
 - [ ] 增加 CSP、离线恢复、跨标签页锁与更多打包器的真实夹具。
 - [ ] 评估 CDN / IIFE 构建，支持无需打包器的 `<script>` 接入。
 

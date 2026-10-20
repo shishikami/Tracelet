@@ -1,6 +1,6 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { analytics, subscribeToDiagnostics } from "./analytics";
+import { analytics } from "./analytics";
 import "./styles.css";
 
 function App() {
@@ -8,7 +8,7 @@ function App() {
 
   useEffect(() => {
     void analytics.init();
-    return subscribeToDiagnostics((event) => {
+    return analytics.subscribeDiagnostics((event) => {
       setEvents((current) => [event.type, ...current].slice(0, 8));
     });
   }, []);

@@ -140,12 +140,14 @@ test("runs the real SDK in the browser playground and demonstrates retry", async
   await page.getByRole("button", { name: "发送队列" }).click();
   await expect(page.getByText("模拟 Collector 返回 503")).toBeVisible();
   await expect(page.getByText("Collector 状态").locator("..")).toContainText("HTTP 503");
+  await expect(page.getByText("投递阶段").locator("..")).toContainText("waiting-retry");
   await expect(page.getByText("队列", { exact: true }).locator("..")).toContainText("1");
   await expect(page.locator("pre").first()).toContainText("product_viewed");
 
   await page.getByRole("button", { name: "发送队列" }).click();
   await expect(page.getByText("模拟 Collector 返回 202")).toBeVisible();
   await expect(page.getByText("Collector 状态").locator("..")).toContainText("HTTP 202");
+  await expect(page.getByText("投递阶段").locator("..")).toContainText("idle");
   await expect(page.getByText("队列", { exact: true }).locator("..")).toContainText("0");
   await expect(page.getByText("已投递", { exact: true }).locator("..")).toContainText("1");
 
@@ -215,6 +217,61 @@ test("sends a browser event through the real collector", async ({ page, request,
     properties: { browser: browserName },
     context: { sdk: { name: "tracelet-browser", version: captured.sdkVersion } },
   });
+});
+
+test("observes queue snapshots and runtime diagnostics with IndexedDB", async ({ page, browserName }) => {
+  await page.goto("/");
+
+  const result = await page.evaluate(async (name) => {
+    const { createAnalytics, HttpTransport, IndexedDbEventStorage } = await import("/dist/index.js");
+    const storage = new IndexedDbEventStorage({ databaseName: `tracelet-observability-${name}` });
+    const diagnostics: Array<{ type: string; attemptId?: string }> = [];
+    const analytics = createAnalytics({
+      appId: "observability-e2e",
+      pageLifecycle: false,
+      flushIntervalMs: 60_000,
+      eventStorage: storage,
+      transport: new HttpTransport({ endpoint: "/v1/batch" }),
+    });
+    const unsubscribe = analytics.subscribeDiagnostics((event) => diagnostics.push(event));
+
+    await analytics.track("snapshot_event", { browser: name }, {
+      timestamp: new Date("2026-10-20T10:30:00.000Z"),
+    });
+    const queued = await analytics.getQueueSnapshot();
+    await analytics.flush();
+    const delivered = await analytics.getQueueSnapshot();
+    const eventCountBeforeUnsubscribe = diagnostics.length;
+
+    unsubscribe();
+    unsubscribe();
+    await analytics.shutdown();
+    await storage.close();
+
+    return {
+      queued,
+      delivered,
+      diagnostics,
+      eventCountBeforeUnsubscribe,
+      immutable: Object.isFrozen(queued) && Object.isFrozen(queued.delivery),
+    };
+  }, browserName);
+
+  expect(result.queued).toMatchObject({
+    pendingEvents: 1,
+    oldestEventTimestamp: "2026-10-20T10:30:00.000Z",
+    delivery: { phase: "idle", retryAttempt: 0 },
+  });
+  expect(result.delivered).toMatchObject({
+    pendingEvents: 0,
+    delivery: { phase: "idle", retryAttempt: 0 },
+  });
+  expect(result.immutable).toBe(true);
+  expect(result.diagnostics).toHaveLength(result.eventCountBeforeUnsubscribe);
+  const started = result.diagnostics.find((event) => event.type === "flush_started");
+  const succeeded = result.diagnostics.find((event) => event.type === "flush_succeeded");
+  expect(started?.attemptId).toBeTruthy();
+  expect(succeeded?.attemptId).toBe(started?.attemptId);
 });
 
 test("flushes the queue with the page-hide lifecycle reason", async ({ page, request }) => {

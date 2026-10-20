@@ -15,6 +15,9 @@
 - npm 包体积、发布文件边界和公开运行时导出的 CI 防回归检查。
 - 官网首屏与总 JavaScript gzip 体积预算。
 - 贡献指南、安全报告政策、Issue 模板和 Pull Request 模板。
+- `getQueueSnapshot()` 队列与投递状态快照，以及支持多个运行时观察者的 `subscribeDiagnostics()`。
+- Flush 诊断事件的 `attemptId` 关联、重试时间与不可变快照语义。
+- 具备 Origin 白名单、gzip、双层请求体限制、可选鉴权和持久化 Sink 契约的 Vercel Collector 实现与协议测试。
 
 ### Changed
 
