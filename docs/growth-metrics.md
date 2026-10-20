@@ -22,6 +22,8 @@
 
 每周固定记录，不因单日波动做结论：
 
+首份发布前基线见 [2026-10-20 growth baseline](./growth-baseline-2026-10-20.md)。后续快照应复用相同口径，并明确区分真实访问与 CI、维护者操作、自动化安装产生的噪声。
+
 ```text
 Search impressions / clicks / CTR:
 Top landing pages:
