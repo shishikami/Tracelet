@@ -53,6 +53,7 @@
     "package:budget": "node scripts/package-budget.mjs",
     "site:budget": "node scripts/site-budget.mjs",
     "seo:check": "node scripts/seo-check.mjs",
+    "capture:launch-assets": "node scripts/capture-launch-assets.mjs",
     "prepack": "pnpm build",
     "pack:check": "npm pack --dry-run",
     "local:server": "node scripts/local-server.mjs"

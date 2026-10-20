@@ -10,6 +10,7 @@
 - 可由 StackBlitz 直接运行的 React/Vite、Vue/Vite 模板，以及可独立部署的 Vercel Collector 模板。
 - 《如何设计一个与后端解耦的浏览器埋点 SDK》中英文架构文章，覆盖契约、可靠投递、隐私与 Protobuf 边界。
 - GitHub Discussions 的 Q&A / Ideas 表单、支持边界说明与首条社区欢迎帖草稿。
+- 可重复生成 Product Hunt / Show HN Playground、架构文章与 starter 截图的 Playwright 脚本。
 - Vercel Web Analytics 官网访问统计，并增加无 Cookie 注入的跨浏览器验证。
 - npm 包体积、发布文件边界和公开运行时导出的 CI 防回归检查。
 - 官网首屏与总 JavaScript gzip 体积预算。

@@ -91,13 +91,16 @@ test("runs the real SDK in the browser playground and demonstrates retry", async
   await expect(page.getByText("队列", { exact: true }).locator("..")).toContainText("1");
 
   await page.getByRole("button", { name: "模拟下次失败" }).click();
+  await expect(page.getByText("Collector 状态").locator("..")).toContainText("Next: 503");
   await page.getByRole("button", { name: "发送队列" }).click();
   await expect(page.getByText("模拟 Collector 返回 503")).toBeVisible();
+  await expect(page.getByText("Collector 状态").locator("..")).toContainText("HTTP 503");
   await expect(page.getByText("队列", { exact: true }).locator("..")).toContainText("1");
   await expect(page.locator("pre").first()).toContainText("product_viewed");
 
   await page.getByRole("button", { name: "发送队列" }).click();
   await expect(page.getByText("模拟 Collector 返回 202")).toBeVisible();
+  await expect(page.getByText("Collector 状态").locator("..")).toContainText("HTTP 202");
   await expect(page.getByText("队列", { exact: true }).locator("..")).toContainText("0");
   await expect(page.getByText("已投递", { exact: true }).locator("..")).toContainText("1");
 

@@ -138,6 +138,7 @@ export default function PlaygroundPage() {
   const [queueSize, setQueueSize] = useState(0);
   const [delivered, setDelivered] = useState(0);
   const [failArmed, setFailArmed] = useState(false);
+  const [collectorStatus, setCollectorStatus] = useState<number | "armed" | undefined>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -153,6 +154,7 @@ export default function PlaygroundPage() {
       if (!active) return;
       setPayload(request.payload);
       setFailArmed(false);
+      setCollectorStatus(request.failed ? 503 : 202);
       if (!request.failed) setDelivered((count) => count + request.payload.events.length);
       addLog({
         kind: request.failed ? "failure" : "success",
@@ -241,6 +243,7 @@ export default function PlaygroundPage() {
   const armFailure = () => {
     transportRef.current?.failNextRequest();
     setFailArmed(true);
+    setCollectorStatus("armed");
     addLog({
       kind: "failure",
       title: en ? "Next delivery will fail" : "下一次投递将会失败",
@@ -254,6 +257,7 @@ export default function PlaygroundPage() {
     setPayload(undefined);
     setDelivered(0);
     setFailArmed(false);
+    setCollectorStatus(undefined);
     setError("");
   });
 
@@ -299,7 +303,12 @@ export default function PlaygroundPage() {
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
               <Metric icon={Database} label={en ? "Queued" : "队列"} value={queueSize} />
               <Metric icon={CheckCircle2} label={en ? "Delivered" : "已投递"} value={delivered} />
-              <Metric icon={AlertTriangle} label={en ? "Failure armed" : "故障模拟"} value={failArmed ? (en ? "Yes" : "已开启") : (en ? "No" : "未开启")} wide />
+              <Metric
+                icon={AlertTriangle}
+                label={en ? "Collector" : "Collector 状态"}
+                value={collectorStatus === "armed" ? "Next: 503" : collectorStatus ? `HTTP ${collectorStatus}` : "—"}
+                wide
+              />
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3 border-t border-white/8 pt-6">

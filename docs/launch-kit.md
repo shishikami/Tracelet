@@ -45,9 +45,11 @@ I would especially value feedback on the public API, privacy defaults and the bo
 ### Gallery plan
 
 1. Social preview: `website/public/tracelet-social-preview.png`.
-2. Playground retry flow: queued event → simulated `503` → successful retry.
-3. Architecture overview: Core → Storage / Codec / Transport.
-4. Quickstart and React/Vue starter templates.
+2. Playground retry flow: `docs/launch-assets/playground-retry.png`.
+3. Architecture overview: `docs/launch-assets/architecture-guide.png`.
+4. React, Vue and Collector starters: `docs/launch-assets/runnable-starters.png`.
+
+Run `pnpm capture:launch-assets` against a reviewed local build, or set `TRACELET_CAPTURE_BASE_URL` to the exact production deployment being launched. Always inspect the generated images before uploading them.
 
 ## Show HN
 
