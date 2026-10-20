@@ -18,8 +18,16 @@
 - [x] React、Vue StackBlitz 链接可直接打开并解析到对应 Starter 目录。
 - [x] GitHub description、topics、social preview 和 Discussions 已配置。
 - [x] GitHub Private Vulnerability Reporting 已启用，安全报告入口可访问。
+- [x] `pnpm audit` 在 2026-10-20 报告 116 个依赖、0 个已知漏洞；许可证清单无未识别或禁止分发的条目。
 - [x] 对外发布文案中指向官网的链接附带对应的 UTM 参数。
 - [ ] 发布当天预留时间回答问题并记录真实反馈。
+
+### 安全与许可证基线
+
+- `tracelet-browser` 没有运行时 npm 依赖，发布包只包含 `dist/`、README、CHANGELOG、LICENSE 和 npm 必需的 `package.json` 清单。
+- 当前工作区依赖许可证为 MIT、Apache-2.0、ISC、BSD-2-Clause、BSD-3-Clause，以及仅用于构建的 MPL-2.0 `lightningcss`。
+- `lightningcss` 和其他官网、测试、构建依赖不会进入 `tracelet-browser` 发布包。
+- 每次正式发布前重新运行 `pnpm audit --json` 与 `pnpm licenses list --json`；不要把这份快照当成未来版本的永久结论。
 
 ## Product Hunt
 

@@ -400,7 +400,7 @@ pnpm pack:check
 
 如果自动发布失败，请先修复 CI、Trusted Publisher 或 staged publishing 配置，再重新创建新的版本；不要绕过人工审批直接执行 `npm publish`。已经公开到 npm 的版本号不能覆盖。
 
-正式发布前请更新 `package.json` 版本号。npm 包只包含 `dist/`、README、CHANGELOG 和 LICENSE，不包含官网与测试文件。
+正式发布前请更新 `package.json` 版本号。npm 包只包含 `dist/`、README、CHANGELOG、LICENSE 和 npm 必需的 `package.json` 清单，不包含官网与测试文件。
 
 ## Roadmap
 
