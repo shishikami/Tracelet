@@ -39,6 +39,14 @@ This audit is a baseline, not a ranking promise. Search results vary by location
 - **After 7 complete days:** record impressions, clicks, top queries and landing pages. Do not compare a partial day with the existing baseline.
 - **After 28 days:** decide whether to add another guide based on real impressions. Prefer queries already receiving impressions over guessed high-volume keywords.
 
+## 2026-10-21 checkpoint
+
+- Search Console reports that `/sitemap.xml` was processed successfully and now discovers all **14** submitted URLs, matching the current sitemap exactly.
+- The Performance and Page indexing reports are still processing, so there is not yet enough first-party data to diagnose ranking or indexing exclusions.
+- Public searches for the exact brand/package and the Chinese long-tail query `TypeScript 浏览器埋点 SDK` still do not surface this project. Results are dominated by older npm packages and unrelated projects also named Tracelet.
+- Keep the current brand qualifier (`Tracelet Browser`) and package name (`tracelet-browser`) stable. Do not rewrite titles again before Search Console has completed its first crawl and produced at least seven complete days of data.
+- The next useful action is URL Inspection for the homepage and the two TypeScript SDK guides after Search Console finishes processing; broad content expansion before then would be guesswork.
+
 ## References
 
 - Google Search Central: [JavaScript SEO basics](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics)

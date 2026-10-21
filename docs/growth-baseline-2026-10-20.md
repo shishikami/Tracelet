@@ -14,6 +14,10 @@ This snapshot records the first comparable growth baseline before the public com
 | Google Search Console | Read on `2026-10-20` | No query, impression or click data yet | Search Console reports that data is still processing and asks to check again after about one day. |
 | Google sitemap | Last read `2026-10-20` | Successfully processed; 2 pages discovered | Production `sitemap.xml` currently contains 12 URLs, so wait for the next crawl before diagnosing or resubmitting. |
 
+### Search checkpoint — 2026-10-21
+
+Search Console now reports **14 discovered pages** for `/sitemap.xml`, equal to the 14 URLs in the deployed sitemap. Performance and Page indexing are still processing and have no query, impression, click or exclusion data yet. This confirms sitemap discovery but does not yet prove that the pages are indexed or ranking.
+
 ## Vercel page distribution
 
 The 15 measured pageviews were distributed as follows:
