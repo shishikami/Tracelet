@@ -433,7 +433,7 @@ pnpm pack:check
 - [x] [兼容性与韧性测试矩阵](./docs/compatibility-matrix.md)：明确自动化、部分覆盖、手工验证和待验证边界。
 - [x] [Vercel Collector starter](./examples/starters/collector-vercel)：CORS、安全大小边界、gzip、鉴权扩展和持久化 Sink 契约。
 - [x] 实现并验证可观测 API：队列快照、运行时订阅、Attempt 关联与三浏览器覆盖。
-- [ ] 发布 `0.3.0-beta.1` 并通过 Playground 收集 API 使用反馈。
+- [x] 发布 `0.3.0-beta.1`；接下来通过 Playground 收集 API 使用反馈。
 - [ ] 增加 CSP、离线恢复、跨标签页锁与更多打包器的真实夹具。
 - [ ] 评估 CDN / IIFE 构建，支持无需打包器的 `<script>` 接入。
 
