@@ -12,17 +12,20 @@
 ```bash
 pnpm install --frozen-lockfile
 pnpm check
+pnpm smoke:ecosystem
 pnpm test:browser
 pnpm pack:check
 ```
 
 `pnpm check` 包含版本一致性、SDK 与示例类型检查、单元测试、网站构建，以及发布 tarball 的安装冒烟测试。
+`pnpm smoke:ecosystem` 会额外安装当前 tarball，并执行 React、Vue、Next.js、Webpack 与 Rollup 的生产构建；首次运行需要下载固定版本的测试依赖。
 
 ## 2. 合并并检查 CI
 
 把版本准备提交合并到 `main`，等待以下检查全部通过：
 
 - Node.js 20 和 24：类型检查、单元测试、tarball 冒烟测试、网站构建与包内容检查。
+- Node.js 24：当前 tarball 的 React、Vue、Next.js、Webpack 与 Rollup 生产构建。
 - Chromium、Firefox 和 WebKit：真实浏览器端到端测试。
 - Vercel：生产文档站部署成功。
 

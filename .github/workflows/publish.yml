@@ -50,6 +50,9 @@ jobs:
       - name: Run release checks, including installed-package smoke test
         run: pnpm check
 
+      - name: Build framework and bundler consumers
+        run: pnpm smoke:ecosystem
+
       - name: Verify npm package contents
         run: pnpm pack:check
 

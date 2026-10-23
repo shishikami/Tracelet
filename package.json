@@ -49,6 +49,7 @@
     "test:browser": "playwright test",
     "test:browser:install": "playwright install chromium firefox webkit",
     "smoke:package": "node scripts/package-smoke.mjs",
+    "smoke:ecosystem": "node scripts/ecosystem-smoke.mjs",
     "api:check": "node scripts/public-api-check.mjs",
     "package:budget": "node scripts/package-budget.mjs",
     "site:budget": "node scripts/site-budget.mjs",

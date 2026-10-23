@@ -12,6 +12,7 @@ This matrix distinguishes what CI proves today from documented manual checks and
 | 🧪 Manual | A repeatable check is documented but not yet a CI gate. |
 | ⚠️ Partial | A related path is automated, but an important variant is missing. |
 | 🗓️ Planned | Targeted for 0.3.x; not currently claimed as verified. |
+| ➖ Deferred | Explicitly outside the 0.3 supported surface. |
 
 ## Browser and lifecycle
 
@@ -70,11 +71,11 @@ This matrix distinguishes what CI proves today from documented manual checks and
 | Native ESM consumer | Root export resolves from packed tarball | `scripts/package-smoke.mjs` | ✅ Automated |
 | TypeScript declarations | Typed consumer compiles from packed tarball | `scripts/package-smoke.mjs` | ✅ Automated |
 | Vite application | Installed tarball bundles in a minimal app | `scripts/package-smoke.mjs` | ✅ Automated |
-| React + Vite starter | Integration source type-checks | `tsconfig.frameworks.json` | ⚠️ Partial |
-| Vue + Vite starter | Integration source type-checks | `tsconfig.frameworks.json` | ⚠️ Partial |
-| Next.js client boundary | Example source type-checks; no Next production build | `examples/frameworks/nextjs-client.tsx` | ⚠️ Partial |
-| Webpack/Rollup direct consumers | ESM should resolve; dedicated fixtures absent | None yet | 🗓️ Planned |
-| CDN/IIFE `<script>` usage | No global build exists | 0.3 candidate | 🗓️ Planned |
+| React + Vite starter | Installs current tarball and completes a production build | `scripts/ecosystem-smoke.mjs` | ✅ Automated |
+| Vue + Vite starter | Installs current tarball, type-checks SFCs and completes a production build | `scripts/ecosystem-smoke.mjs` | ✅ Automated |
+| Next.js client boundary | Standalone App Router starter installs current tarball and completes a Turbopack production build | `examples/starters/nextjs`; ecosystem smoke test | ✅ Automated |
+| Webpack/Rollup direct consumers | Both resolve and bundle the installed current tarball | `scripts/ecosystem-smoke.mjs` | ✅ Automated |
+| CDN/IIFE `<script>` usage | 0.3 remains native ESM-only; revisit on demonstrated demand | `docs/rfcs/0002-distribution-formats.md` | ➖ Deferred |
 | Vercel Function collector | Handler compiles and protocol tests run on Node 20/24 | `tests/collector.test.mjs` | ✅ Automated |
 
 ## 0.3 implementation order
@@ -92,12 +93,12 @@ This matrix distinguishes what CI proves today from documented manual checks and
 - [x] Add a real multi-page test for the shared IndexedDB delivery lock.
 - [x] Add an isolated `visibilitychange` lifecycle assertion.
 
-### P2 — ecosystem builds
+### P2 — ecosystem builds (completed)
 
-1. Build the React and Vue starters in CI, not only type-check shared adapters.
-2. Add minimal Rollup and Webpack consumers that install the packed tarball.
-3. Add a Next.js production-build fixture around the documented client boundary.
-4. Introduce CDN/IIFE coverage only if that artifact is accepted into the 0.3 scope.
+- [x] Build the React and Vue starters in CI, not only type-check shared adapters.
+- [x] Add minimal Rollup and Webpack consumers that install the packed tarball.
+- [x] Add a Next.js production-build fixture around the documented client boundary.
+- [x] Evaluate CDN/IIFE scope and keep 0.3 ESM-only until demonstrated demand.
 
 ## How to update this matrix
 

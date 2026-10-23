@@ -2,6 +2,7 @@ node_modules/
 .pnpm-store/
 dist/
 out/
+.next/
 website/dist/
 *.tsbuildinfo
 playwright-report/

@@ -41,6 +41,7 @@ pnpm dev:docs
 
 - [ ] `pnpm check` 通过。
 - [ ] 涉及浏览器行为时，`pnpm test:browser` 通过。
+- [ ] 涉及包入口、框架示例或构建兼容性时，`pnpm smoke:ecosystem` 通过。
 - [ ] 公共 API 变化已更新文档和 Changelog。
 - [ ] npm 包体积与公开导出检查没有被绕过。
 - [ ] PR 只包含同一主题的必要修改。

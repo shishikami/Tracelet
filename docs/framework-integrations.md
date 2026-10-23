@@ -28,4 +28,9 @@ Render `TraceletClient` from the root layout. Its `"use client"` directive preve
 
 Source: [`examples/frameworks/nextjs-client.tsx`](../examples/frameworks/nextjs-client.tsx)
 
-All three examples and their shared singleton are compiled by `pnpm typecheck:frameworks` in CI.
+Runnable App Router project: [`examples/starters/nextjs`](../examples/starters/nextjs)
+
+All three examples and their shared singleton are compiled by
+`pnpm typecheck:frameworks` in CI. The React/Vite, Vue/Vite and Next.js starters
+also install the current packed SDK and complete real production builds through
+`pnpm smoke:ecosystem`; the same gate verifies Webpack and Rollup consumers.

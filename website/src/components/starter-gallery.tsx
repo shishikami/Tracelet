@@ -24,6 +24,15 @@ const starters = [
     actionEn: "Run in StackBlitz",
   },
   {
+    icon: Component,
+    title: "Next.js App Router",
+    zh: "客户端边界、应用级 SDK 单例，以及只在浏览器交互中触发的类型安全事件。",
+    en: "A client boundary, application-wide SDK singleton and typed events triggered only by browser interactions.",
+    href: `${stackBlitzBase}/nextjs?startScript=dev&title=Tracelet%20Next.js%20Starter`,
+    actionZh: "在 StackBlitz 运行",
+    actionEn: "Run in StackBlitz",
+  },
+  {
     icon: Cloud,
     title: "Vercel Collector",
     zh: "可测试的无状态 Node.js Function，包含 Origin 白名单、gzip、双层大小边界、鉴权扩展与持久化 Sink 契约。",

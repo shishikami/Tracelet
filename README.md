@@ -384,6 +384,7 @@ proto/     可选的 Protobuf 协议示例
 
 - Pull Request 和 `main` 分支推送会在 Node.js 20、24 上运行类型检查、测试、官网构建和 npm 包内容检查。
 - CI 会把 `npm pack` 生成的 tarball 安装进空白项目，验证 JavaScript 导入、TypeScript 声明和 Vite 构建，避免“源码能用但发布包不可用”。
+- Node.js 24 还会安装同一个 tarball，并完成 React/Vite、Vue/Vite、Next.js/Turbopack、Webpack 与 Rollup 的真实生产构建。
 - Node.js 检查通过后，会在 Chromium、Firefox 和 WebKit 上运行浏览器端到端测试。
 - 发布 GitHub Release 后，工作流会校验 Git tag 与 `package.json` 版本一致，再通过 npm Trusted Publishing 提交待审核版本；SemVer 预发布版本固定使用 `beta` dist-tag，正式版本使用 `latest`。
 - Vercel 保持 Git 集成：Pull Request 生成 Preview，`main` 更新生产站点，不在 Actions 中重复部署。
@@ -409,6 +410,7 @@ proto/     可选的 Protobuf 协议示例
 ```bash
 pnpm check
 pnpm smoke:package
+pnpm smoke:ecosystem
 pnpm pack:check
 ```
 
@@ -435,8 +437,8 @@ pnpm pack:check
 - [x] 实现并验证可观测 API：队列快照、运行时订阅、Attempt 关联与三浏览器覆盖。
 - [x] 发布 `0.3.0-beta.1`；接下来通过 Playground 收集 API 使用反馈。
 - [x] 增加 CSP、离线恢复、隐藏页 Flush 与真实跨标签页锁的三浏览器夹具。
-- [ ] 增加 React、Vue、Next.js、Webpack 与 Rollup 的真实生产构建夹具。
-- [ ] 评估 CDN / IIFE 构建，支持无需打包器的 `<script>` 接入。
+- [x] 增加 React、Vue、Next.js、Webpack 与 Rollup 的真实生产构建夹具。
+- [x] [评估 CDN / IIFE 构建](./docs/rfcs/0002-distribution-formats.md)：0.3 保持原生 ESM-only，等待真实无打包器需求后再扩展。
 
 RFC 中仍有命名与状态保留范围等开放问题；公开 API 实现前应先通过 Issue 或 Discussion 收集真实使用场景。
 
