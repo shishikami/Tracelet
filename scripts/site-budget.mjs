@@ -10,7 +10,9 @@ const manifest = JSON.parse(
   await readFile(join(outputRoot, ".vite", "manifest.json"), "utf8"),
 );
 const MAX_INITIAL_GZIP_BYTES = 125 * 1024;
-const MAX_TOTAL_JAVASCRIPT_GZIP_BYTES = 170 * 1024;
+// The 0.3 storage fallback guide adds a small, intentionally lazy-loaded docs
+// chunk. Keep the increase narrow so future content growth still fails loudly.
+const MAX_TOTAL_JAVASCRIPT_GZIP_BYTES = 171 * 1024;
 
 const initialFiles = new Set();
 const visit = (key) => {
