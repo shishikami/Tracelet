@@ -1,15 +1,18 @@
 # RFC 0001: Tracelet 0.3 observability API
 
-- Status: Implemented on `main` (unreleased)
+- Status: Accepted and implemented
 - Target: `0.3.0`
-- Last updated: 2026-10-20
+- Last updated: 2026-10-23
 - Scope: browser SDK public API; no collector-specific dependency
 
 ## Summary
 
 Tracelet already emitted diagnostic events through the constructor-only `onDiagnostic` callback, but an application could not query the current queue/delivery state or add observers after creating the client. Version 0.3 adds a read-only snapshot API and lifecycle subscriptions while keeping storage, codecs, transports and collectors replaceable.
 
-The API described here is now implemented and verified on `main`. It remains unreleased until the planned `0.3.0-beta.1` package is published, so consumers of `0.2.x` cannot use it yet.
+The API described here is implemented, published in `0.3.0-beta.1` and verified
+through the Playground, installed-package smoke tests and Chromium, Firefox and
+WebKit. Its public names and semantics are frozen for the stable `0.3.0`
+release; any later breaking adjustment moves to a subsequent minor version.
 
 ## Problem
 
@@ -205,5 +208,5 @@ Items 1–11 are covered by `tests/analytics.test.mjs`; the real IndexedDB and t
 
 1. Implement state tracking without changing the replaceable storage or transport contracts. — Done
 2. Add unit, packed-package and three-browser tests before updating the API reference. — Done
-3. Publish `0.3.0-beta.1` and validate the API in the Playground/debug panel. — Next
-4. Stabilize names for `0.3.0`; breaking adjustments after that wait for a major version.
+3. Publish `0.3.0-beta.1` and validate the API in the Playground/debug panel. — Done
+4. Stabilize names for `0.3.0`; breaking adjustments after that wait for a subsequent minor version. — Done

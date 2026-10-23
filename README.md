@@ -67,7 +67,7 @@ Runnable starters:
 - [Next.js App Router](./examples/starters/nextjs)
 - [Vercel Collector](./examples/starters/collector-vercel)
 
-Planning: [0.3 observability RFC](./docs/rfcs/0001-observability-api.md) · [Compatibility matrix](./docs/compatibility-matrix.md)
+Planning: [0.3 release readiness](./docs/0.3-release-readiness.md) · [Observability RFC](./docs/rfcs/0001-observability-api.md) · [Compatibility matrix](./docs/compatibility-matrix.md)
 
 Community: [Support](./SUPPORT.md) · [Contributing](./CONTRIBUTING.md) · [Code of Conduct](./CODE_OF_CONDUCT.md) · [Accessibility](./ACCESSIBILITY.md) · [Security](./SECURITY.md) · [Issues](https://github.com/shishikami/Tracelet/issues)
 
@@ -456,6 +456,6 @@ pnpm pack:check
 - [x] [评估 CDN / IIFE 构建](./docs/rfcs/0002-distribution-formats.md)：0.3 保持原生 ESM-only，等待真实无打包器需求后再扩展。
 - [x] 增加 IndexedDB 启动探测与显式内存后备队列，避免首个 `track()` 因持久存储不可用而影响业务。
 
-RFC 中仍有命名与状态保留范围等开放问题；公开 API 实现前应先通过 Issue 或 Discussion 收集真实使用场景。
+0.3 的公开命名与 ESM-only 分发范围已经冻结；剩余发布门禁见 [0.3 release readiness](./docs/0.3-release-readiness.md)。
 
 版本变化见 [CHANGELOG.md](./CHANGELOG.md)。
