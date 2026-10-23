@@ -12,6 +12,12 @@ const packageJson = JSON.parse(await readFile(join(repositoryRoot, "package.json
 const packageSpec = process.env.TRACELET_PACKAGE_SPEC ?? `${packageJson.name}@${packageJson.version}`;
 const expectedVersion = process.env.TRACELET_EXPECTED_VERSION ?? packageJson.version;
 const temporaryProject = await mkdtemp(join(tmpdir(), "tracelet-registry-smoke-"));
+const registryAttempts = Number(process.env.TRACELET_REGISTRY_ATTEMPTS ?? 60);
+
+assert.ok(
+  Number.isSafeInteger(registryAttempts) && registryAttempts > 0,
+  "TRACELET_REGISTRY_ATTEMPTS must be a positive integer",
+);
 
 async function run(command, args, options = {}) {
   return execFileAsync(command, args, {
@@ -24,7 +30,7 @@ async function run(command, args, options = {}) {
 
 async function waitForPublishedVersion() {
   let lastError;
-  for (let attempt = 1; attempt <= 12; attempt += 1) {
+  for (let attempt = 1; attempt <= registryAttempts; attempt += 1) {
     try {
       const { stdout } = await run("npm", ["view", packageSpec, "version", "--json"]);
       const value = JSON.parse(stdout);
@@ -33,8 +39,8 @@ async function waitForPublishedVersion() {
       return;
     } catch (error) {
       lastError = error;
-      if (attempt === 12) break;
-      console.log(`[registry] ${packageSpec} is not visible yet (${attempt}/12); retrying in 5s`);
+      if (attempt === registryAttempts) break;
+      console.log(`[registry] ${packageSpec} is not visible yet (${attempt}/${registryAttempts}); retrying in 5s`);
       await new Promise((resolve) => setTimeout(resolve, 5_000));
     }
   }

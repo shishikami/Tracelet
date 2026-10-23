@@ -60,7 +60,10 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          if [[ "$RELEASE_TAG" == *-* ]]; then
+          PACKAGE_SPEC=$(node --input-type=module -e 'import pkg from "./package.json" with { type: "json" }; process.stdout.write(pkg.name + "@" + pkg.version)')
+          if npm view "$PACKAGE_SPEC" version --json >/dev/null 2>&1; then
+            echo "$PACKAGE_SPEC is already public; skipping the immutable publish step."
+          elif [[ "$RELEASE_TAG" == *-* ]]; then
             npm stage publish --tag beta
           else
             npm stage publish --tag latest

@@ -1,0 +1,37 @@
+name: Verify published npm package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact tracelet-browser version to install from npm
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify tracelet-browser@${{ inputs.version }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Node.js and npm registry
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org/
+          package-manager-cache: false
+
+      - name: Install pinned npm
+        run: npm install --global npm@11.21.0
+
+      - name: Install and verify the public package
+        env:
+          TRACELET_PACKAGE_SPEC: tracelet-browser@${{ inputs.version }}
+          TRACELET_EXPECTED_VERSION: ${{ inputs.version }}
+        run: node scripts/registry-smoke.mjs
