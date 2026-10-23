@@ -329,6 +329,58 @@ test("flushes the queue with the page-hide lifecycle reason", async ({ page, req
   ]);
 });
 
+test("flushes the queue when the document becomes hidden", async ({ page, request }) => {
+  await page.goto("/");
+
+  const result = await page.evaluate(async () => {
+    const { createAnalytics, HttpTransport, MemoryEventStorage } = await import("/dist/index.js");
+    const storage = new MemoryEventStorage();
+    const diagnostics: Array<{ type: string; reason?: string }> = [];
+    const analytics = createAnalytics({
+      appId: "visibility-e2e",
+      eventStorage: storage,
+      flushIntervalMs: 60_000,
+      transport: new HttpTransport({ endpoint: "/v1/batch" }),
+      onDiagnostic(event) {
+        diagnostics.push(event);
+      },
+    });
+
+    await analytics.track("visibility_event", { source: "visibilitychange" });
+    // Headless browsers do not expose a portable API for backgrounding a tab.
+    // Override the read-only state for this isolated lifecycle assertion while
+    // still exercising the real DOM listener and HTTP transport in each engine.
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "hidden",
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    const deadline = Date.now() + 3_000;
+    while (await storage.size() !== 0) {
+      if (Date.now() >= deadline) throw new Error("visibilitychange flush did not finish");
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+
+    const remaining = await storage.size();
+    await analytics.shutdown();
+    return { diagnostics, remaining };
+  });
+
+  expect(result.remaining).toBe(0);
+  expect(result.diagnostics).toEqual(expect.arrayContaining([
+    expect.objectContaining({ type: "flush_started", reason: "page-hide" }),
+    expect.objectContaining({ type: "flush_succeeded" }),
+  ]));
+  const body = await (await request.get("/v1/events")).json();
+  expect(body.events).toEqual([
+    expect.objectContaining({
+      name: "visibility_event",
+      properties: { source: "visibilitychange" },
+    }),
+  ]);
+});
+
 test("compresses a browser batch with gzip before delivery", async ({ page, request }) => {
   await page.goto("/");
 
@@ -430,6 +482,146 @@ test("recovers automatically after a retryable collector failure", async ({ page
     name: "recovered_event",
     properties: { recovered: true },
   });
+});
+
+test("retains an IndexedDB event while offline and delivers it after reconnecting", async ({
+  page,
+  request,
+  context,
+  browserName,
+}) => {
+  const databaseName = `tracelet-offline-${browserName}-${Date.now()}`;
+  await page.goto("/");
+
+  await page.evaluate(async (name) => {
+    const { createAnalytics, HttpTransport, IndexedDbEventStorage } = await import("/dist/index.js");
+    const storage = new IndexedDbEventStorage({ databaseName: name });
+    const diagnostics: Array<{ type: string; status?: number; retryable?: boolean }> = [];
+    const analytics = createAnalytics({
+      appId: "offline-recovery-e2e",
+      pageLifecycle: false,
+      flushIntervalMs: 60_000,
+      retry: { baseDelayMs: 500, maxDelayMs: 500, jitterRatio: 0 },
+      eventStorage: storage,
+      transport: new HttpTransport({ endpoint: "/v1/batch", timeoutMs: 1_000 }),
+      onDiagnostic(event) {
+        diagnostics.push(event);
+      },
+    });
+
+    (globalThis as typeof globalThis & {
+      __traceletOfflineE2E?: {
+        enqueueAndFlush(): Promise<number>;
+        size(): Promise<number>;
+        diagnostics(): Array<{ type: string; status?: number; retryable?: boolean }>;
+        cleanup(): Promise<void>;
+      };
+    }).__traceletOfflineE2E = {
+      async enqueueAndFlush() {
+        await analytics.track("offline_event", { source: "network-transition" });
+        await analytics.flush();
+        return storage.size();
+      },
+      size: () => storage.size(),
+      diagnostics: () => [...diagnostics],
+      async cleanup() {
+        await analytics.shutdown();
+        await storage.close();
+      },
+    };
+  }, databaseName);
+
+  await context.setOffline(true);
+  const queuedWhileOffline = await page.evaluate(() => {
+    const harness = (globalThis as typeof globalThis & {
+      __traceletOfflineE2E?: { enqueueAndFlush(): Promise<number> };
+    }).__traceletOfflineE2E;
+    if (!harness) throw new Error("offline harness is missing");
+    return harness.enqueueAndFlush();
+  });
+  expect(queuedWhileOffline).toBe(1);
+
+  await context.setOffline(false);
+  await expect.poll(() => page.evaluate(() => {
+    const harness = (globalThis as typeof globalThis & {
+      __traceletOfflineE2E?: { size(): Promise<number> };
+    }).__traceletOfflineE2E;
+    if (!harness) throw new Error("offline harness is missing");
+    return harness.size();
+  }), { timeout: 5_000 }).toBe(0);
+
+  const diagnostics = await page.evaluate(() => {
+    const harness = (globalThis as typeof globalThis & {
+      __traceletOfflineE2E?: {
+        diagnostics(): Array<{ type: string; retryable?: boolean }>;
+        cleanup(): Promise<void>;
+      };
+    }).__traceletOfflineE2E;
+    if (!harness) throw new Error("offline harness is missing");
+    return harness.diagnostics();
+  });
+  expect(diagnostics).toEqual(expect.arrayContaining([
+    expect.objectContaining({ type: "flush_failed", retryable: true }),
+    expect.objectContaining({ type: "flush_retry_scheduled" }),
+    expect.objectContaining({ type: "flush_succeeded" }),
+  ]));
+
+  await page.evaluate(async () => {
+    const harness = (globalThis as typeof globalThis & {
+      __traceletOfflineE2E?: { cleanup(): Promise<void> };
+    }).__traceletOfflineE2E;
+    await harness?.cleanup();
+  });
+  const body = await (await request.get("/v1/events")).json();
+  expect(body.events).toEqual([
+    expect.objectContaining({
+      name: "offline_event",
+      properties: { source: "network-transition" },
+    }),
+  ]);
+});
+
+test("retains the queue when CSP blocks the collector connection", async ({ page, request }) => {
+  await page.route("**/fixtures/csp-connect-blocked", (route) => route.fulfill({
+    status: 200,
+    contentType: "text/html",
+    headers: {
+      "content-security-policy": "default-src 'self'; script-src 'self'; connect-src 'none'",
+    },
+    body: "<!doctype html><html><body><main>CSP fixture</main></body></html>",
+  }));
+  await page.goto("/fixtures/csp-connect-blocked");
+
+  const result = await page.evaluate(async () => {
+    const { createAnalytics, HttpTransport, MemoryEventStorage } = await import("/dist/index.js");
+    const storage = new MemoryEventStorage();
+    const diagnostics: Array<{ type: string; retryable?: boolean }> = [];
+    const analytics = createAnalytics({
+      appId: "csp-e2e",
+      pageLifecycle: false,
+      flushIntervalMs: 60_000,
+      retry: { baseDelayMs: 60_000, maxDelayMs: 60_000, jitterRatio: 0 },
+      eventStorage: storage,
+      transport: new HttpTransport({ endpoint: "/v1/batch" }),
+      onDiagnostic(event) {
+        diagnostics.push(event);
+      },
+    });
+
+    await analytics.track("csp_blocked_event", { retained: true });
+    await analytics.flush();
+    const remaining = await storage.size();
+    await analytics.shutdown();
+    return { diagnostics, remaining };
+  });
+
+  expect(result.remaining).toBe(1);
+  expect(result.diagnostics).toEqual(expect.arrayContaining([
+    expect.objectContaining({ type: "flush_failed", retryable: true }),
+    expect.objectContaining({ type: "flush_retry_scheduled" }),
+  ]));
+  const stats = await (await request.get("/v1/stats")).json();
+  expect(stats).toMatchObject({ batchRequests: 0, acceptedEvents: 0, storedEvents: 0 });
 });
 
 test("routes event batches to different HTTP collectors", async ({ page, request }) => {

@@ -434,7 +434,8 @@ pnpm pack:check
 - [x] [Vercel Collector starter](./examples/starters/collector-vercel)：CORS、安全大小边界、gzip、鉴权扩展和持久化 Sink 契约。
 - [x] 实现并验证可观测 API：队列快照、运行时订阅、Attempt 关联与三浏览器覆盖。
 - [x] 发布 `0.3.0-beta.1`；接下来通过 Playground 收集 API 使用反馈。
-- [ ] 增加 CSP、离线恢复、跨标签页锁与更多打包器的真实夹具。
+- [x] 增加 CSP、离线恢复、隐藏页 Flush 与真实跨标签页锁的三浏览器夹具。
+- [ ] 增加 React、Vue、Next.js、Webpack 与 Rollup 的真实生产构建夹具。
 - [ ] 评估 CDN / IIFE 构建，支持无需打包器的 `<script>` 接入。
 
 RFC 中仍有命名与状态保留范围等开放问题；公开 API 实现前应先通过 Issue 或 Discussion 收集真实使用场景。

@@ -2,6 +2,18 @@
 
 本项目的所有重要变更都会记录在此文件中。
 
+## 0.3.0 - Unreleased
+
+### Added
+
+- Chromium、Firefox 与 WebKit 的真实离线到在线恢复测试，验证 IndexedDB 队列会保留事件并在网络恢复后自动投递。
+- 响应头 CSP `connect-src 'none'` 浏览器夹具，验证被策略阻断的请求不会误删队列。
+- 独立的 `visibilitychange` 隐藏页 Flush 测试，并把已有的真实双标签页共享队列测试纳入稳定版兼容性声明。
+
+### Changed
+
+- 兼容性矩阵更新为已由三浏览器 CI 证明的离线恢复、CSP、隐藏页 Flush 与跨标签页锁状态。
+
 ## 0.3.0-beta.1 - 2026-10-21
 
 ### Added

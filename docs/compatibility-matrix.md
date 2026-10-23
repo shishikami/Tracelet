@@ -1,6 +1,6 @@
 # Tracelet compatibility and resilience matrix
 
-Last reviewed: 2026-10-20
+Last reviewed: 2026-10-23
 
 This matrix distinguishes what CI proves today from documented manual checks and planned coverage. “Supported” means the named path has automated evidence in this repository; it does not imply support for every historical browser or third-party extension.
 
@@ -20,11 +20,11 @@ This matrix distinguishes what CI proves today from documented manual checks and
 | Package import and real HTTP delivery | Yes | Yes | Yes | `tests/browser/sdk.spec.ts`: real collector | ✅ Automated |
 | IndexedDB persistent queue | Yes | Yes | Yes | Real collector test uses `IndexedDbEventStorage` | ✅ Automated |
 | `pagehide` flush | Yes | Yes | Yes | Browser lifecycle test | ✅ Automated |
-| Hidden-page `visibilitychange` flush | Indirect | Indirect | Indirect | Listener exists; no isolated browser assertion | ⚠️ Partial |
+| Hidden-page `visibilitychange` flush | Yes | Yes | Yes | Isolated browser lifecycle test with real HTTP delivery | ✅ Automated |
 | gzip through `CompressionStream` | Yes | Yes | Yes | Browser gzip delivery test | ✅ Automated |
 | Retry after transient `503` | Yes | Yes | Yes | Browser recovery test | ✅ Automated |
 | Multiple collector routing | Yes | Yes | Yes | Browser routing test | ✅ Automated |
-| Cross-tab delivery lock | Unit only | Unit only | Unit only | `tests/analytics.test.mjs`; no multi-page browser case | ⚠️ Partial |
+| Cross-tab delivery lock | Yes | Yes | Yes | Two real pages share IndexedDB and flush concurrently without duplicates | ✅ Automated |
 | Storage quota diagnostics | Unit only | Unit only | Unit only | Synthetic quota rejection test | ⚠️ Partial |
 | Queue snapshots and runtime diagnostic subscriptions | Yes | Yes | Yes | Real IndexedDB observability lifecycle test | ✅ Automated |
 | Private/ephemeral browsing modes | — | — | — | Browser policies vary by version | 🗓️ Planned |
@@ -44,7 +44,7 @@ This matrix distinguishes what CI proves today from documented manual checks and
 | Within-batch duplicate IDs | Reject with `400` | `tests/collector.test.mjs` | ✅ Automated |
 | Delivery attempt correlation | Start, result and retry schedule share `attemptId` | Unit and three-browser observability tests | ✅ Automated |
 | Cross-request idempotency | Durable sink enforces unique `eventId` | Sink contract and starter documentation; no database chosen | 🧪 Manual |
-| Offline → online browser transition | Queued events eventually retry | Retry primitive exists; online/offline transition not isolated | 🗓️ Planned |
+| Offline → online browser transition | IndexedDB retains the event and retry succeeds after reconnecting | Playwright context network transition in all three browsers | ✅ Automated |
 | Captive portal / DNS / TLS failure | Keep events and retry | Fetch failure is covered generically, not browser-network variants | ⚠️ Partial |
 
 ## Privacy, policy and constrained environments
@@ -56,7 +56,7 @@ This matrix distinguishes what CI proves today from documented manual checks and
 | `localStorage` unavailable/throws | Fall back to in-memory identity storage | Unit tests | ✅ Automated |
 | IndexedDB unavailable | Adapter rejects; application must select/fallback storage | Documented limitation; no automatic fallback | 🧪 Manual |
 | Storage quota exceeded | Drop current event safely and emit diagnostics | Unit test | ✅ Automated |
-| CSP `connect-src` blocks collector | Fetch fails and queue is retained | Generic fetch failure covered; CSP fixture missing | 🗓️ Planned |
+| CSP `connect-src` blocks collector | Fetch fails and queue is retained | Response-header CSP fixture in all three browsers | ✅ Automated |
 | Strict CSP blocks inline/eval | SDK uses ESM without eval; website policy fixture missing | Source inspection only | 🗓️ Planned |
 | Common privacy/ad blockers | Endpoint-dependent; custom first-party paths recommended | No maintained extension corpus | 🗓️ Planned |
 | Third-party cookies disabled | Default transport uses `credentials: "omit"`; no dedicated browser-policy fixture | Source contract and manual inspection | ⚠️ Partial |
@@ -85,12 +85,12 @@ This matrix distinguishes what CI proves today from documented manual checks and
 - Run collector contract tests in the existing Node 20/24 CI matrix.
 - Treat partial/planned rows as limitations, not implicit support claims.
 
-### P1 — resilience fixtures
+### P1 — resilience fixtures (completed)
 
-1. Add a browser test that starts offline, enqueues, returns online and succeeds.
-2. Serve a CSP-constrained fixture and verify `connect-src` failure retains the queue.
-3. Add a real multi-page test for the shared IndexedDB delivery lock.
-4. Add an isolated `visibilitychange` lifecycle assertion.
+- [x] Add a browser test that starts offline, enqueues, returns online and succeeds.
+- [x] Serve a CSP-constrained fixture and verify `connect-src` failure retains the queue.
+- [x] Add a real multi-page test for the shared IndexedDB delivery lock.
+- [x] Add an isolated `visibilitychange` lifecycle assertion.
 
 ### P2 — ecosystem builds
 
