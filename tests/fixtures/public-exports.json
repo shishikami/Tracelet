@@ -19,6 +19,7 @@
   "StorageQuotaExceededError",
   "createAnalytics",
   "createAutoCapturePlugin",
+  "createBrowserEventStorage",
   "createId",
   "estimateBrowserStorage",
   "isStorageQuotaExceededError",

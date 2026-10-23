@@ -55,7 +55,7 @@ This matrix distinguishes what CI proves today from documented manual checks and
 | Consent denied | Drop before identity/event persistence | Unit tests and public contract | ✅ Automated |
 | URL query/fragment sanitization | Omit query and fragment from default context | Browser context sanitization test | ✅ Automated |
 | `localStorage` unavailable/throws | Fall back to in-memory identity storage | Unit tests | ✅ Automated |
-| IndexedDB unavailable | Adapter rejects; application must select/fallback storage | Documented limitation; no automatic fallback | 🧪 Manual |
+| IndexedDB unavailable | `createBrowserEventStorage()` selects an explicit fallback before client creation | Unit fallback test plus persistent selection in all three browsers | ✅ Automated |
 | Storage quota exceeded | Drop current event safely and emit diagnostics | Unit test | ✅ Automated |
 | CSP `connect-src` blocks collector | Fetch fails and queue is retained | Response-header CSP fixture in all three browsers | ✅ Automated |
 | Strict CSP blocks inline/eval | SDK uses ESM without eval; website policy fixture missing | Source inspection only | 🗓️ Planned |

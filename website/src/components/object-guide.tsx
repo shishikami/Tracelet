@@ -47,13 +47,22 @@ const storageCode = `import {
   IndexedDbEventStorage,
   MemoryEventStorage,
   MemoryKeyValueStorage,
+  createBrowserEventStorage,
 } from "tracelet-browser";
 
-// 生产环境：刷新页面后，尚未发送的事件仍然存在。
+// 需要强制持久化时，可以直接使用 IndexedDB Adapter。
 const eventStorage = new IndexedDbEventStorage({
   databaseName: "shop-analytics",
   storeName: "events",
   version: 1,
+});
+
+// 普通生产接入推荐：启动时探测 IndexedDB，失败则安全退回内存。
+const resilientEventStorage = await createBrowserEventStorage({
+  databaseName: "shop-analytics",
+  onFallback(error) {
+    console.warn("Tracelet storage fallback", error);
+  },
 });
 
 // 使用独立前缀，避免和应用自己的 LocalStorage Key 冲突。
@@ -262,8 +271,8 @@ const groups = [
     title: "Storage：队列与身份保存在哪里",
     englishTitle: "Storage: where queues and identity live",
     badge: "Production",
-    copy: "事件队列与身份存储是两个不同契约。生产环境通常使用 IndexedDbEventStorage + BrowserLocalStorage；Memory 实现适合测试，并不是持久化方案。",
-    englishCopy: "The event queue and identity store are separate contracts. Production usually uses IndexedDbEventStorage plus BrowserLocalStorage; memory implementations are for tests, not persistence.",
+    copy: "事件队列与身份存储是两个不同契约。生产环境通常使用 createBrowserEventStorage() + BrowserLocalStorage；前者优先选择 IndexedDB，并能在启动失败时显式退回内存。",
+    englishCopy: "The event queue and identity store are separate contracts. Production usually uses createBrowserEventStorage() plus BrowserLocalStorage; the former prefers IndexedDB and explicitly falls back to memory when startup fails.",
     code: storageCode,
     filename: "storage.ts",
   },

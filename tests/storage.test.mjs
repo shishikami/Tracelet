@@ -3,7 +3,9 @@ import test from "node:test";
 
 import {
   BrowserLocalStorage,
+  MemoryEventStorage,
   StorageQuotaExceededError,
+  createBrowserEventStorage,
   estimateBrowserStorage,
   isStorageQuotaExceededError,
 } from "../dist/index.js";
@@ -72,5 +74,32 @@ test("falls back to memory when localStorage throws", () => {
   } finally {
     if (original) Object.defineProperty(globalThis, "localStorage", original);
     else delete globalThis.localStorage;
+  }
+});
+
+test("selects an explicit memory fallback when IndexedDB cannot open", async () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "indexedDB");
+  const fallback = new MemoryEventStorage();
+  const observed = [];
+  Object.defineProperty(globalThis, "indexedDB", {
+    configurable: true,
+    value: undefined,
+  });
+
+  try {
+    const selected = await createBrowserEventStorage({
+      fallback,
+      onFallback(error) {
+        observed.push(error);
+        throw new Error("diagnostic listener failure");
+      },
+    });
+
+    assert.equal(selected, fallback);
+    assert.equal(observed.length, 1);
+    assert.match(String(observed[0]), /IndexedDB is not supported/);
+  } finally {
+    if (original) Object.defineProperty(globalThis, "indexedDB", original);
+    else delete globalThis.indexedDB;
   }
 });

@@ -20,18 +20,23 @@ import nextFrameworkCode from "../../../examples/frameworks/nextjs-client.tsx?ra
 const setupCode = `import {
   BrowserLocalStorage,
   HttpTransport,
-  IndexedDbEventStorage,
   createAnalytics,
+  createBrowserEventStorage,
 } from "tracelet-browser";
+
+const eventStorage = await createBrowserEventStorage({
+  databaseName: "commerce-analytics",
+  onFallback(error) {
+    console.warn("IndexedDB 不可用，队列将退回内存", error);
+  },
+});
 
 // 建议在独立 analytics.ts 中创建并导出唯一实例。
 export const analytics = createAnalytics({
   appId: "commerce-web",
   environment: import.meta.env.MODE,
   identityStorage: new BrowserLocalStorage(),
-  eventStorage: new IndexedDbEventStorage({
-    databaseName: "commerce-analytics",
-  }),
+  eventStorage,
   transport: new HttpTransport({
     endpoint: "https://events.example.com/v1/batch",
   }),
@@ -219,7 +224,7 @@ HTTP/1.1 202 Accepted`;
 
 const troubleshooting = [
   ["浏览器出现 CORS 错误", "在 Collector 允许站点 Origin、POST、Content-Type 和 X-Analytics-Event-Count 请求头。"],
-  ["刷新页面后队列消失", "显式使用 IndexedDbEventStorage；默认 MemoryEventStorage 不持久化。"],
+  ["刷新页面后队列消失", "显式使用 createBrowserEventStorage()；默认 MemoryEventStorage 不持久化。"],
   ["出现 storage_quota_exceeded", "这是整个 Origin 的存储配额，不只属于 Tracelet。检查 estimate，并由应用决定清理策略。"],
   ["事件被重复接收", "Tracelet 使用至少一次投递；服务端必须按照 eventId 幂等去重。"],
   ["自动页面事件没有出现", "确认已调用 init()，并启用了 createAutoCapturePlugin({ pageViews: true })。"],
@@ -254,7 +259,7 @@ const manualNavigation = [
 
 const englishTroubleshooting = [
   ["The browser reports a CORS error", "Allow the site's origin, POST, Content-Type and X-Analytics-Event-Count in the collector's CORS policy."],
-  ["The queue disappears after reload", "Use IndexedDbEventStorage explicitly; the default MemoryEventStorage is not persistent."],
+  ["The queue disappears after reload", "Use createBrowserEventStorage() explicitly; the default MemoryEventStorage is not persistent."],
   ["storage_quota_exceeded appears", "The quota belongs to the whole origin, not only Tracelet. Inspect the estimate and let the application decide what to clean."],
   ["The collector receives duplicate events", "Tracelet delivers at least once, so the collector must deduplicate idempotently by eventId."],
   ["Automatic page events are missing", "Confirm init() was called and createAutoCapturePlugin({ pageViews: true }) is enabled."],

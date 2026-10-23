@@ -11,6 +11,7 @@
 - 独立的 `visibilitychange` 隐藏页 Flush 测试，并把已有的真实双标签页共享队列测试纳入稳定版兼容性声明。
 - 从当前 npm tarball 安装并构建 React/Vite、Vue/Vite、Next.js/Turbopack、Webpack 与 Rollup 消费者的生态冒烟测试。
 - 可直接运行的 Next.js App Router starter，展示客户端边界、应用级单例与显式业务事件采集。
+- `createBrowserEventStorage()` 启动探测器：优先使用 IndexedDB，无法打开时返回内存或调用方提供的后备队列，并暴露一次性降级回调。
 
 ### Changed
 

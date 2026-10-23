@@ -89,6 +89,13 @@ export interface IndexedDbEventStorageOptions {
   version?: number;
 }
 
+export interface BrowserEventStorageOptions extends IndexedDbEventStorageOptions {
+  /** Queue used when IndexedDB cannot be opened. Defaults to in-memory storage. */
+  fallback?: EventStorage;
+  /** Observes the one-time startup fallback; listener errors are isolated. */
+  onFallback?(error: unknown): void;
+}
+
 /** Error emitted when IndexedDB rejects a write because the origin is full. */
 export class StorageQuotaExceededError extends Error {
   readonly name = "StorageQuotaExceededError";
@@ -287,6 +294,39 @@ export class IndexedDbEventStorage implements EventStorage {
       transaction.onerror = () => reject(transaction.error ?? new Error("IndexedDB transaction failed"));
       transaction.onabort = () => reject(transaction.error ?? new Error("IndexedDB transaction aborted"));
     });
+  }
+}
+
+/**
+ * Select persistent browser storage when IndexedDB can be opened, otherwise
+ * return an explicit fallback queue.
+ *
+ * The readiness probe runs before Analytics starts collecting, so a failed
+ * persistent adapter cannot reject the first track() call. Runtime quota
+ * failures remain visible through the regular storage diagnostics instead of
+ * silently moving previously persisted events into another queue.
+ */
+export async function createBrowserEventStorage(
+  options: BrowserEventStorageOptions = {},
+): Promise<EventStorage> {
+  const {
+    fallback = new MemoryEventStorage(),
+    onFallback,
+    ...indexedDbOptions
+  } = options;
+  const persistent = new IndexedDbEventStorage(indexedDbOptions);
+
+  try {
+    await persistent.size();
+    return persistent;
+  } catch (error) {
+    await persistent.close().catch(() => undefined);
+    try {
+      onFallback?.(error);
+    } catch {
+      // Observability must not make storage selection fail.
+    }
+    return fallback;
   }
 }
 

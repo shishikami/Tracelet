@@ -29,17 +29,24 @@ npm install tracelet-browser
 ```ts
 import {
   HttpTransport,
-  IndexedDbEventStorage,
   createAnalytics,
+  createBrowserEventStorage,
 } from "tracelet-browser";
 
 interface Events {
   order_submitted: { orderId: string; amount: number };
 }
 
+const eventStorage = await createBrowserEventStorage({
+  databaseName: "storefront-analytics",
+  onFallback(error) {
+    console.warn("IndexedDB unavailable; analytics will use memory", error);
+  },
+});
+
 const analytics = createAnalytics<Events>({
   appId: "storefront",
-  eventStorage: new IndexedDbEventStorage(),
+  eventStorage,
   transport: new HttpTransport({
     endpoint: "https://events.example.com/v1/batch",
   }),
@@ -57,6 +64,7 @@ Runnable starters:
 
 - [React + Vite](./examples/starters/react-vite)
 - [Vue + Vite](./examples/starters/vue-vite)
+- [Next.js App Router](./examples/starters/nextjs)
 - [Vercel Collector](./examples/starters/collector-vercel)
 
 Planning: [0.3 observability RFC](./docs/rfcs/0001-observability-api.md) · [Compatibility matrix](./docs/compatibility-matrix.md)
@@ -114,8 +122,8 @@ track / page / identify
 import {
   BrowserLocalStorage,
   HttpTransport,
-  IndexedDbEventStorage,
   createAnalytics,
+  createBrowserEventStorage,
 } from "tracelet-browser";
 
 interface Events {
@@ -125,10 +133,17 @@ interface Events {
   };
 }
 
+const eventStorage = await createBrowserEventStorage({
+  databaseName: "shop-analytics",
+  onFallback(error) {
+    console.warn("IndexedDB 不可用，埋点队列将退回内存", error);
+  },
+});
+
 const analytics = createAnalytics<Events>({
   appId: "shop-web",
   identityStorage: new BrowserLocalStorage(),
-  eventStorage: new IndexedDbEventStorage(),
+  eventStorage,
   transport: new HttpTransport({
     endpoint: "https://events.example.com/v1/batch",
   }),
@@ -315,7 +330,7 @@ const analytics = createAnalytics({
 
 ## 当前限制
 
-- 默认队列仍是内存存储；浏览器生产环境应显式使用 `IndexedDbEventStorage`。
+- 默认队列仍是内存存储；浏览器生产环境应显式使用 `createBrowserEventStorage()`，优先选择 IndexedDB 并在启动失败时退回内存。
 - gzip 使用浏览器原生 `CompressionStream`，不支持时不会自动降级。
 - 自动采集暂不包含点击、输入和 DOM 内容采集；这是有意的隐私与稳定性边界。
 - `properties` 和 `context` 在示例 Protobuf 中以 JSON bytes 保存，优先保持通用性；稳定后可以逐步强类型化。
@@ -439,6 +454,7 @@ pnpm pack:check
 - [x] 增加 CSP、离线恢复、隐藏页 Flush 与真实跨标签页锁的三浏览器夹具。
 - [x] 增加 React、Vue、Next.js、Webpack 与 Rollup 的真实生产构建夹具。
 - [x] [评估 CDN / IIFE 构建](./docs/rfcs/0002-distribution-formats.md)：0.3 保持原生 ESM-only，等待真实无打包器需求后再扩展。
+- [x] 增加 IndexedDB 启动探测与显式内存后备队列，避免首个 `track()` 因持久存储不可用而影响业务。
 
 RFC 中仍有命名与状态保留范围等开放问题；公开 API 实现前应先通过 Issue 或 Discussion 收集真实使用场景。
 

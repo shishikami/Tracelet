@@ -687,16 +687,21 @@ test("reports browser storage quota estimates through IndexedDB storage", async 
 
   const result = await page.evaluate(async (name) => {
     const {
+      createBrowserEventStorage,
       IndexedDbEventStorage,
       estimateBrowserStorage,
     } = await import("/dist/index.js");
     const storage = new IndexedDbEventStorage({ databaseName: `tracelet-quota-${name}` });
+    const selected = await createBrowserEventStorage({ databaseName: `tracelet-selected-${name}` });
     const direct = await estimateBrowserStorage();
     const throughStorage = await storage.estimate();
     await storage.close();
-    return { direct, throughStorage };
+    const persistentSelected = selected instanceof IndexedDbEventStorage;
+    if (selected instanceof IndexedDbEventStorage) await selected.close();
+    return { direct, throughStorage, persistentSelected };
   }, browserName);
 
+  expect(result.persistentSelected).toBe(true);
   for (const estimate of [result.direct, result.throughStorage]) {
     expect(estimate).toBeTruthy();
     expect(estimate.quotaBytes).toBeGreaterThan(0);
