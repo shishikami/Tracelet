@@ -50,12 +50,14 @@ try {
       SDK_VERSION,
       createAnalytics,
       createAutoCapturePlugin,
+      createBrowserEventStorage,
       estimateBrowserStorage,
     } from "tracelet-browser";
 
     if (SDK_NAME !== "tracelet-browser") throw new Error("Unexpected SDK name");
     if (SDK_VERSION !== ${JSON.stringify(packageJson.version)}) throw new Error("Unexpected SDK version");
     if (typeof createAutoCapturePlugin !== "function") throw new Error("Missing autocapture export");
+    if (typeof createBrowserEventStorage !== "function") throw new Error("Missing browser storage selector export");
     if (typeof EventRouter !== "function") throw new Error("Missing event router export");
     if (typeof estimateBrowserStorage !== "function") throw new Error("Missing storage estimate export");
 
@@ -84,6 +86,7 @@ try {
   await writeFile(join(temporaryProject, "typed.ts"), `
     import {
       createAnalytics,
+      createBrowserEventStorage,
       type AnalyticsPlugin,
       type DiagnosticListener,
       type QueueSnapshot,
@@ -94,6 +97,8 @@ try {
     }
 
     const plugin: AnalyticsPlugin = { name: "smoke" };
+    const browserStorageFactory = createBrowserEventStorage;
+    console.info(typeof browserStorageFactory);
     const analytics = createAnalytics<Events>({
       appId: "typed-smoke",
       plugins: [plugin],
