@@ -2,6 +2,23 @@
 
 本项目的所有重要变更都会记录在此文件中。
 
+## Unreleased
+
+### Added
+
+- 完整 TypeScript 声明快照门禁，用于发现运行时导出名称检查无法覆盖的参数、返回值和公开类型变更。
+- 官网 API Reference 与构建后 Analytics 方法、DiagnosticEvent 类型之间的机械一致性检查。
+- EventBatch v1 协议规范，明确版本兼容、重试、幂等、批次确认与隐私边界。
+
+### Changed
+
+- `HttpTransport` 只对满足页面退出传输预算的 Payload 启用 `fetch keepalive`，较大 Payload 会保留普通 Fetch 语义。
+- `shutdown()` 变为终态且幂等；关闭后的事件调用安全丢弃并产生诊断，不会重新初始化插件。
+- Plugin 的事件转换、观察和清理异常被隔离，并通过不含 Payload 的 `plugin_error` 诊断暴露；显式初始化失败仍会回滚并拒绝调用。
+- 身份/事件存储、Codec、Compression、Transport 与投递锁的运行时异常不会再从常规采集或 Flush 调用逃逸，并以不含 Payload 的适配器诊断暴露；隐私擦除和显式状态查询仍保留可观察失败。
+- npm 暂存发布与人工批准后的公共 Registry 验证拆分，避免等待审批导致 GitHub Release 工作流误报失败。
+- React、Vue 和 Next.js starter 更新为当前 `0.3.0` 稳定依赖。
+
 ## 0.3.0 - 2026-10-23
 
 ### Added

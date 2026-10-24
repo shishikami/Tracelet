@@ -48,6 +48,129 @@ test("reports IndexedDB quota exhaustion without rejecting track", async () => {
   await sdk.shutdown();
 });
 
+test("isolates identity and event storage adapter failures from collection calls", async () => {
+  const diagnostics = [];
+  const failingIdentity = {
+    get() { throw new Error("sensitive identity failure"); },
+    set() { throw new Error("sensitive identity failure"); },
+    remove() { throw new Error("sensitive identity failure"); },
+  };
+  const identitySdk = createAnalytics({
+    appId: "identity-adapter-test",
+    pageLifecycle: false,
+    identityStorage: failingIdentity,
+    onDiagnostic(event) { diagnostics.push(event); },
+    transport: { name: "test", async send() { return { success: true }; } },
+  });
+
+  await identitySdk.track("identity_failure", { secret: "must-not-leak" });
+  await identitySdk.identify("private-user", { secret: "must-not-leak" });
+
+  const failingEvents = {
+    async push() { throw new Error("sensitive event storage failure"); },
+    async peek() { return []; },
+    async remove() {},
+    async size() { return 0; },
+    async clear() {},
+  };
+  const eventSdk = createAnalytics({
+    appId: "event-adapter-test",
+    pageLifecycle: false,
+    eventStorage: failingEvents,
+    onDiagnostic(event) { diagnostics.push(event); },
+    transport: { name: "test", async send() { return { success: true }; } },
+  });
+
+  await eventSdk.track("storage_failure", { secret: "must-not-leak" });
+
+  assert.deepEqual(
+    diagnostics.filter((event) => event.type === "adapter_error"),
+    [
+      { type: "adapter_error", adapter: "identity-storage", operation: "current" },
+      { type: "adapter_error", adapter: "identity-storage", operation: "identify" },
+      { type: "adapter_error", adapter: "event-storage", operation: "enqueue" },
+    ],
+  );
+  assert.equal(JSON.stringify(diagnostics).includes("sensitive"), false);
+  assert.deepEqual(
+    diagnostics.filter((event) => event.type === "event_dropped").map((event) => event.reason),
+    ["adapter-error", "adapter-error", "adapter-error"],
+  );
+  await identitySdk.shutdown();
+  await eventSdk.shutdown();
+});
+
+test("turns codec, compression, transport, and delivery-lock exceptions into retry diagnostics", async () => {
+  const stages = [
+    {
+      adapter: "codec",
+      operation: "encode",
+      options: {
+        codec: {
+          name: "broken-codec",
+          contentType: "application/json",
+          async encode() { throw new Error("private codec failure"); },
+        },
+      },
+    },
+    {
+      adapter: "compression",
+      operation: "compress",
+      options: {
+        compression: {
+          name: "broken-compression",
+          async compress() { throw new Error("private compression failure"); },
+        },
+      },
+    },
+    {
+      adapter: "transport",
+      operation: "send",
+      options: {
+        transport: {
+          name: "broken-transport",
+          async send() { throw new Error("private transport failure"); },
+        },
+      },
+    },
+    {
+      adapter: "delivery-lock",
+      operation: "run-exclusive",
+      options: {
+        deliveryLock: {
+          async runExclusive() { throw new Error("private lock failure"); },
+        },
+      },
+    },
+  ];
+
+  for (const stage of stages) {
+    const diagnostics = [];
+    const sdk = createAnalytics({
+      appId: `failure-${stage.adapter}`,
+      pageLifecycle: false,
+      flushIntervalMs: 60_000,
+      retry: { baseDelayMs: 60_000, maxDelayMs: 60_000, jitterRatio: 0 },
+      onDiagnostic(event) { diagnostics.push(event); },
+      transport: { name: "test", async send() { return { success: true }; } },
+      ...stage.options,
+    });
+
+    await sdk.track("queued", { secret: "must-not-leak" });
+    await sdk.flush();
+
+    assert.deepEqual(
+      diagnostics.find((event) => event.type === "adapter_error"),
+      { type: "adapter_error", adapter: stage.adapter, operation: stage.operation },
+    );
+    assert.equal(diagnostics.some((event) => event.type === "flush_failed" && event.retryable), true);
+    assert.equal(diagnostics.some((event) => event.type === "flush_retry_scheduled"), true);
+    assert.equal(JSON.stringify(diagnostics).includes("private"), false);
+    await sdk.setConsent("denied");
+    await sdk.shutdown();
+  }
+});
+
 test("routes contiguous events to one transport without reordering the queue", async () => {
   const storage = new MemoryEventStorage();
   const deliveries = [];
@@ -247,7 +370,83 @@ test("initializes plugins once and tears them down once", async () => {
   assert.equal(setupCalls, 1);
 
   await sdk.shutdown();
+  await sdk.shutdown();
   assert.equal(teardownCalls, 1);
+});
+
+test("treats shutdown as terminal and drops later events without restarting plugins", async () => {
+  const storage = new MemoryEventStorage();
+  const dropped = [];
+  let setupCalls = 0;
+  const sdk = createAnalytics({
+    appId: "test",
+    eventStorage: storage,
+    pageLifecycle: false,
+    plugins: [{ name: "lifecycle", setup() { setupCalls += 1; } }],
+    onDiagnostic(event) {
+      if (event.type === "event_dropped") dropped.push(event.reason);
+    },
+    transport: { name: "test", async send() { return { success: true }; } },
+  });
+
+  await sdk.track("before_shutdown", {});
+  await sdk.shutdown();
+  await sdk.track("after_shutdown", {});
+  await sdk.identify("user-after-shutdown");
+  await sdk.init();
+
+  assert.equal(setupCalls, 1);
+  assert.equal(await storage.size(), 0);
+  assert.deepEqual(dropped, ["shutdown", "shutdown"]);
+});
+
+test("isolates plugin hook and teardown failures with payload-free diagnostics", async () => {
+  const storage = new MemoryEventStorage();
+  const diagnostics = [];
+  const sdk = createAnalytics({
+    appId: "test",
+    eventStorage: storage,
+    pageLifecycle: false,
+    plugins: [
+      { name: "before", beforeTrack() { throw new Error("sensitive before payload"); } },
+      { name: "after", afterTrack() { throw new Error("sensitive after payload"); } },
+      { name: "teardown", teardown() { throw new Error("sensitive teardown payload"); } },
+    ],
+    onDiagnostic(event) {
+      if (event.type === "plugin_error") diagnostics.push(event);
+    },
+    transport: { name: "test", async send() { return { success: true }; } },
+  });
+
+  await sdk.track("dropped_by_failed_before_hook", { secret: "must-not-leak" });
+  assert.equal(await storage.size(), 0);
+
+  // Remove the failing before hook from this focused test through a separate
+  // client so an afterTrack failure can be observed after persistence.
+  const afterSdk = createAnalytics({
+    appId: "test-after",
+    eventStorage: storage,
+    pageLifecycle: false,
+    plugins: [
+      { name: "after", afterTrack() { throw new Error("sensitive after payload"); } },
+      { name: "teardown", teardown() { throw new Error("sensitive teardown payload"); } },
+    ],
+    onDiagnostic(event) {
+      if (event.type === "plugin_error") diagnostics.push(event);
+    },
+    transport: { name: "test", async send() { return { success: true }; } },
+  });
+  await afterSdk.track("stored_despite_after_hook", { secret: "must-not-leak" });
+  assert.equal(await storage.size(), 1);
+
+  await sdk.shutdown();
+  await afterSdk.shutdown();
+  assert.deepEqual(diagnostics, [
+    { type: "plugin_error", plugin: "before", stage: "before-track" },
+    { type: "plugin_error", plugin: "after", stage: "after-track" },
+    { type: "plugin_error", plugin: "teardown", stage: "teardown" },
+    { type: "plugin_error", plugin: "teardown", stage: "teardown" },
+  ]);
 });
 
 test("rolls back initialized plugins when a later setup fails", async () => {

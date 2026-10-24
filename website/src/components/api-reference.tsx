@@ -13,11 +13,11 @@ const methods = [
   ["getQueueSnapshot()", "Promise<QueueSnapshot>", "读取不可变的队列数量、最早事件时间与当前投递状态快照。"],
   ["subscribeDiagnostics(listener)", "() => void", "运行时订阅诊断事件；返回可重复调用的取消订阅函数。"],
   ["flush(reason?)", "Promise<void>", "立即尝试发送一个批次；同实例并发调用会合并。"],
-  ["shutdown()", "Promise<void>", "最后 Flush，移除监听器并按逆序销毁插件。"],
+  ["shutdown()", "Promise<void>", "终态且幂等：最后 Flush，移除监听器并按逆序销毁插件；后续事件会安全丢弃。"],
 ] as const;
 
 const adapters = [
-  ["HttpTransport", "Transport", "通过 fetch 向 Collector POST 批次；支持超时、Retry-After 和 keepalive。"],
+  ["HttpTransport", "Transport", "通过 fetch 向 Collector POST 批次；支持超时、Retry-After，以及受 keepaliveMaxBytes 约束的页面退出 keepalive。"],
   ["ConsoleTransport", "Transport", "把编码批次输出到控制台，适合本地调试。"],
   ["EventRouter", "TransportResolver", "按事件条件选择 Transport；首条匹配规则优先，未匹配事件进入 fallback。"],
   ["IndexedDbEventStorage", "EventStorage", "浏览器持久化 FIFO 队列，生产环境推荐。"],
@@ -52,6 +52,8 @@ const diagnostics = [
   "sdk_initialized",
   "event_enqueued",
   "event_dropped",
+  "plugin_error",
+  "adapter_error",
   "storage_quota_exceeded",
   "flush_started",
   "flush_succeeded",
@@ -72,11 +74,11 @@ const englishMethods = [
   ["getQueueSnapshot()", "Promise<QueueSnapshot>", "Reads an immutable snapshot of queue depth, the oldest event timestamp and current delivery state."],
   ["subscribeDiagnostics(listener)", "() => void", "Subscribes at runtime and returns an idempotent unsubscribe function."],
   ["flush(reason?)", "Promise<void>", "Immediately attempts one batch; concurrent calls on one instance are coalesced."],
-  ["shutdown()", "Promise<void>", "Performs a final flush, removes listeners and tears down plugins in reverse order."],
+  ["shutdown()", "Promise<void>", "Terminal and idempotent: performs a final flush, removes listeners, tears down plugins, and safely drops later events."],
 ] as const;
 
 const englishAdapters = [
-  ["HttpTransport", "Transport", "POSTs encoded batches with timeout, Retry-After and keepalive support."],
+  ["HttpTransport", "Transport", "POSTs encoded batches with timeout, Retry-After and page-exit keepalive bounded by keepaliveMaxBytes."],
   ["ConsoleTransport", "Transport", "Writes encoded batches to the console for local development."],
   ["EventRouter", "TransportResolver", "Selects a Transport per event; first match wins and unmatched events use the fallback."],
   ["IndexedDbEventStorage", "EventStorage", "Persistent browser FIFO queue recommended for production."],
@@ -179,7 +181,7 @@ export function ApiReference({ embedded = false }: { embedded?: boolean }) {
 
             <article id="api-diagnostics">
               <div className="manual-heading"><Network className="size-5" /><h3>DiagnosticEvent</h3></div>
-              <p className="manual-copy">{en ? <>Receive events through <code>onDiagnostic</code> or <code>subscribeDiagnostics()</code>; neither creates a product event. Delivery events include an <code>attemptId</code> for correlation, while <code>getQueueSnapshot()</code> exposes the current phase.</> : <>可通过 <code>onDiagnostic</code> 或 <code>subscribeDiagnostics()</code> 接收，均不会产生业务埋点。投递事件包含可关联的 <code>attemptId</code>，<code>getQueueSnapshot()</code> 则提供当前阶段。</>}</p>
+              <p className="manual-copy">{en ? <>Receive events through <code>onDiagnostic</code> or <code>subscribeDiagnostics()</code>; neither creates a product event. Delivery events include an <code>attemptId</code> for correlation. Plugin and adapter errors contain only their name/stage or component/operation—never the raw error or event payload.</> : <>可通过 <code>onDiagnostic</code> 或 <code>subscribeDiagnostics()</code> 接收，均不会产生业务埋点。投递事件包含可关联的 <code>attemptId</code>。插件和 Adapter 异常只包含名称/阶段或组件/操作，不包含原始 Error 与事件 Payload。</>}</p>
               <ul className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {diagnostics.map((event) => (
                   <li key={event} className="rounded-lg border border-white/8 bg-black/15 px-4 py-3 font-mono text-xs text-slate-300">{event}</li>

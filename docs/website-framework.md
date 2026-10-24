@@ -2,7 +2,7 @@
 
 ## Current decision
 
-Keep the documentation site on React and Vite through the `0.3.0` beta. The site now has multiple addressable documentation routes, but still has no server data, authentication or content collection. Migrating frameworks in the same release as the observability API would add more regression surface than product value.
+Keep the documentation site on React and Vite through the `0.4.0` contract-hardening cycle. The site now has multiple addressable documentation routes, but still has no server data, authentication or content collection. Migrating frameworks while the SDK contract is being hardened would add more regression surface than product value.
 
 The Vite build now generates route-specific HTML files with canonical metadata, reciprocal `hreflang`, structured data and an equivalent static summary in the first response. React replaces that summary after loading. This closes the immediate crawlability gap without serving bot-specific content, while keeping the interactive Playground and documentation search unchanged.
 
@@ -25,7 +25,7 @@ Re-evaluate the framework when at least one of these becomes true:
 
 ## Preferred migration target
 
-Astro remains the preferred next step for a documentation-first site. Re-evaluate it after the `0.3.0` stable release using Search Console rendering evidence, content volume and contributor friction. It can statically render localized content, keep React islands for the Playground, search and copy buttons, and avoid shipping React for non-interactive documentation.
+Astro remains the preferred next step for a documentation-first site. Re-evaluate it after the `0.4.0` contract-hardening release using Search Console rendering evidence, content volume and contributor friction. It can statically render localized content, keep React islands for the Playground, search and copy buttons, and avoid shipping React for non-interactive documentation.
 
 Next.js is appropriate only if Tracelet later needs server-side application behavior, authenticated dashboards, API routes or tight integration with a larger React application. Those requirements do not exist today.
 

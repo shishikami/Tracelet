@@ -132,7 +132,15 @@ export type DiagnosticEvent =
         | "serialization"
         | "event-too-large"
         | "batch-byte-limit"
-        | "storage-quota";
+        | "storage-quota"
+        | "adapter-error"
+        | "shutdown";
+    }
+  | { type: "plugin_error"; plugin: string; stage: "setup" | "before-track" | "after-track" | "teardown" }
+  | {
+      type: "adapter_error";
+      adapter: "identity-storage" | "event-storage" | "codec" | "compression" | "transport" | "delivery-lock";
+      operation: string;
     }
   | { type: "storage_quota_exceeded"; eventName: string; estimate?: StorageEstimate }
   | {

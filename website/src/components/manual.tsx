@@ -133,6 +133,7 @@ analytics.reset();
 await analytics.flush();
 
 // 微前端卸载、测试结束或 HMR dispose 时释放监听器。
+// shutdown() 是终态且幂等；后续 track()/page()/identify() 会安全丢弃。
 await analytics.shutdown();`;
 
 const diagnosticCode = `const analytics = createAnalytics({
@@ -298,6 +299,7 @@ const englishCodeComments: ReadonlyArray<readonly [string, string]> = [
   ["退出登录时轮换匿名 ID 和 Session ID。", "Rotate anonymous and session IDs at sign-out."],
   ["测试或关键跳转前可以主动发送队列。", "Flush explicitly in tests or before a critical navigation."],
   ["微前端卸载、测试结束或 HMR dispose 时释放监听器。", "Release listeners on micro-frontend unmount, test teardown or HMR dispose."],
+  ["shutdown() 是终态且幂等；后续 track()/page()/identify() 会安全丢弃。", "shutdown() is terminal and idempotent; later track(), page() and identify() calls are safely dropped."],
   ["这里不会创建新的埋点，可安全接入自己的日志系统。", "This does not create another analytics event and can feed your logger."],
   ["运行时可添加多个观察者；监听器异常不会影响事件投递。", "Add multiple observers at runtime; listener failures cannot affect delivery."],
   ["组件或调试面板卸载时取消订阅；重复调用也是安全的。", "Unsubscribe when the component or debug panel unmounts; repeated calls are safe."],
@@ -429,7 +431,7 @@ export function Manual() {
 
             <article id="manual-production">
               <div className="manual-heading"><CheckCircle2 className="size-5" /><h3>{en ? "10. Diagnostics and production checklist" : "10. 诊断与上线清单"}</h3></div>
-              <p className="manual-copy">{en ? <><code>subscribeDiagnostics()</code> can attach observers after creation, while <code>getQueueSnapshot()</code> reads queue depth and the current delivery phase. Neither creates product events or exposes event properties. Exercise network failures and 429 responses before production.</> : <><code>subscribeDiagnostics()</code> 可在实例创建后添加观察者，<code>getQueueSnapshot()</code> 可读取队列数量与当前投递阶段。两者都不会创建业务事件或暴露事件属性。建议先在测试环境模拟网络失败和 429，再投入生产。</>}</p>
+              <p className="manual-copy">{en ? <><code>subscribeDiagnostics()</code> can attach observers after creation, while <code>getQueueSnapshot()</code> reads queue depth and the current delivery phase. Routine adapter failures are isolated as payload-free <code>adapter_error</code> events; consent erasure and explicit inspection calls may still reject so callers do not receive a false success. Exercise network failures and 429 responses before production.</> : <><code>subscribeDiagnostics()</code> 可在实例创建后添加观察者，<code>getQueueSnapshot()</code> 可读取队列数量与当前投递阶段。常规 Adapter 故障会被隔离为不含 Payload 的 <code>adapter_error</code>；Consent 擦除与显式状态查询仍可能拒绝，避免向调用方返回虚假的成功。建议先在测试环境模拟网络失败和 429，再投入生产。</>}</p>
               <div className="mt-6"><CodeBlock code={codeForLocale(diagnosticCode, en)} filename="diagnostics.ts" /></div>
               <ul className="mt-6 grid gap-3 sm:grid-cols-2">
                 {localizedChecklist.map((item) => <li key={item} className="flex gap-3 rounded-xl border border-white/8 bg-black/15 p-4 text-sm leading-6 text-slate-300"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-300" />{item}</li>)}

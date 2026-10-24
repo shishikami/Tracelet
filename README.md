@@ -67,11 +67,13 @@ Runnable starters:
 - [Next.js App Router](./examples/starters/nextjs)
 - [Vercel Collector](./examples/starters/collector-vercel)
 
-Planning: [0.3 release readiness](./docs/0.3-release-readiness.md) · [Observability RFC](./docs/rfcs/0001-observability-api.md) · [Compatibility matrix](./docs/compatibility-matrix.md)
+Planning: [0.4 release readiness](./docs/0.4-release-readiness.md) · [1.0 readiness gates](./docs/1.0-readiness.md) · [0.3 → 0.4 migration](./docs/migration-0.3-to-0.4.md) · [EventBatch v1](./docs/protocol-v1.md) · [Browser support](./docs/browser-support.md) · [Compatibility matrix](./docs/compatibility-matrix.md)
+
+Privacy and security: [Data inventory](./docs/data-inventory.md) · [Threat model](./docs/threat-model.md) · [Failure semantics](./docs/failure-semantics.md) · [Security policy](./SECURITY.md)
 
 Community: [Support](./SUPPORT.md) · [Contributing](./CONTRIBUTING.md) · [Code of Conduct](./CODE_OF_CONDUCT.md) · [Accessibility](./ACCESSIBILITY.md) · [Security](./SECURITY.md) · [Issues](https://github.com/shishikami/Tracelet/issues)
 
-> The project is currently suitable for evaluation, prototypes and early production integrations with an explicit delivery validation plan. See the [changelog](./CHANGELOG.md) before upgrading.
+> The current `0.3.x` line is suitable for evaluation and early production integrations with an explicit delivery validation plan. The `0.4.0` cycle is hardening API, protocol and lifecycle contracts before the 1.0 compatibility commitment. See the [changelog](./CHANGELOG.md) before upgrading.
 
 ## 简体中文
 
@@ -100,7 +102,7 @@ yarn add tracelet-browser
 
 当前版本见页面顶部的 npm badge，适合评估、原型和对投递行为有明确验证方案的早期项目。
 
-Tracelet 以现代 Chrome、Edge、Firefox 和 Safari 为目标。核心逻辑、npm JavaScript 导入和 TypeScript 声明已经验证；Chromium、Firefox 和 WebKit 会在 CI 中运行真实浏览器测试。使用 `CompressionStream` 等可选浏览器能力前，仍应结合目标版本验证支持情况。
+Tracelet 的完整浏览器套件会在固定版本的 Chromium、Firefox 和 WebKit 中运行。精确引擎版本、必需能力、能力缺失时的降级行为，以及尚未单独验证的移动端/隐私模式，见[浏览器支持策略](./docs/browser-support.md)；不要把“同一引擎”理解成未经测试的设备兼容承诺。
 
 ## 数据链路
 
@@ -115,6 +117,8 @@ track / page / identify
   -> compression
   -> transport
 ```
+
+客户端与 Collector 的稳定线协议见 [EventBatch v1](./docs/protocol-v1.md)。协议把任意 `2xx` 定义为整批事件已持久接收（包括按 `eventId` 判定的重复事件），因此 Collector 不应在只提交部分事件时返回成功。
 
 ## 快速使用
 
@@ -444,18 +448,24 @@ pnpm pack:check
 - [x] 存储配额估算与 IndexedDB 配额诊断
 - [x] 文档搜索和框架适配示例
 
-0.3.0 规划状态：
+0.3.0 已完成。0.4.0 聚焦 1.0 前的契约硬化：
 
 - [x] [可观测 API 设计稿](./docs/rfcs/0001-observability-api.md)：队列快照、投递状态和多订阅者语义。
 - [x] [兼容性与韧性测试矩阵](./docs/compatibility-matrix.md)：明确自动化、部分覆盖、手工验证和待验证边界。
 - [x] [Vercel Collector starter](./examples/starters/collector-vercel)：CORS、安全大小边界、gzip、鉴权扩展和持久化 Sink 契约。
 - [x] 实现并验证可观测 API：队列快照、运行时订阅、Attempt 关联与三浏览器覆盖。
-- [x] 发布 `0.3.0-beta.1`；接下来通过 Playground 收集 API 使用反馈。
+- [x] 发布并验证 `0.3.0` 正式版。
 - [x] 增加 CSP、离线恢复、隐藏页 Flush 与真实跨标签页锁的三浏览器夹具。
 - [x] 增加 React、Vue、Next.js、Webpack 与 Rollup 的真实生产构建夹具。
 - [x] [评估 CDN / IIFE 构建](./docs/rfcs/0002-distribution-formats.md)：0.3 保持原生 ESM-only，等待真实无打包器需求后再扩展。
 - [x] 增加 IndexedDB 启动探测与显式内存后备队列，避免首个 `track()` 因持久存储不可用而影响业务。
 
-0.3 的公开命名与 ESM-only 分发范围已经冻结；剩余发布门禁见 [0.3 release readiness](./docs/0.3-release-readiness.md)。
+- [ ] 对完整 TypeScript 声明建立可审查的 API 快照，而不只检查运行时导出名称。
+- [ ] 冻结 EventBatch v1、重试、幂等与兼容性语义。
+- [ ] 明确页面退出、关闭后调用和适配器异常的生命周期边界。
+- [ ] 将 npm 暂存发布与人工批准后的公共 Registry 验证拆成独立成功门禁。
+- [ ] 完成真实项目接入与持续运行验证，为 1.0 提供生产证据。
+
+0.3 的公开命名与 ESM-only 分发范围已经冻结；历史发布证据见 [0.3 release readiness](./docs/0.3-release-readiness.md)。
 
 版本变化见 [CHANGELOG.md](./CHANGELOG.md)。

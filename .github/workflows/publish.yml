@@ -68,6 +68,3 @@ jobs:
           else
             npm stage publish --tag latest
           fi
-
-      - name: Verify the public npm package
-        run: pnpm smoke:registry

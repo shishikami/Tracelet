@@ -53,6 +53,8 @@ export interface TraceletCollectorOptions {
   maxDecodedBytes?: number;
   /** Maximum events in one EventBatch. Defaults to 100. */
   maxEvents?: number;
+  /** Accepted EventBatch protocol versions. Defaults to only version "1". */
+  supportedProtocolVersions?: readonly string[];
   /** Optional server-side authentication hook. Never embed a long-lived secret in browser code. */
   authorize?: (request: Request) => boolean | Promise<boolean>;
   logger?: Pick<Console, "info" | "error">;
@@ -81,6 +83,7 @@ export function createTraceletCollector(options: TraceletCollectorOptions) {
   const maxCompressedBytes = positiveInteger(options.maxCompressedBytes, 512 * 1_024);
   const maxDecodedBytes = positiveInteger(options.maxDecodedBytes, 1_024 * 1_024);
   const maxEvents = positiveInteger(options.maxEvents, 100);
+  const supportedProtocolVersions = new Set(options.supportedProtocolVersions ?? ["1"]);
   const allowedOrigins = new Set(options.allowedOrigins ?? []);
   const logger = options.logger ?? console;
 
@@ -177,7 +180,7 @@ export function createTraceletCollector(options: TraceletCollectorOptions) {
         throw new CollectorRequestError(400, "invalid_json", "The request body is not valid UTF-8 JSON.");
       }
 
-      const batch = validateBatch(value, maxEvents);
+      const batch = validateBatch(value, maxEvents, supportedProtocolVersions);
       const declaredEventCount = parseOptionalInteger(request.headers.get("x-analytics-event-count"));
       if (declaredEventCount !== undefined && declaredEventCount !== batch.events.length) {
         throw new CollectorRequestError(
@@ -233,12 +236,23 @@ export function parseAllowedOrigins(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
-function validateBatch(value: unknown, maxEvents: number): CollectorEventBatch {
+function validateBatch(
+  value: unknown,
+  maxEvents: number,
+  supportedProtocolVersions: ReadonlySet<string>,
+): CollectorEventBatch {
   if (!isRecord(value)) {
     throw new CollectorRequestError(400, "invalid_batch", "EventBatch must be a JSON object.");
   }
   if (!validString(value.protocolVersion, 32)) {
     throw new CollectorRequestError(400, "invalid_batch", "protocolVersion is required.");
+  }
+  if (!supportedProtocolVersions.has(value.protocolVersion)) {
+    throw new CollectorRequestError(
+      400,
+      "unsupported_protocol_version",
+      `protocolVersion ${value.protocolVersion} is not supported.`,
+    );
   }
   if (!validTimestamp(value.sentAt)) {
     throw new CollectorRequestError(400, "invalid_batch", "sentAt must be an ISO-compatible timestamp.");

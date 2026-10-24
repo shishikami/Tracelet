@@ -24,6 +24,8 @@ const http = new HttpTransport({
   headers: { "x-public-client": "web" },
   credentials: "omit",
   timeoutMs: 10_000,
+  // 页面退出时，仅在 Payload 不超过该预算时启用 fetch keepalive。
+  keepaliveMaxBytes: 60 * 1024,
 });
 
 // 本地调试：只打印批次，不发网络请求。

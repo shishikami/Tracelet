@@ -185,6 +185,19 @@ test("rejects duplicate IDs and mismatched declared event counts", async () => {
   assert.equal((await mismatch.json()).error, "event_count_mismatch");
 });
 
+test("rejects unsupported protocol versions before writing to the sink", async () => {
+  const handle = createTraceletCollector({
+    allowedOrigins: [acceptedOrigin],
+    logger: silentLogger(),
+    sink: { write() { assert.fail("unsupported protocol versions must not reach the sink"); } },
+  });
+
+  const response = await handle(createRequest(JSON.stringify(createBatch({ protocolVersion: "2" }))));
+
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).error, "unsupported_protocol_version");
+});
+
 test("supports optional authentication without exposing the expected credential", async () => {
   const handle = createTraceletCollector({
     allowedOrigins: [acceptedOrigin],

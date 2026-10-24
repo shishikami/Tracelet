@@ -32,6 +32,29 @@ test("HttpTransport accepts a distinct diagnostic name", () => {
   assert.equal(new HttpTransport({ endpoint: "https://example.test" }).name, "http");
 });
 
+test("uses keepalive only for lifecycle payloads within the configured budget", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (_url, init) => {
+    requests.push(init);
+    return new Response(null, { status: 202 });
+  };
+
+  try {
+    const transport = new HttpTransport({
+      endpoint: "https://example.test",
+      keepaliveMaxBytes: 8,
+    });
+    await transport.send(batch, { reason: "page-hide" });
+    await transport.send({ ...batch, body: "123456789" }, { reason: "shutdown" });
+    await transport.send(batch, { reason: "manual" });
+
+    assert.deepEqual(requests.map((request) => request.keepalive), [true, false, false]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("treats an internal request timeout as retryable", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (_url, init) => new Promise((_resolve, reject) => {

@@ -33,3 +33,7 @@ Tracelet 仍处于 1.0.0 之前。安全修复优先发布到 npm 的最新版�
 - Collector URL、Header 或 Payload 注入。
 - IndexedDB、LocalStorage 与多 Tab 锁造成的数据泄漏或拒绝服务。
 - npm 包、发布工作流或依赖供应链被篡改。
+
+SDK 的资产、信任边界、已知威胁、缓解措施与非目标见
+[`docs/threat-model.md`](./docs/threat-model.md)，默认采集字段和浏览器持久化内容见
+[`docs/data-inventory.md`](./docs/data-inventory.md)。

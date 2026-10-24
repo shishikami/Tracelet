@@ -14,6 +14,12 @@ export interface HttpTransportOptions {
   headers?: Record<string, string>;
   credentials?: RequestCredentials;
   timeoutMs?: number;
+  /**
+   * Maximum body size that may use Fetch keepalive during page exit.
+   * Defaults to 60 KiB, leaving headroom below common browser limits.
+   * Larger payloads still use a regular retryable Fetch request.
+   */
+  keepaliveMaxBytes?: number;
 }
 
 export class HttpTransport implements Transport {
@@ -44,17 +50,24 @@ export class HttpTransport implements Transport {
       };
       if (batch.contentEncoding) headers["content-encoding"] = batch.contentEncoding;
 
-      const body: BodyInit =
-        typeof batch.body === "string"
-          ? batch.body
-          : new Blob([new Uint8Array(batch.body)], { type: batch.contentType });
+      const bodyBytes = typeof batch.body === "string"
+        ? new TextEncoder().encode(batch.body).byteLength
+        : batch.body.byteLength;
+      const body: BodyInit = typeof batch.body === "string"
+        ? batch.body
+        : new Blob([new Uint8Array(batch.body)], { type: batch.contentType });
+      const lifecycleRequest = context.reason === "page-hide" || context.reason === "shutdown";
+      const keepaliveMaxBytes = Math.max(0, this.options.keepaliveMaxBytes ?? 60 * 1_024);
 
       const response = await fetch(this.options.endpoint, {
         method: "POST",
         headers,
         body,
         credentials: this.options.credentials ?? "omit",
-        keepalive: context.reason === "page-hide" || context.reason === "shutdown",
+        // Browsers enforce a small, shared quota for in-flight keepalive data.
+        // A synchronous TypeError here is retryable, but avoiding keepalive for
+        // a known-large payload gives the regular request a chance to finish.
+        keepalive: lifecycleRequest && bodyBytes <= keepaliveMaxBytes,
         signal: controller.signal,
       });
 

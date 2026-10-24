@@ -11,6 +11,7 @@ import type {
   StorageEstimate,
   Transport,
   TransportContext,
+  TransportResult,
   TransportResolver,
 } from "./contracts.js";
 import { JsonCodec } from "./codecs.js";
@@ -83,10 +84,13 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
   private readonly identity: IdentityManager;
   private readonly consent: ConsentManager;
   private readonly plugins: AnalyticsPlugin[];
+  private activePlugins: AnalyticsPlugin[] = [];
   private readonly deliveryLock: DeliveryLock;
   private flushTimer?: number;
   private flushPromise: Promise<void> | undefined;
   private initialized = false;
+  private shutdownPromise: Promise<void> | undefined;
+  private shutdownComplete = false;
   private retryAttempt = 0;
   private readonly diagnosticListeners = new Set<DiagnosticListener>();
   private deliveryState: QueueSnapshot["delivery"] = idleDeliveryState();
@@ -116,7 +120,7 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
 
   /** Initialize plugins and lifecycle listeners. Safe to call more than once. */
   async init(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized || this.shutdownPromise || this.shutdownComplete) return;
     // Mark the instance ready before plugin setup so capture plugins can safely
     // emit an initial event without recursively entering init().
     this.initialized = true;
@@ -130,12 +134,22 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
         });
         initializedPlugins.push(plugin);
       }
+      this.activePlugins = initializedPlugins;
       this.bindPageLifecycle();
       this.scheduleFlush();
       this.emit({ type: "sdk_initialized" });
     } catch (error) {
       this.initialized = false;
-      for (const plugin of initializedPlugins.reverse()) await plugin.teardown?.();
+      const failedPlugin = this.plugins[initializedPlugins.length];
+      if (failedPlugin) this.emit({ type: "plugin_error", plugin: failedPlugin.name, stage: "setup" });
+      for (const plugin of initializedPlugins.reverse()) {
+        try {
+          await plugin.teardown?.();
+        } catch {
+          this.emit({ type: "plugin_error", plugin: plugin.name, stage: "teardown" });
+        }
+      }
+      this.activePlugins = [];
       throw error;
     }
   }
@@ -156,11 +170,21 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
 
   /** Associate subsequent events with an authenticated user. */
   async identify(userId: string, traits: EventProperties = {}): Promise<void> {
+    if (this.shutdownPromise || this.shutdownComplete) {
+      this.emit({ type: "event_dropped", eventName: "$identify", reason: "shutdown" });
+      return;
+    }
     if (!this.consent.canCollect()) {
       this.emit({ type: "event_dropped", eventName: "$identify", reason: "consent" });
       return;
     }
-    this.identity.identify(userId);
+    try {
+      this.identity.identify(userId);
+    } catch {
+      this.emit({ type: "adapter_error", adapter: "identity-storage", operation: "identify" });
+      this.emit({ type: "event_dropped", eventName: "$identify", reason: "adapter-error" });
+      return;
+    }
     await this.enqueue("identify", "$identify", traits);
   }
 
@@ -234,6 +258,7 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
 
   /** Attempt to deliver one batch immediately. Concurrent calls are coalesced. */
   async flush(reason: TransportContext["reason"] = "manual"): Promise<void> {
+    if (this.shutdownComplete) return;
     if (this.flushPromise) return this.flushPromise;
     this.flushPromise = this.performFlush(reason).finally(() => {
       this.flushPromise = undefined;
@@ -242,14 +267,28 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
   }
 
   /** Flush once, remove listeners, and tear down plugins. */
-  async shutdown(): Promise<void> {
+  shutdown(): Promise<void> {
+    this.shutdownPromise ??= this.performShutdown();
+    return this.shutdownPromise;
+  }
+
+  private async performShutdown(): Promise<void> {
     if (this.flushTimer !== undefined) globalThis.clearTimeout(this.flushTimer);
     this.unbindPageLifecycle();
     // Mark inactive before flushing so performFlush does not schedule another timer.
     this.initialized = false;
+    if (this.flushPromise) await this.flushPromise;
     await this.flush("shutdown");
     // Reverse order mirrors nested resource acquisition during plugin setup.
-    for (const plugin of [...this.plugins].reverse()) await plugin.teardown?.();
+    for (const plugin of [...this.activePlugins].reverse()) {
+      try {
+        await plugin.teardown?.();
+      } catch {
+        this.emit({ type: "plugin_error", plugin: plugin.name, stage: "teardown" });
+      }
+    }
+    this.activePlugins = [];
+    this.shutdownComplete = true;
     this.emit({ type: "sdk_shutdown" });
   }
 
@@ -259,27 +298,45 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     properties: EventProperties,
     options?: TrackOptions,
   ): Promise<void> {
+    if (this.shutdownPromise || this.shutdownComplete) {
+      this.emit({ type: "event_dropped", eventName: name, reason: "shutdown" });
+      return;
+    }
     if (!this.initialized) await this.init();
     if (!this.consent.canCollect()) {
       this.emit({ type: "event_dropped", eventName: name, reason: "consent" });
       return;
     }
 
-    let event: AnalyticsEvent | null = {
-      eventId: createId(),
-      type,
-      name,
-      timestamp: (options?.timestamp ?? new Date()).toISOString(),
-      identity: this.identity.current(),
-      properties,
-      context: this.createContext(),
-      schemaVersion: this.options.schemaVersion ?? "1",
-    };
+    let event: AnalyticsEvent | null;
+    try {
+      event = {
+        eventId: createId(),
+        type,
+        name,
+        timestamp: (options?.timestamp ?? new Date()).toISOString(),
+        identity: this.identity.current(),
+        properties,
+        context: this.createContext(),
+        schemaVersion: this.options.schemaVersion ?? "1",
+      };
+    } catch {
+      // Built-in identity storage is defensive, but a custom adapter may fail.
+      // Product instrumentation must not turn that failure into an app error.
+      this.emit({ type: "adapter_error", adapter: "identity-storage", operation: "current" });
+      this.emit({ type: "event_dropped", eventName: name, reason: "adapter-error" });
+      return;
+    }
 
     for (const plugin of this.plugins) {
       if (!event) break;
-      const processed: AnalyticsEvent | null | undefined = await plugin.beforeTrack?.(event);
-      if (processed !== undefined) event = processed;
+      try {
+        const processed: AnalyticsEvent | null | undefined = await plugin.beforeTrack?.(event);
+        if (processed !== undefined) event = processed;
+      } catch {
+        this.emit({ type: "plugin_error", plugin: plugin.name, stage: "before-track" });
+        event = null;
+      }
     }
     if (!event) {
       this.emit({ type: "event_dropped", eventName: name, reason: "plugin" });
@@ -298,46 +355,73 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
       return;
     }
 
-    if (await this.eventStorage.size() >= (this.options.maxQueueSize ?? 2_000)) {
-      const oldest = await this.eventStorage.peek(1);
-      if (oldest[0]) {
-        await this.eventStorage.remove([oldest[0].eventId]);
-        this.emit({ type: "event_dropped", eventName: oldest[0].name, reason: "queue-limit" });
+    let queueSize: number;
+    try {
+      queueSize = await this.eventStorage.size();
+      if (queueSize >= (this.options.maxQueueSize ?? 2_000)) {
+        const oldest = await this.eventStorage.peek(1);
+        if (oldest[0]) {
+          await this.eventStorage.remove([oldest[0].eventId]);
+          queueSize = Math.max(0, queueSize - 1);
+          this.emit({ type: "event_dropped", eventName: oldest[0].name, reason: "queue-limit" });
+        }
+      }
+      await this.eventStorage.push(event);
+      queueSize += 1;
+    } catch (error) {
+      if (isStorageQuotaExceededError(error)) {
+        const estimate = error instanceof StorageQuotaExceededError
+          ? error.estimate
+          : await this.getStorageEstimate().catch(() => undefined);
+        this.emit({ type: "event_dropped", eventName: event.name, reason: "storage-quota" });
+        this.emit({
+          type: "storage_quota_exceeded",
+          eventName: event.name,
+          ...(estimate === undefined ? {} : { estimate }),
+        });
+        return;
+      }
+      this.emit({ type: "adapter_error", adapter: "event-storage", operation: "enqueue" });
+      this.emit({ type: "event_dropped", eventName: event.name, reason: "adapter-error" });
+      return;
+    }
+    this.emit({ type: "event_enqueued", eventId: event.eventId, eventName: event.name, queueSize });
+    for (const plugin of this.plugins) {
+      try {
+        await plugin.afterTrack?.(event);
+      } catch {
+        this.emit({ type: "plugin_error", plugin: plugin.name, stage: "after-track" });
       }
     }
 
-    try {
-      await this.eventStorage.push(event);
-    } catch (error) {
-      if (!isStorageQuotaExceededError(error)) throw error;
-      const estimate = error instanceof StorageQuotaExceededError
-        ? error.estimate
-        : await this.getStorageEstimate();
-      this.emit({ type: "event_dropped", eventName: event.name, reason: "storage-quota" });
-      this.emit({
-        type: "storage_quota_exceeded",
-        eventName: event.name,
-        ...(estimate === undefined ? {} : { estimate }),
-      });
-      return;
-    }
-    const queueSize = await this.eventStorage.size();
-    this.emit({ type: "event_enqueued", eventId: event.eventId, eventName: event.name, queueSize });
-    for (const plugin of this.plugins) await plugin.afterTrack?.(event);
-
-    if (await this.eventStorage.size() >= (this.options.maxBatchSize ?? 30)) {
+    if (queueSize >= (this.options.maxBatchSize ?? 30)) {
       await this.flush("queue-full");
     }
   }
 
   private async performFlush(reason: TransportContext["reason"]): Promise<void> {
-    const acquired = await this.deliveryLock.runExclusive(() => this.performFlushUnlocked(reason));
-    if (!acquired) {
-      // Another tab owns delivery. This instance has no active request or
-      // retry deadline, so its observable state must not remain stale.
-      this.retryAttempt = 0;
-      this.deliveryState = idleDeliveryState();
-      if (this.initialized) this.scheduleFlush();
+    try {
+      const acquired = await this.deliveryLock.runExclusive(() => this.performFlushUnlocked(reason));
+      if (!acquired) {
+        // Another tab owns delivery. This instance has no active request or
+        // retry deadline, so its observable state must not remain stale.
+        this.retryAttempt = 0;
+        this.deliveryState = idleDeliveryState();
+        if (this.initialized) this.scheduleFlush();
+      }
+    } catch {
+      const attemptId = createId();
+      const nextDelayMs = this.nextRetryDelay();
+      this.emit({ type: "adapter_error", adapter: "delivery-lock", operation: "run-exclusive" });
+      this.emit({ type: "flush_failed", attemptId, eventCount: 0, retryable: true });
+      this.emit({
+        type: "flush_retry_scheduled",
+        attemptId,
+        attempt: this.retryAttempt,
+        delayMs: nextDelayMs,
+        nextRetryAt: new Date(Date.now() + nextDelayMs).toISOString(),
+      });
+      if (this.initialized) this.scheduleFlush(nextDelayMs);
     }
   }
 
@@ -363,23 +447,37 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
         reason,
         transport: transport.name,
       });
-      const body = await this.compression.compress(encoded);
+      let body: string | Uint8Array;
+      try {
+        body = await this.compression.compress(encoded);
+      } catch (error) {
+        throw new AdapterOperationError("compression", "compress", error);
+      }
       const eventIds = events.map((event) => event.eventId);
 
-      const result = await transport.send(
-        {
-          body,
-          contentType: this.codec.contentType,
-          ...(this.compression.contentEncoding
-            ? { contentEncoding: this.compression.contentEncoding }
-            : {}),
-          eventIds,
-        },
-        { reason },
-      );
+      let result: TransportResult;
+      try {
+        result = await transport.send(
+          {
+            body,
+            contentType: this.codec.contentType,
+            ...(this.compression.contentEncoding
+              ? { contentEncoding: this.compression.contentEncoding }
+              : {}),
+            eventIds,
+          },
+          { reason },
+        );
+      } catch (error) {
+        throw new AdapterOperationError("transport", "send", error);
+      }
 
       if (result.success || result.retryable === false) {
-        await this.eventStorage.remove(eventIds);
+        try {
+          await this.eventStorage.remove(eventIds);
+        } catch (error) {
+          throw new AdapterOperationError("event-storage", "remove-committed", error);
+        }
         this.retryAttempt = 0;
       }
 
@@ -413,7 +511,14 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
           });
         }
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof AdapterOperationError) {
+        this.emit({
+          type: "adapter_error",
+          adapter: error.adapter,
+          operation: error.operation,
+        });
+      }
       nextDelayMs = this.nextRetryDelay();
       this.emit({
         type: "flush_failed",
@@ -439,25 +544,46 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
     encoded: string | Uint8Array;
     transport: Transport;
   } | undefined> {
-    let candidates = await this.eventStorage.peek(this.options.maxBatchSize ?? 30);
+    let candidates: AnalyticsEvent[];
+    try {
+      candidates = await this.eventStorage.peek(this.options.maxBatchSize ?? 30);
+    } catch (error) {
+      throw new AdapterOperationError("event-storage", "peek", error);
+    }
     const byteLimit = this.options.maxBatchBytes ?? 256 * 1_024;
 
     while (candidates.length > 0) {
       const first = candidates[0];
       if (!first) return undefined;
-      const transport = this.resolveTransport(first);
+      let transport: Transport;
+      try {
+        transport = this.resolveTransport(first);
+      } catch (error) {
+        throw new AdapterOperationError("transport", "resolve", error);
+      }
       const routedCandidates: AnalyticsEvent[] = [first];
 
       // Preserve FIFO ordering: a batch stops at the first event for another
       // destination instead of skipping past it and reordering the queue.
       for (const event of candidates.slice(1)) {
-        if (this.resolveTransport(event) !== transport) break;
+        let eventTransport: Transport;
+        try {
+          eventTransport = this.resolveTransport(event);
+        } catch (error) {
+          throw new AdapterOperationError("transport", "resolve", error);
+        }
+        if (eventTransport !== transport) break;
         routedCandidates.push(event);
       }
 
       for (let count = routedCandidates.length; count >= 1; count -= 1) {
         const events = routedCandidates.slice(0, count);
-        const encoded = await this.encodeBatch(events);
+        let encoded: string | Uint8Array;
+        try {
+          encoded = await this.encodeBatch(events);
+        } catch (error) {
+          throw new AdapterOperationError("codec", "encode", error);
+        }
         if (byteLength(encoded) <= byteLimit) {
           return { events, encoded, transport };
         }
@@ -465,9 +591,17 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
 
       const oversized = routedCandidates[0];
       if (!oversized) return undefined;
-      await this.eventStorage.remove([oversized.eventId]);
+      try {
+        await this.eventStorage.remove([oversized.eventId]);
+      } catch (error) {
+        throw new AdapterOperationError("event-storage", "remove-oversized", error);
+      }
       this.emit({ type: "event_dropped", eventName: oversized.name, reason: "batch-byte-limit" });
-      candidates = await this.eventStorage.peek(this.options.maxBatchSize ?? 30);
+      try {
+        candidates = await this.eventStorage.peek(this.options.maxBatchSize ?? 30);
+      } catch (error) {
+        throw new AdapterOperationError("event-storage", "peek", error);
+      }
     }
 
     return undefined;
@@ -624,6 +758,17 @@ function freezeStorageEstimate(value: StorageEstimate | undefined): Readonly<Sto
       ? {}
       : { usageDetails: Object.freeze({ ...value.usageDetails }) }),
   });
+}
+
+class AdapterOperationError extends Error {
+  constructor(
+    readonly adapter: Extract<DiagnosticEvent, { type: "adapter_error" }>["adapter"],
+    readonly operation: string,
+    options?: unknown,
+  ) {
+    super(`Analytics adapter failed during ${operation}`, { cause: options });
+    this.name = "AdapterOperationError";
+  }
 }
 
 /** Create a typed Analytics client without coupling it to a UI framework. */

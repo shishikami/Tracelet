@@ -38,7 +38,7 @@ pnpm pack:check
 3. 从 `CHANGELOG.md` 复制本版本的 Fixed、Added 和 Changed 内容作为 Release Notes。
 4. 发布正式 Release；不要勾选 prerelease，除非版本本身是预发布版本。
 
-`Publish npm package` 工作流会再次执行检查，校验 tag 与包版本，然后使用 npm Trusted Publishing 将版本提交到暂存区。
+`Publish npm package` 工作流会再次执行检查，校验 tag 与包版本，然后使用 npm Trusted Publishing 将版本提交到暂存区。工作流在暂存成功后结束，不会占用 GitHub Runner 等待人工批准。
 
 ## 4. 批准 npm 暂存版本
 
@@ -63,6 +63,8 @@ npm install tracelet-browser@<version>
 ```
 
 最后确认 npm badge、Vercel 文档站、GitHub Release 和 `CHANGELOG.md` 展示的是同一版本。
+
+批准后，在 GitHub Actions 中手动运行 **Verify published npm package**，输入刚发布的精确版本号。该工作流会从公共 Registry 安装包，并验证运行时导入、TypeScript 声明和一次真实 HTTP Collector 投递。人工批准可能发生在数小时后，因此这项检查必须与暂存发布工作流解耦，避免把正常的等待误报为发布失败。
 
 ## 6. 恢复开发版本
 

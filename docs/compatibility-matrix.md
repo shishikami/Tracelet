@@ -1,8 +1,11 @@
 # Tracelet compatibility and resilience matrix
 
-Last reviewed: 2026-10-23
+Last reviewed: 2026-10-24
 
 This matrix distinguishes what CI proves today from documented manual checks and planned coverage. “Supported” means the named path has automated evidence in this repository; it does not imply support for every historical browser or third-party extension.
+
+Exact tested engine versions, required capabilities and fallback behavior are
+defined in the [browser support policy](./browser-support.md).
 
 ## Status legend
 
@@ -11,7 +14,7 @@ This matrix distinguishes what CI proves today from documented manual checks and
 | ✅ Automated | Runs in CI and blocks merging on failure. |
 | 🧪 Manual | A repeatable check is documented but not yet a CI gate. |
 | ⚠️ Partial | A related path is automated, but an important variant is missing. |
-| 🗓️ Planned | Targeted for 0.3.x; not currently claimed as verified. |
+| 🗓️ Planned | Targeted for the 0.4 contract-hardening cycle; not currently claimed as verified. |
 | ➖ Deferred | Explicitly outside the 0.3 supported surface. |
 
 ## Browser and lifecycle
@@ -38,11 +41,13 @@ This matrix distinguishes what CI proves today from documented manual checks and
 | `408`, `429`, `5xx` | Keep events and retry | Transport/analytics tests; browser `503` test | ✅ Automated |
 | `Retry-After` seconds or HTTP date | Schedule the requested delay | `tests/transport.test.mjs` | ✅ Automated |
 | Request timeout | Keep events and retry | `tests/transport.test.mjs` | ✅ Automated |
+| Page-exit keepalive budget | Use keepalive only for bodies within the configured safety budget | `tests/transport.test.mjs` | ✅ Automated |
 | Explicit caller abort | Do not retry that send | `tests/transport.test.mjs` | ✅ Automated |
 | JSON + gzip ingestion | Decode and validate the same EventBatch | `tests/collector.test.mjs` | ✅ Automated |
 | CORS preflight and origin allowlist | Allow configured origins; deny others | `tests/collector.test.mjs` | ✅ Automated |
 | Compressed/decoded body limits | Reject with `413` before the sink | `tests/collector.test.mjs` | ✅ Automated |
 | Within-batch duplicate IDs | Reject with `400` | `tests/collector.test.mjs` | ✅ Automated |
+| Unsupported protocol version | Reject before the Sink is called | `tests/collector.test.mjs` and `docs/protocol-v1.md` | ✅ Automated |
 | Delivery attempt correlation | Start, result and retry schedule share `attemptId` | Unit and three-browser observability tests | ✅ Automated |
 | Cross-request idempotency | Durable sink enforces unique `eventId` | Sink contract and starter documentation; no database chosen | 🧪 Manual |
 | Offline → online browser transition | IndexedDB retains the event and retry succeeds after reconnecting | Playwright context network transition in all three browsers | ✅ Automated |
