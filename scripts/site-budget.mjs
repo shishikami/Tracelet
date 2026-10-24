@@ -10,9 +10,10 @@ const manifest = JSON.parse(
   await readFile(join(outputRoot, ".vite", "manifest.json"), "utf8"),
 );
 const MAX_INITIAL_GZIP_BYTES = 125 * 1024;
-// The 0.3 storage fallback guide adds a small, intentionally lazy-loaded docs
-// chunk. Keep the increase narrow so future content growth still fails loudly.
-const MAX_TOTAL_JAVASCRIPT_GZIP_BYTES = 171 * 1024;
+// 0.4 adds adapter-failure guidance to the lazy-loaded API/manual chunks.
+// Keep one narrow KiB of headroom for zlib differences between local macOS and
+// the Linux CI matrix while preserving the independent initial-load ceiling.
+const MAX_TOTAL_JAVASCRIPT_GZIP_BYTES = 172 * 1024;
 
 const initialFiles = new Set();
 const visit = (key) => {
