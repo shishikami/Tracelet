@@ -10,6 +10,7 @@
 - 官网 API Reference 与构建后 Analytics 方法、DiagnosticEvent 类型之间的机械一致性检查。
 - EventBatch v1 协议规范，明确版本兼容、重试、幂等、批次确认与隐私边界。
 - 可运行的 PostgreSQL Collector Sink、建表迁移与真实数据库 CI，验证重建连接池后重放批次仍由 `eventId` 主键安全去重。
+- Chromium 1,000 事件/10 次刷新有界 Soak，以及三浏览器临时上下文隔离、跨域无 Cookie 投递和客户端拦截后第一方路径恢复测试。
 
 ### Changed
 

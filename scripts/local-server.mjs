@@ -57,6 +57,8 @@ function requestMetadata(request) {
     contentType: request.headers["content-type"] ?? null,
     contentEncoding: request.headers["content-encoding"] ?? null,
     declaredEventCount: request.headers["x-analytics-event-count"] ?? null,
+    // Record only presence. Test diagnostics must never copy cookie values.
+    hadCookie: request.headers.cookie !== undefined,
   };
 }
 
@@ -162,7 +164,7 @@ const server = createServer(async (request, response) => {
 
   if (request.method === "GET" && url.pathname === "/v1/events") {
     const requestedLimit = Number(url.searchParams.get("limit") ?? 100);
-    const limit = Math.min(500, Math.max(1, Number.isFinite(requestedLimit) ? requestedLimit : 100));
+    const limit = Math.min(2_000, Math.max(1, Number.isFinite(requestedLimit) ? requestedLimit : 100));
     json(response, 200, { count: receivedEvents.length, events: receivedEvents.slice(-limit).reverse() });
     return;
   }

@@ -31,7 +31,8 @@ defined in the [browser support policy](./browser-support.md).
 | Cross-tab delivery lock | Yes | Yes | Yes | Two real pages share IndexedDB and flush concurrently without duplicates | ✅ Automated |
 | Storage quota diagnostics | Unit only | Unit only | Unit only | Synthetic quota rejection test | ⚠️ Partial |
 | Queue snapshots and runtime diagnostic subscriptions | Yes | Yes | Yes | Real IndexedDB observability lifecycle test | ✅ Automated |
-| Private/ephemeral browsing modes | — | — | — | Browser policies vary by version | 🗓️ Planned |
+| Non-persistent/ephemeral browser contexts | Yes | Yes | Yes | Fresh isolated contexts can use IndexedDB and do not leak it into the next context | ✅ Automated |
+| Branded private-window storage policies | — | — | — | Vendor modes can impose additional quota/eviction rules not exposed by Playwright | ⚠️ Partial |
 
 ## Network and collector behavior
 
@@ -64,8 +65,8 @@ defined in the [browser support policy](./browser-support.md).
 | Storage quota exceeded | Drop current event safely and emit diagnostics | Unit test | ✅ Automated |
 | CSP `connect-src` blocks collector | Fetch fails and queue is retained | Response-header CSP fixture in all three browsers | ✅ Automated |
 | Strict CSP blocks inline/eval | SDK uses ESM without eval; website policy fixture missing | Source inspection only | 🗓️ Planned |
-| Common privacy/ad blockers | Endpoint-dependent; custom first-party paths recommended | No maintained extension corpus | 🗓️ Planned |
-| Third-party cookies disabled | Default transport uses `credentials: "omit"`; no dedicated browser-policy fixture | Source contract and manual inspection | ⚠️ Partial |
+| Common privacy/ad blockers | A blocked vendor endpoint retains the queue; switching to the maintained first-party path drains it | `blockedbyclient` recovery fixture in all three engines; no extension corpus | ⚠️ Partial |
+| Third-party cookies disabled | Cross-origin transport uses `credentials: "omit"` and succeeds without sending an available collector cookie | Cookie-bearing cross-origin fixture in all three engines | ✅ Automated |
 
 ## Package, runtime and framework integration
 

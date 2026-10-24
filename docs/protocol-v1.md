@@ -126,4 +126,6 @@ than treating page-exit delivery as guaranteed.
   `examples/starters/collector-vercel/src/postgres-sink.ts` and the PostgreSQL
   CI service test in `tests/collector.test.mjs`
 - Real browser delivery: `tests/browser/sdk.spec.ts`
+- Repeated-reload soak, ephemeral contexts, cookie-free cross-origin delivery
+  and client-blocker recovery: `tests/browser/resilience.spec.ts`
 - Protobuf field layout: `proto/analytics.proto`

@@ -11,9 +11,9 @@ capabilities, but they are not part of the automated support claim.
 
 | Engine | CI runtime | Typical browser family | Evidence |
 | --- | --- | --- | --- |
-| Chromium | 156.0.8078.4 | Chrome, Edge and other Chromium browsers | `tests/browser/sdk.spec.ts` |
-| Firefox | 157.0 | Firefox | `tests/browser/sdk.spec.ts` |
-| WebKit | 27.2 | Safari-family engine behavior | `tests/browser/sdk.spec.ts` |
+| Chromium | 156.0.8078.4 | Chrome, Edge and other Chromium browsers | `tests/browser/sdk.spec.ts`, `tests/browser/resilience.spec.ts` |
+| Firefox | 157.0 | Firefox | `tests/browser/sdk.spec.ts`, `tests/browser/resilience.spec.ts` |
+| WebKit | 27.2 | Safari-family engine behavior | `tests/browser/sdk.spec.ts`, `tests/browser/resilience.spec.ts` |
 
 These are the engines bundled with `@playwright/test@1.64.1`, which is pinned
 in `package.json`. Updating Playwright changes the tested browser line and must
@@ -43,10 +43,14 @@ release gate.
   engine coverage is useful evidence but not a device support claim.
 - Mobile Safari and `WKWebView` are not separately automated; WebKit coverage
   does not reproduce iOS storage eviction and backgrounding policy exactly.
-- Private/ephemeral browsing, strict enterprise policies and privacy extensions
-  can reduce storage or network availability. The SDK is designed to fall back
-  or retry, but those modes remain explicitly listed in the compatibility
-  matrix until dedicated fixtures exist.
+- Non-persistent Playwright contexts are verified in every engine: IndexedDB
+  remains usable within the context and does not leak into a fresh context.
+  Branded private-window modes, strict enterprise policies and real privacy
+  extensions can impose additional storage or network rules; those narrower
+  claims remain partial in the compatibility matrix.
+- Cross-origin delivery is verified with a collector-origin cookie present;
+  `HttpTransport` omits it. A blocked vendor endpoint is also verified to keep
+  the queue so it can later drain through a first-party collector path.
 - A CSP must allow the configured collector in `connect-src`. Tracelet does not
   use `eval` and does not require inline scripts.
 
