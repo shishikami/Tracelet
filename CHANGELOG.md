@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## 0.4.0-beta.1 - 2026-10-24
+
 ### Added
 
 - 完整 TypeScript 声明快照门禁，用于发现运行时导出名称检查无法覆盖的参数、返回值和公开类型变更。
@@ -146,6 +148,7 @@ Tracelet 首个公开版本。
 - 本地 Collector、浏览器验证台和 React 文档官网。
 
 [0.3.0-beta.1]: https://github.com/shishikami/Tracelet/compare/v0.2.0...v0.3.0-beta.1
+[0.4.0-beta.1]: https://github.com/shishikami/Tracelet/compare/v0.3.0...v0.4.0-beta.1
 [0.2.0]: https://github.com/shishikami/Tracelet/releases/tag/v0.2.0
 [0.1.2]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.2
 [0.1.1]: https://github.com/shishikami/Tracelet/releases/tag/v0.1.1
