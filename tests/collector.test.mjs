@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -19,6 +19,9 @@ execFileSync(process.execPath, [
 
 const { createTraceletCollector } = await import(
   pathToFileURL(join(buildDirectory, "src/collector.js"))
+);
+const { createPostgresCollectorSink } = await import(
+  pathToFileURL(join(buildDirectory, "src/postgres-sink.js"))
 );
 
 after(async () => {
@@ -62,6 +65,15 @@ function createRequest(body, headers = {}, method = "POST") {
 
 function silentLogger() {
   return { info() {}, error() {} };
+}
+
+function createEvent(eventId, name = "checkout_completed") {
+  return {
+    ...createBatch().events[0],
+    eventId,
+    name,
+    properties: { orderId: `order-${eventId}` },
+  };
 }
 
 test("accepts a valid batch and reports sink-level duplicates", async () => {
@@ -235,4 +247,103 @@ test("returns a generic retryable server error when the durable sink fails", asy
   assert.equal(body.error, "collector_failure");
   assert.doesNotMatch(JSON.stringify(body), /database password/);
   assert.equal(errors.length, 1);
+});
+
+test("PostgreSQL sink writes one atomic statement and reports conflicts", async () => {
+  const queries = [];
+  const sink = createPostgresCollectorSink({
+    async query(text, values) {
+      queries.push({ text, values });
+      return { rows: [{ event_id: "event-1" }] };
+    },
+  });
+  const batch = createBatch({
+    events: [createEvent("event-1"), createEvent("event-2", "cart_viewed")],
+  });
+
+  const result = await sink.write(batch, {
+    requestId: "request-postgres",
+    receivedAt: "2026-10-20T08:00:01.000Z",
+    origin: acceptedOrigin,
+  });
+
+  assert.equal(queries.length, 1);
+  assert.match(queries[0].text, /INSERT INTO tracelet_events/);
+  assert.match(queries[0].text, /ON CONFLICT \(event_id\) DO NOTHING/);
+  assert.match(queries[0].text, /RETURNING event_id/);
+  assert.equal(queries[0].values.length, 30);
+  assert.deepEqual(result, { duplicateEventIds: ["event-2"] });
+});
+
+const postgresUrl = process.env.TRACELET_TEST_POSTGRES_URL;
+
+test("PostgreSQL sink keeps idempotency after pool restart", {
+  skip: postgresUrl ? false : "TRACELET_TEST_POSTGRES_URL is not configured",
+}, async () => {
+  const { Pool } = await import("pg");
+  const migration = await readFile(
+    join(repositoryRoot, "examples/starters/collector-vercel/migrations/001_tracelet_events.sql"),
+    "utf8",
+  );
+  const createHandle = (pool) => createTraceletCollector({
+    allowedOrigins: [acceptedOrigin],
+    logger: silentLogger(),
+    sink: createPostgresCollectorSink({
+      query(text, values = []) {
+        return pool.query(text, [...values]);
+      },
+    }),
+  });
+  const events = [createEvent("restart-event-1"), createEvent("restart-event-2", "cart_viewed")];
+  const batch = createBatch({ events });
+  let firstPool = new Pool({ connectionString: postgresUrl, max: 2 });
+  let secondPool;
+
+  try {
+    await firstPool.query(migration);
+    await firstPool.query("TRUNCATE TABLE tracelet_events");
+
+    const firstResponse = await createHandle(firstPool)(createRequest(
+      JSON.stringify(batch),
+      { "x-analytics-event-count": "2", "x-request-id": "before-restart" },
+    ));
+    assert.equal(firstResponse.status, 202);
+    assert.deepEqual(await firstResponse.json(), {
+      requestId: "before-restart",
+      accepted: 2,
+      duplicates: 0,
+      eventIds: ["restart-event-1", "restart-event-2"],
+    });
+
+    await firstPool.end();
+    firstPool = undefined;
+
+    // A new pool and sink simulate a fresh serverless instance after restart.
+    secondPool = new Pool({ connectionString: postgresUrl, max: 2 });
+    const secondResponse = await createHandle(secondPool)(createRequest(
+      JSON.stringify(batch),
+      { "x-analytics-event-count": "2", "x-request-id": "after-restart" },
+    ));
+    assert.equal(secondResponse.status, 202);
+    assert.deepEqual(await secondResponse.json(), {
+      requestId: "after-restart",
+      accepted: 0,
+      duplicates: 2,
+      eventIds: [],
+    });
+
+    const stored = await secondPool.query(
+      "SELECT event_id, event_name, properties, request_id FROM tracelet_events ORDER BY event_id",
+    );
+    assert.equal(stored.rowCount, 2);
+    assert.deepEqual(stored.rows.map((row) => row.event_id), ["restart-event-1", "restart-event-2"]);
+    assert.equal(stored.rows[0].request_id, "before-restart");
+    assert.deepEqual(stored.rows[0].properties, { orderId: "order-restart-event-1" });
+  } finally {
+    if (firstPool) await firstPool.end();
+    if (secondPool) {
+      await secondPool.query("TRUNCATE TABLE tracelet_events");
+      await secondPool.end();
+    }
+  }
 });

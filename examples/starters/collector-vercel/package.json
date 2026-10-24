@@ -9,5 +9,6 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "dev": "vercel dev"
   },
-  "devDependencies": { "typescript": "^5.7.0", "vercel": "^50.0.0" }
+  "dependencies": { "pg": "8.23.1" },
+  "devDependencies": { "@types/pg": "8.23.1", "typescript": "^5.7.0", "vercel": "^50.0.0" }
 }

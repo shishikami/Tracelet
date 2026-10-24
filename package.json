@@ -46,6 +46,7 @@
     "typecheck:docs": "pnpm --dir website typecheck",
     "check": "pnpm version:check && pnpm typecheck && pnpm typecheck:examples && pnpm typecheck:frameworks && pnpm typecheck:docs && pnpm test && pnpm api:check && pnpm docs:api:check && pnpm package:budget && pnpm smoke:package && pnpm build:docs && pnpm site:budget && pnpm seo:check",
     "test": "pnpm build && node --test tests/*.test.mjs",
+    "test:postgres": "node --test --test-name-pattern='PostgreSQL sink' tests/collector.test.mjs",
     "test:browser": "playwright test",
     "test:browser:install": "playwright install chromium firefox webkit",
     "smoke:package": "node scripts/package-smoke.mjs",
@@ -64,6 +65,8 @@
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
+    "@types/pg": "8.23.1",
+    "pg": "8.23.1",
     "typescript": "^5.7.0"
   },
   "exports": {

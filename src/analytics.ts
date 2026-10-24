@@ -86,7 +86,7 @@ export class Analytics<TEvents extends object = Record<string, EventProperties>>
   private readonly plugins: AnalyticsPlugin[];
   private activePlugins: AnalyticsPlugin[] = [];
   private readonly deliveryLock: DeliveryLock;
-  private flushTimer?: number;
+  private flushTimer?: ReturnType<typeof globalThis.setTimeout>;
   private flushPromise: Promise<void> | undefined;
   private initialized = false;
   private shutdownPromise: Promise<void> | undefined;

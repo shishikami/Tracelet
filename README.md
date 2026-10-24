@@ -460,10 +460,11 @@ pnpm pack:check
 - [x] [评估 CDN / IIFE 构建](./docs/rfcs/0002-distribution-formats.md)：0.3 保持原生 ESM-only，等待真实无打包器需求后再扩展。
 - [x] 增加 IndexedDB 启动探测与显式内存后备队列，避免首个 `track()` 因持久存储不可用而影响业务。
 
-- [ ] 对完整 TypeScript 声明建立可审查的 API 快照，而不只检查运行时导出名称。
-- [ ] 冻结 EventBatch v1、重试、幂等与兼容性语义。
-- [ ] 明确页面退出、关闭后调用和适配器异常的生命周期边界。
-- [ ] 将 npm 暂存发布与人工批准后的公共 Registry 验证拆成独立成功门禁。
+- [x] 对完整 TypeScript 声明建立可审查的 API 快照，而不只检查运行时导出名称。
+- [x] 冻结 EventBatch v1、重试、幂等与兼容性语义。
+- [x] 明确页面退出、关闭后调用和适配器异常的生命周期边界。
+- [x] 将 npm 暂存发布与人工批准后的公共 Registry 验证拆成独立成功门禁。
+- [x] 增加 PostgreSQL 参考 Sink 与真实数据库重启幂等 CI。
 - [ ] 完成真实项目接入与持续运行验证，为 1.0 提供生产证据。
 
 0.3 的公开命名与 ESM-only 分发范围已经冻结；历史发布证据见 [0.3 release readiness](./docs/0.3-release-readiness.md)。

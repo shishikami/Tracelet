@@ -49,7 +49,7 @@ defined in the [browser support policy](./browser-support.md).
 | Within-batch duplicate IDs | Reject with `400` | `tests/collector.test.mjs` | ✅ Automated |
 | Unsupported protocol version | Reject before the Sink is called | `tests/collector.test.mjs` and `docs/protocol-v1.md` | ✅ Automated |
 | Delivery attempt correlation | Start, result and retry schedule share `attemptId` | Unit and three-browser observability tests | ✅ Automated |
-| Cross-request idempotency | Durable sink enforces unique `eventId` | Sink contract and starter documentation; no database chosen | 🧪 Manual |
+| Cross-request idempotency | PostgreSQL primary key enforces unique `eventId` across fresh pools/instances | Real PostgreSQL 16 service test in `tests/collector.test.mjs` | ✅ Automated |
 | Offline → online browser transition | IndexedDB retains the event and retry succeeds after reconnecting | Playwright context network transition in all three browsers | ✅ Automated |
 | Captive portal / DNS / TLS failure | Keep events and retry | Fetch failure is covered generically, not browser-network variants | ⚠️ Partial |
 
@@ -81,7 +81,7 @@ defined in the [browser support policy](./browser-support.md).
 | Next.js client boundary | Standalone App Router starter installs current tarball and completes a Turbopack production build | `examples/starters/nextjs`; ecosystem smoke test | ✅ Automated |
 | Webpack/Rollup direct consumers | Both resolve and bundle the installed current tarball | `scripts/ecosystem-smoke.mjs` | ✅ Automated |
 | CDN/IIFE `<script>` usage | 0.3 remains native ESM-only; revisit on demonstrated demand | `docs/rfcs/0002-distribution-formats.md` | ➖ Deferred |
-| Vercel Function collector | Handler compiles and protocol tests run on Node 20/24 | `tests/collector.test.mjs` | ✅ Automated |
+| Vercel Function collector | Handler compiles on Node 20/24; protocol tests and PostgreSQL restart idempotency run in CI | `tests/collector.test.mjs` | ✅ Automated |
 
 ## 0.3 implementation order
 

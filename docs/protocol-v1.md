@@ -122,5 +122,8 @@ than treating page-exit delivery as guaranteed.
 - SDK transport behavior: `tests/transport.test.mjs`
 - Queue and retry behavior: `tests/analytics.test.mjs`
 - JSON/gzip collector contract: `tests/collector.test.mjs`
+- PostgreSQL atomic persistence and restart-safe idempotency:
+  `examples/starters/collector-vercel/src/postgres-sink.ts` and the PostgreSQL
+  CI service test in `tests/collector.test.mjs`
 - Real browser delivery: `tests/browser/sdk.spec.ts`
 - Protobuf field layout: `proto/analytics.proto`

@@ -50,9 +50,50 @@ jobs:
         if: matrix.node-version == 24
         run: pnpm smoke:ecosystem
 
+  postgres:
+    name: PostgreSQL Collector
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: tracelet_test
+          POSTGRES_USER: tracelet
+          POSTGRES_PASSWORD: tracelet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tracelet -d tracelet_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install pnpm
+        run: npm install --global pnpm@10.18.3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify restart-safe PostgreSQL idempotency
+        run: pnpm test:postgres
+        env:
+          TRACELET_TEST_POSTGRES_URL: postgresql://tracelet:tracelet@127.0.0.1:5432/tracelet_test
+
   browser:
     name: Browser E2E
-    needs: quality
+    needs:
+      - quality
+      - postgres
     runs-on: ubuntu-latest
 
     steps:

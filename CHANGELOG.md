@@ -9,6 +9,7 @@
 - 完整 TypeScript 声明快照门禁，用于发现运行时导出名称检查无法覆盖的参数、返回值和公开类型变更。
 - 官网 API Reference 与构建后 Analytics 方法、DiagnosticEvent 类型之间的机械一致性检查。
 - EventBatch v1 协议规范，明确版本兼容、重试、幂等、批次确认与隐私边界。
+- 可运行的 PostgreSQL Collector Sink、建表迁移与真实数据库 CI，验证重建连接池后重放批次仍由 `eventId` 主键安全去重。
 
 ### Changed
 
@@ -18,6 +19,7 @@
 - 身份/事件存储、Codec、Compression、Transport 与投递锁的运行时异常不会再从常规采集或 Flush 调用逃逸，并以不含 Payload 的适配器诊断暴露；隐私擦除和显式状态查询仍保留可观察失败。
 - npm 暂存发布与人工批准后的公共 Registry 验证拆分，避免等待审批导致 GitHub Release 工作流误报失败。
 - React、Vue 和 Next.js starter 更新为当前 `0.3.0` 稳定依赖。
+- SDK 内部定时器句柄改用跨浏览器与 Node 类型环境兼容的推导类型。
 
 ## 0.3.0 - 2026-10-23
 
