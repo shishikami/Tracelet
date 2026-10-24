@@ -452,7 +452,7 @@ pnpm pack:check
 
 - [x] [可观测 API 设计稿](./docs/rfcs/0001-observability-api.md)：队列快照、投递状态和多订阅者语义。
 - [x] [兼容性与韧性测试矩阵](./docs/compatibility-matrix.md)：明确自动化、部分覆盖、手工验证和待验证边界。
-- [x] [Vercel Collector starter](./examples/starters/collector-vercel)：CORS、安全大小边界、gzip、鉴权扩展和持久化 Sink 契约。
+- [x] [Vercel Collector starter](./examples/starters/collector-vercel)：CORS、安全大小边界、gzip、鉴权扩展、PostgreSQL 迁移与跨实例幂等 Sink。
 - [x] 实现并验证可观测 API：队列快照、运行时订阅、Attempt 关联与三浏览器覆盖。
 - [x] 发布并验证 `0.3.0` 正式版。
 - [x] 增加 CSP、离线恢复、隐藏页 Flush 与真实跨标签页锁的三浏览器夹具。

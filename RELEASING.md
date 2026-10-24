@@ -26,6 +26,7 @@ pnpm pack:check
 
 - Node.js 20 和 24：类型检查、单元测试、tarball 冒烟测试、网站构建与包内容检查。
 - Node.js 24：当前 tarball 的 React、Vue、Next.js、Webpack 与 Rollup 生产构建。
+- PostgreSQL 16：执行真实迁移，并验证 Collector 在重建连接池后仍能按 `eventId` 幂等去重。
 - Chromium、Firefox 和 WebKit：真实浏览器端到端测试。
 - Vercel：生产文档站部署成功。
 
